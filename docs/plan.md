@@ -1,0 +1,200 @@
+# Edge implementation plan
+
+Status: accepted overall direction; individual contracts require review.
+
+## Objective
+
+Build `github.com/asteroid-computing/go-lambda-edge`, with root package `edge`,
+as a new Go 1.27 module. Adapt AWS API Gateway Lambda proxy events to ordinary
+`net/http` handlers and provide complementary identity, authentication,
+authorization, and consumer-test packages.
+
+Beakley was reviewed at `/Volumes/home/Developer/spmt-20260905/beakley`.
+Its requirements and observed failures inform this design. This work is not a
+port, source copy, or compatibility-preserving update of Beakley.
+
+## Accepted direction
+
+- Set the module's Go baseline to 1.27.0.
+- Use `encoding/json/v2` directly for our event, response, JWKS, and claim JSON
+  handling. Do not route our codec through `encoding/json`'s compatibility API.
+  Check third-party parser behavior separately during dependency selection.
+- Keep ordinary `http.Handler` as the application boundary.
+- Own event serialization at a raw Lambda invocation boundary implementing
+  `Invoke(context.Context, []byte) ([]byte, error)`.
+- Support REST API proxy events, HTTP API payload 1.0, and HTTP API payload 2.0.
+  API product and payload version are distinct concepts.
+- Start with buffered responses. Streaming is a separate future capability.
+- Keep payload dispatch and the response writer private initially.
+- Preserve separate IAM/JWT caller representations and an anonymous zero value;
+  enforce invariants rather than relying on comments about a union.
+- Separate token scopes, Cognito groups, and application-resolved grants.
+- Preserve context-aware authorization and distinguish denial from dependency
+  failure.
+- Preserve full-fidelity claims when the selected source provides them. Do not
+  claim to recover arrays or original numeric values from flattened data.
+- Research substantive decisions and bring recommendations to the user before
+  implementing dependent behavior. See `AGENTS.md`.
+
+The user's follow-up supersedes the review's initial gateway-default proposal:
+prefer no gateway-derived identity by default, with an explicit positive option
+to enable it. Exact option naming, IAM scope, and composition remain proposed in
+[decision 0001](decisions/0001-gateway-identity.md).
+
+## Planned package boundaries
+
+| Package | Responsibility |
+| --- | --- |
+| `edge` (root) | Invocation adapter, payload decoding, HTTP translation, gateway metadata, optional gateway identity extraction |
+| `identity` | Validated callers, claim representation, context transport; standard library only |
+| `authn` | Bearer authentication, explicitly named Cognito verification, JWKS caching |
+| `authz` | Decisions, rules, combinators, middleware, application-principal resolution |
+| `edgetest` | Consumer identity fixtures and gateway event helpers |
+
+Avoid a broad root-package facade that reexports every companion type. Keep AWS
+event types out of transport-independent packages. Reassess any additional
+exported package against a concrete consumer need; version-reporting machinery
+does not need to precede a working adapter.
+
+## Milestones and acceptance criteria
+
+### 0. Persist the design and working agreement
+
+- [x] Create a working branch from the initial `main` commit.
+- [x] Record accepted direction and review findings.
+- [x] Establish decision records and review workflow.
+- [ ] Resolve decision 0001 before implementing authentication defaults.
+
+### 1. Specify the transport contracts
+
+Research and present a contract covering:
+
+- Raw invocation API, constructor/options, configuration validation, and errors.
+- Discrimination between all three supported event cases; reject unsupported
+  versions and malformed shapes without fallback to a different format.
+- Strict JSON v2 handling of duplicate names and invalid UTF-8, with tolerance
+  for additional AWS fields.
+- V1 decoded paths versus V2 raw paths, escaped segments, query representation,
+  custom-domain mappings, and information that AWS does not preserve.
+- Headers and multivalue precedence per key, cookies, host, protocol,
+  `RequestURI`, source address, body decoding/length/cleanup, and context lifetime.
+- Status commitment, header snapshots, implicit responses, content-type
+  detection, HEAD/bodyless statuses, informational responses, trailers, and
+  accurately advertised optional `ResponseWriter` capabilities.
+- Binary response selection and REST API deployment requirements; response-size
+  limits, including base64 and JSON-envelope overhead.
+- Separation of HTTP application outcomes from invocation/translation faults.
+
+Acceptance: a reviewed contract and fixture matrix exist before the corresponding
+behavior is implemented. Resolve smaller decisions incrementally rather than
+presenting an entire frozen public API at once.
+
+### 2. Implement and prove the HTTP adapter
+
+- Create the Go module and minimal public adapter after its contract is reviewed.
+- Implement the adapter from scratch using JSON v2 directly.
+- Test raw invocation through the actual pinned AWS Lambda Go SDK boundary.
+- Exercise documented event fixtures and adversarial/malformed input.
+- Compare relevant request/response behavior with real `net/http` serving,
+  documenting unavoidable transport differences.
+- Fuzz decoding and path/query conversion; add targeted allocation benchmarks.
+- Run appropriate tests, race detection, vet, and Lambda-target build checks.
+
+Acceptance: the same application handler behaves as specified across all three
+event cases; no auth or codec behavior depends on accidental SDK dispatch.
+
+### 3. Identity and gateway producers
+
+- Review caller constructors, immutable/owned data, validation, anonymous state,
+  and context-presence semantics.
+- Preserve issuer plus subject for JWT application identity; do not treat a
+  bare subject as globally unique or assume every M2M caller has a user subject.
+- Keep audience, app client, token use, and provenance distinct.
+- Implement the approved opt-in gateway policy for native JWT/Cognito and IAM.
+- Review custom-authorizer mapping for both payload families, including context,
+  error returns, provenance, and conflicts between identity sources.
+- Expose only the gateway metadata handlers actually need, separately from
+  authenticated identity. Do not synthesize cryptographic guarantees from it.
+
+Acceptance: invalid/ambiguous identities cannot authorize; gateway and token
+claims cannot be silently mixed; unavailable claim fidelity remains explicit.
+
+### 4. Cognito verification and JWKS resilience
+
+- Review a verifier requiring explicit issuer/client restrictions; accepting all
+  pool clients must be a deliberate policy.
+- Keep access-token `client_id`, ID-token audience, and access-token resource
+  audience validation separate. Preserve access-token-only defaults unless
+  deliberately widened.
+- Review algorithm/key selection, expiry/not-before/issued-at behavior, leeway,
+  malformed claims, and the chosen JWT dependency's JSON behavior.
+- Separate cache freshness, unknown-key refresh, and failure backoff.
+- Bound network duration and JWKS response size. Define stale-key behavior,
+  rotation, concurrency, waiter cancellation, and HTTP client ownership.
+- Use deterministic cache/rotation/outage tests; consider Go 1.27 test networking
+  and `testing/synctest` where useful.
+
+Acceptance: malformed credentials fail closed, failures do not create fetch
+storms, and dependency outages remain distinguishable from invalid credentials.
+
+### 5. Authorization and consumer ergonomics
+
+- Implement reviewed rules/combinators, scope/group/grant separation, principal
+  resolution, and explicit authentication precedence.
+- Review missing/invalid credential responses (ordinarily 401), authenticated
+  denial (403), and dependency unavailability (503), including bearer challenges
+  and behavior on public routes.
+- Define ARN matching precisely, including separators, partitions, account
+  boundaries, and STS role sessions. Do not approximate IAM policy evaluation.
+- Validate nil/empty authorizers and invalid identities consistently.
+- Provide consumer fixtures, runnable examples, and limited structured logging
+  that excludes raw credentials and unnecessary profile claims.
+
+Acceptance: examples work both in Lambda and ordinary HTTP applications, while
+authorization decisions remain inspectable and deny by default.
+
+## Findings carried forward from the Beakley review
+
+These are requirements to test independently, not instructions to preserve old
+implementation structure.
+
+1. Unverified header JWTs were reconciled using only `sub` and `client_id`.
+   A probe admitted altered groups with an invalid signature when modeling a
+   gateway/adapter identity-source mismatch. This is conditional on that mismatch,
+   not a demonstrated bypass of a correctly aligned native JWT authorizer.
+2. Repeated final `WriteHeader` calls replaced the committed status, and header
+   changes after commitment appeared in output. Both reproduced.
+3. V1 path `/a?b#c` was interpreted as path, query, and fragment rather than as
+   the supplied path. Reproduced.
+4. V1 helpers discarded single-value maps wholesale when multivalue maps were
+   nonempty. Host lookup and request metadata also need defined semantics.
+5. A caller with both IAM and JWT arms could satisfy both rule conditions.
+   Reproduced; validation was not consistently enforced.
+6. Cold JWKS failures bypassed the refetch floor: three immediate calls produced
+   three network requests. Reproduced. Outage and cancellation behavior need
+   explicit contracts beyond the existing successful-cache tests.
+7. An attached anonymous identity prevented subsequent bearer verification.
+   Existing tests codified that behavior; the new composition policy must be
+   deliberate rather than inherited.
+8. `path.Match` permits wildcards across colons, contrary to the old ARN-matching
+   comment. Synthetic IAM-role examples are insufficient for role-session cases.
+9. Client ID and audience were conflated, and verifier construction allowed any
+   client in the issuer's pool unless explicitly restricted.
+
+Validation performed during review: the old suite passed with `-race` in a
+temporary copy after changing only its Go directive to 1.27. The original 1.26
+directive triggered Go 1.27's standard-library version checks for JSON v2. The
+SDK serialization-boundary probe passed on Go 1.27. No live AWS integration was
+deployed or exercised, and the Beakley repository was not edited.
+
+## Official references
+
+- [Go 1.27 release notes](https://go.dev/doc/go1.27)
+- [JSON v2](https://pkg.go.dev/encoding/json/v2)
+- [HTTP ResponseWriter](https://pkg.go.dev/net/http#ResponseWriter)
+- [AWS Lambda Go Handler](https://pkg.go.dev/github.com/aws/aws-lambda-go/lambda#Handler)
+- [API Gateway HTTP API payload formats](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html)
+- [Gateway JWT validation](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-jwt-authorizer.html)
+- [Gateway IAM authorization](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-access-control-iam.html)
+- [Cognito resource binding](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-define-resource-servers.html)
+- [REST API binary media](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-payload-encodings.html)
