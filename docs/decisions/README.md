@@ -10,4 +10,5 @@ Keep related decisions small enough to review and implement independently.
 | Record | Status | Question |
 | --- | --- | --- |
 | [0001: Gateway identity](0001-gateway-identity.md) | Accepted | How should gateway identity be enabled, and which assertions does it cover? |
-| [0002: Adapter boundary](0002-adapter-boundary.md) | Proposed | How should construction fail, and which failures become Lambda invocation errors? |
+| [0002: Adapter boundary](0002-adapter-boundary.md) | Accepted | How should construction fail, and which failures become Lambda invocation errors? |
+| [0003: Event decoding](0003-event-decoding.md) | Proposed | Which event shapes are accepted, and should the wire types be private? |

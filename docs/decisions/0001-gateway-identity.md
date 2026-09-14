@@ -90,4 +90,6 @@ adaptation without establishing identity or fetching keys, and local verificatio
 is explicitly composed. This approves the decision above, not the remaining
 constructor, precedence, mapper, or error-policy decisions.
 
-Implementation status: not yet implemented. The transport API is the next review.
+Implementation status: `WithGatewayIdentity` now records the approved setting in
+constructor-owned configuration. Invocation and identity extraction are not yet
+implemented; the option cannot establish identity until those stages are built.

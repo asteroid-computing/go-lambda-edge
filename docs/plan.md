@@ -68,9 +68,14 @@ does not need to precede a working adapter.
 
 ### 1. Specify the transport contracts
 
-Current review: [decision 0002](decisions/0002-adapter-boundary.md) proposes
-construction, option application, and invocation-failure handling. It is pending;
-the gateway-identity approval does not settle these contracts.
+Accepted: [decision 0002](decisions/0002-adapter-boundary.md) settles construction,
+option application, and transport invocation-failure handling. Its independent
+constructor/options foundation is implemented while the event/HTTP contracts are
+reviewed. Constructor tests pass with race detection, vet and formatting checks
+pass, and package builds pass for Linux arm64 and amd64.
+
+Current review: [decision 0003](decisions/0003-event-decoding.md) proposes private
+wire types, version dispatch, structural validation, and a decoder fixture matrix.
 
 Research and present a contract covering:
 
@@ -96,7 +101,8 @@ presenting an entire frozen public API at once.
 
 ### 2. Implement and prove the HTTP adapter
 
-- Create the Go module and minimal public adapter after its contract is reviewed.
+- [x] Create the Go 1.27 module and constructor/options foundation after review.
+- [ ] Implement raw invocation after the remaining transport contracts are reviewed.
 - Implement the adapter from scratch using JSON v2 directly.
 - Test raw invocation through the actual pinned AWS Lambda Go SDK boundary.
 - Exercise documented event fixtures and adversarial/malformed input.

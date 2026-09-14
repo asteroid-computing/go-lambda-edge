@@ -1,15 +1,15 @@
 # 0002: Adapter construction and invocation boundary
 
-Status: proposed; awaiting user review.
+Status: accepted by the user.
 
 ## Question
 
 Should the adapter validate configuration at construction, and should failures to
 translate an invocation return a Lambda error or a synthesized HTTP response?
 
-The raw `Invoke` boundary and variadic gateway-identity option are accepted
-direction. Constructor errors, option application, and invocation-failure policy
-still need decisions before implementation.
+This decision settles constructor errors, option application, and transport
+invocation-failure policy alongside the previously accepted raw `Invoke` boundary
+and variadic gateway-identity option.
 
 ## Evidence
 
@@ -38,11 +38,11 @@ still need decisions before implementation.
 The SDK version above was inspected as evidence, not selected as the new module's
 dependency version. That selection and its checks belong to implementation setup.
 
-## Recommendation
+## Decision
 
 ### Public shape
 
-Proposed signatures, not implemented API:
+Accepted signatures (implementation status is recorded below):
 
 ```go
 func New(handler http.Handler, opts ...Option) (*Adapter, error)
@@ -67,7 +67,7 @@ or separate library-owned start function is needed initially.
 
 ### Failure ownership
 
-| Outcome | Proposed behavior |
+| Outcome | Accepted behavior |
 | --- | --- |
 | Invalid adapter configuration | `New` returns an error; startup caller decides how to report/terminate |
 | Invalid JSON, unsupported event, or missing required envelope structure | `Invoke` returns an error without invoking the HTTP handler |
@@ -104,7 +104,7 @@ public sentinel/type taxonomy. Those require the relevant contracts.
 - Export event unions or typed proxy methods now: adds public compatibility
   obligations without improving the ordinary handler or Lambda startup path.
 
-## Validation after approval
+## Validation
 
 - Constructor cases: absent handler, nil option, invalid configuration, explicit
   gateway enable/disable, and duplicate scalar options.
@@ -119,4 +119,16 @@ decision does not authorize inventing those contracts during implementation.
 
 ## Resolution
 
-Pending user approval or redirection.
+The user replied "approved" to the constructor and failure-handling contract:
+`New` returns `(*Adapter, error)`, options apply in order with last scalar assignment
+winning, the adapter object is passed to `lambda.Start`, transport failures return
+invocation errors, and handler HTTP responses retain their status/body with nil
+invocation error.
+
+Implementation status: constructor/options foundation is implemented with no
+external dependencies. Tests cover nil/typed-nil handlers, nil options, and
+construction without handler invocation. `go test -race ./...`, `go vet ./...`,
+and Linux arm64/amd64 package builds pass on Go 1.27.1; formatting is clean.
+
+`Invoke`, identity behavior, duplicate-option behavior as observed during an
+invocation, and integration tests follow the remaining payload/HTTP contracts.
