@@ -24,6 +24,9 @@ port, source copy, or compatibility-preserving update of Beakley.
   `Invoke(context.Context, []byte) ([]byte, error)`.
 - Reuse AWS Lambda Go event/response structs where they meet the contract;
   reserve custom representations for demonstrated limitations.
+- Use the latest stable aws-lambda-go release, recorded explicitly in go.mod
+  for reproducibility. On 2026-09-14, the Go module proxy and AWS GitHub releases
+  both confirmed v1.55.0, already required here; it includes Go 1.27 compatibility.
 - Support already typed events without an envelope JSON round trip inside edge.
   Decision 0004 accepts HandleV1 and HandleV2 with matching AWS request/response
   types, sharing translation and identity policy with raw invocation.

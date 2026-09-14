@@ -22,14 +22,15 @@ buffered/raw/typed contracts or abandoning ordinary net/http handlers?
   supports statusCode, headers, multiValueHeaders, and cookies. There is no
   base64 body field. These deployment and framing requirements must match.
   [Lambda streaming integration contract](https://docs.aws.amazon.com/apigateway/latest/developerguide/response-transfer-mode-lambda.html)
-- Lambda documents a 200 MB streamed-response ceiling versus 6 MB buffered,
-  with bandwidth shaping. Do not blindly reuse the buffered body limit or claim
-  this is an independently verified end-to-end gateway allowance. An AWS .NET
-  article states a 10 MB gateway limit, while the gateway streaming guide
-  describes bandwidth behavior above 10 MB. Resolve that documentation conflict
-  before promising an exact end-to-end maximum or encoding it as a library limit.
+- The full API Gateway streaming guide explicitly states that streaming can
+  exceed the ordinary 10 MB response limit. Use that service-specific guide over
+  the conflicting 10 MB statement in an AWS .NET blog article; do not impose a
+  10 MB streaming cap. Lambda documents a separate 200 MB streamed-response
+  ceiling versus 6 MB buffered. Both stages can apply bandwidth shaping; the
+  gateway describes 2 MB/s after its first 10 MB. No deployed throughput or
+  boundary measurements have been performed by this project.
+  [API Gateway streaming guide](https://docs.aws.amazon.com/apigateway/latest/developerguide/response-transfer-mode.html)
   [Lambda streaming](https://docs.aws.amazon.com/lambda/latest/dg/configuration-response-streaming.html)
-  [AWS .NET article](https://aws.amazon.com/blogs/developer/announcing-response-streaming-for-net-on-aws-lambda/)
 
 ## SDK and repository evidence
 
@@ -39,6 +40,14 @@ cookies, and an io.Reader body. It implements Read, Close, and ContentType; Read
 generates the prefix using encoding/json. Reusing that serializer inside edge
 would conflict with our direct JSON v2 requirement.
 [Pinned SDK streaming response](https://github.com/aws/aws-lambda-go/blob/v1.55.0/events/apigw.go)
+
+On 2026-09-14, both `go list -m -json github.com/aws/aws-lambda-go@latest` and
+AWS's GitHub latest-release endpoint resolve to v1.55.0. The release is neither
+draft nor prerelease, was published on 2026-08-27, and explicitly includes Go 1.27
+compatibility work. go.mod already requires this version. "Pinned" means the
+exact version recorded for reproducible builds, not a policy of remaining on an
+older release. Use the latest stable SDK and verify compatibility when updating.
+[Latest stable release verified](https://github.com/aws/aws-lambda-go/releases/tag/v1.55.0)
 
 The SDK's function-handler path can return readers. Its runtime loop consumes
 and closes the reader and honors its ContentType method. Its legacy/public

@@ -195,6 +195,16 @@ The SDK also provides official streaming response examples, so this observation
 alone does not prove the service rejects or buffers its output. It is a concrete
 documentation/SDK mismatch, not resolved by a permissive local test server.
 
+The SDK is the latest stable release: both the Go module proxy and AWS GitHub
+release endpoint were checked on 2026-09-14 and returned v1.55.0. Reading the full
+API Gateway guide through AWS MCP confirms its supported combination is STREAM,
+InvokeWithResponseStream, and correctly framed metadata/body output. That guide
+does not impose this Runtime API header itself. Keep the header question scoped
+to the Lambda runtime boundary; it is not evidence that API Gateway streaming
+or the SDK's documented streaming response type is unsupported.
+[API Gateway supported configurations](https://docs.aws.amazon.com/apigateway/latest/developerguide/response-transfer-mode-lambda.html)
+[AWS SDK stable release](https://github.com/aws/aws-lambda-go/releases/tag/v1.55.0)
+
 Recommend retaining SDK reuse as the design, but treat this mismatch as a release
 gate: seek an authoritative clarification or a suitable SDK fix/version; if
 needed, propose a separately approved minimal AWS integration test. Do not patch
@@ -210,7 +220,7 @@ behavior, not API Gateway delivery or billing/error metrics.
 3. Implement shared header validation and separate streaming writer/framing.
 4. Wire the proposed raw and typed REST entry points with identity policy.
 5. Exercise SSE, NDJSON, binary output, early Close, slow reads, and warm reuse;
-   resolve the AWS runtime-header mismatch and service-limit questions before
+   resolve the AWS runtime-header mismatch and exact prefix-boundary questions before
    advertising deployment support.
 
 The first complete buffered adapter remains the initial deliverable. The local
