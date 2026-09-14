@@ -106,7 +106,12 @@ The user accepted the qualification to decision 0007: do not freeze arbitrary
 resource and compatibility justification. Streaming is now being discussed in
 [decision 0008](decisions/0008-streaming-architecture.md): explicit REST response
 streaming alongside the buffered adapter, sharing HTTP/identity foundations.
-This is a proposed architecture, not implemented streaming support.
+The high-level architecture is accepted. [Decision 0009](decisions/0009-streaming-boundaries.md)
+proposes concrete APIs and an ownership/state graph. A local SDK Runtime API
+probe demonstrates incremental delivery, raw/typed capture, closure, and error
+trailers; it also exposes a bytes-plus-error reader issue and a missing header
+relative to AWS's documented streaming contract. No production streaming API is
+implemented, and deployed API Gateway behavior is not verified.
 
 Implemented under decision 0006: bounded direct JSON v2 envelope encoding,
 text/base64 body selection, and a shared invocation scope that preserves primary

@@ -1,6 +1,6 @@
 # 0008: Streaming architecture alongside buffered invocation
 
-Status: proposed architecture for discussion; no streaming implementation.
+Status: architecture accepted; concrete boundaries proposed in decision 0009.
 
 ## Question
 
@@ -133,7 +133,9 @@ the old API but defeats incremental delivery. A separate runtime or mandatory
 Lambda Web Adapter adds deployment machinery that the existing SDK transport
 does not yet appear to require.
 
-Recommendation: explicit REST streaming mode within edge, shared HTTP/identity
-foundations, direct JSON v2 framing, and AWS SDK transport. Await review of this
-architecture and then the concrete streaming API/lifecycle contract. No streaming
-methods or placeholder APIs have been added.
+The user agreed with the architecture and requested the detailed design graph.
+[Decision 0009](0009-streaming-boundaries.md) proposes concrete APIs, ownership,
+commitment, and failure rules, backed by a local SDK Runtime API probe. SDK
+transport reuse remains the preferred approach, with a documented wire-header
+compatibility question to settle before claiming AWS deployment support. No
+streaming methods or placeholder APIs have been added.
