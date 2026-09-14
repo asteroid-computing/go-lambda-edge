@@ -1,0 +1,20 @@
+{
+  "version": "2.0",
+  "routeKey": "$default",
+  "rawPath": "/my/%2Fpath",
+  "rawQueryString": "parameter1=value1&parameter1=value2&literal=%2C",
+  "cookies": ["a=1", "b=2"],
+  "headers": {"header1": "value1,value2"},
+  "queryStringParameters": {"parameter1": "value1,value2", "literal": ","},
+  "requestContext": {
+    "apiId": "example",
+    "domainName": "example.execute-api.eu-west-1.amazonaws.com",
+    "http": {"method": "POST", "path": "/my//path", "protocol": "HTTP/1.1", "sourceIp": "192.0.2.1"},
+    "authorizer": {"jwt": {"claims": {"sub": "example"}, "scopes": ["read"]}}
+  },
+  "body": "AP8=",
+  "isBase64Encoded": true,
+  "pathParameters": null,
+  "stageVariables": null,
+  "futureField": {"nested": [true, 9007199254740993]}
+}

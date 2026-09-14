@@ -79,11 +79,16 @@ constructor/options foundation is implemented while the event/HTTP contracts are
 reviewed. Constructor tests pass with race detection, vet and formatting checks
 pass, and package builds pass for Linux arm64 and amd64.
 
-Current review: [decision 0003](decisions/0003-event-decoding.md) records accepted
-AWS type reuse and proposes version dispatch, structural validation, and a decoder
-fixture matrix. [Decision 0004](decisions/0004-typed-events.md) accepts typed
+Accepted: [decision 0003](decisions/0003-event-decoding.md) settles AWS type reuse,
+version dispatch, structural validation, and the decoder fixture matrix. The
+private decoder and typed validators are implemented and tested against AWS
+Lambda Go v1.55.0. [Decision 0004](decisions/0004-typed-events.md) accepts typed
 methods that skip envelope JSON work inside edge. These entry points await the
-remaining decoding and shared HTTP translation contracts before implementation.
+shared HTTP translation contract before implementation.
+
+Current review: [decision 0005](decisions/0005-http-request-translation.md) proposes
+request URLs, header/query merging, cookies, body handling, invocation metadata,
+and request ownership. The buffered response contract follows separately.
 
 Research and present a contract covering:
 
@@ -110,6 +115,8 @@ presenting an entire frozen public API at once.
 ### 2. Implement and prove the HTTP adapter
 
 - [x] Create the Go 1.27 module and constructor/options foundation after review.
+- [x] Implement the private decoder and typed semantic validators with direct
+      JSON v2, SDK types, opaque authorizer data, fixtures, and fuzzing.
 - [ ] Implement raw invocation after the remaining transport contracts are reviewed.
 - [ ] Implement the accepted typed entry points after shared HTTP translation
       review, documenting upstream codec ownership.

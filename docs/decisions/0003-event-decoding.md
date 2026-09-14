@@ -1,6 +1,6 @@
 # 0003: AWS event types and explicit event decoding
 
-Status: proposed; AWS type reuse accepted, detailed decoding policy pending.
+Status: accepted by the user; private decoder and typed validators implemented.
 
 ## Question
 
@@ -33,11 +33,11 @@ use the AWS SDK event structs or private types owned by this module?
 - Lambda Function URLs use the same request/response schema as API Gateway V2.
   Shape validation cannot authenticate the invoking service.
   [Function URL payloads](https://docs.aws.amazon.com/lambda/latest/dg/urls-invocation.html)
-- Our implementation currently contains only the constructor/options foundation.
+- At the time of this decision, implementation contained only the constructor/options foundation.
   No existing decoder or wire schema constrains this choice. The accepted plan
   already requires direct JSON v2 and rejection rather than V2-to-V1 fallback.
 
-## Recommendation
+## Decision
 
 ### Wire representation
 
@@ -48,7 +48,7 @@ reuse does not require using the SDK's JSON decoder. Keep a small explicit
 version discriminator and targeted presence/type validation where needed;
 do not duplicate complete AWS schemas just to select the event format.
 
-Proposed exception: carry authorizer data internally as `jsontext.Value` until
+Carry authorizer data internally as `jsontext.Value` until
 the selected identity producer interprets it. Preserve exactly the JSON
 representation AWS supplies;
 this does not assert that AWS supplies full-fidelity JWT claims or authorize
@@ -57,7 +57,7 @@ claim numbers at the transport boundary.
 
 Authorizer extraction and SDK decoding must be designed together so an SDK claim
 field cannot prematurely reject data intended to remain opaque. The exact
-exception mechanism remains pending; authorizer fidelity alone does not justify
+exception mechanism is an implementation detail; authorizer fidelity alone does not justify
 private copies of the entire envelope.
 
 The AWS Lambda Go library remains the runtime integration and supplies event
@@ -84,7 +84,7 @@ and the limits of validation after another component has decoded the payload.
 For every accepted envelope require a non-null object `requestContext`, a
 nonempty string `requestContext.apiId`, and the canonical method/path fields as
 nonempty strings. V2 also requires the `requestContext.http` object. These are
-proposed library validity checks based on the documented envelopes, not a claim
+accepted library validity checks based on the documented envelopes, not a claim
 that AWS publishes a formal required-field schema for all variants.
 
 Do not fall back to a different format after a decode/validation error. Do not
@@ -101,7 +101,7 @@ accepted in decision 0001.
 ### Already typed events
 
 The selected method determines the payload family without automatic dispatch.
-Proposed semantic checks still require nonempty API ID, method, and canonical
+Semantic checks still require nonempty API ID, method, and canonical
 path. HandleV2 accepts Version equal to "2.0" or empty: an omitted Go string
 does not make a caller-created V2 struct ambiguous, because its type and method
 already select V2. Reject any other nonempty Version as contradictory input.
@@ -109,7 +109,7 @@ HandleV1 has no version field to inspect. Neither method can validate original
 JSON shape, member presence, or syntax. Do not serialize structs to imitate
 raw-wire validation.
 
-This is a proposed ergonomic exception for explicitly typed input, not a change
+This is an accepted ergonomic exception for explicitly typed input, not a change
 to raw Invoke: a present empty version in JSON remains invalid there. Matching
 raw and typed valid events share translation; their available validation evidence
 differs as accepted in decision 0004.
@@ -170,14 +170,28 @@ sole oracle. Run fuzzing against the decoder after implementation.
 - Reject all unknown fields: catches misspellings, but makes additive AWS fields
   a breaking change for deployed applications.
 
-SDK structs alone do not provide the proposed presence checks or opaque-claim
+SDK structs alone do not provide the accepted presence checks or opaque-claim
 contract. Limit supplementary representations to those needs and maintain
 independent wire fixtures so SDK serialization is not the sole specification.
 
 ## Resolution
 
-The user accepted AWS type reuse and requested typed-event entry points. This
-supersedes the original recommendation for entirely private wire types. The
-detailed version/structure/strictness rules above remain proposed; agreement to
-type reuse does not approve every earlier validation rule. No decoder is
-implemented yet.
+The user accepted AWS type reuse, the typed entry points, and subsequently the
+remaining decoding contract in full: dispatch, structural checks, strict JSON,
+opaque authorizer data, and the typed V2 empty-version exception. This supersedes
+the original recommendation for entirely private wire types.
+
+The private decoder and typed validators are implemented. Pin AWS Lambda Go
+v1.55.0, verified against the
+Go module proxy on 2026-09-14. Its API Gateway event definitions are unchanged
+from the inspected v1.54.0, and its reflected handler still uses encoding/json.
+Use SDK embedding with a shadowed request context/authorizer field to retain
+opaque data without copying the complete schema. SDK dependency selection and
+this private decoding mechanism do not alter the accepted public API.
+
+Validation: documented-shape synthetic fixtures, malformed/unsupported envelopes,
+opaque authorizer ownership and precision, error redaction, and SDK serialization
+compatibility pass. Race tests, vet, and Linux arm64/amd64 builds pass. A 15-second
+fuzz run completed 1,553,008 executions without a failure. Public Invoke and typed
+HTTP entry points still await the HTTP translation and response contracts; these
+checks do not claim end-to-end Lambda adaptation is implemented.

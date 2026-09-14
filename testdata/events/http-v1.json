@@ -1,0 +1,22 @@
+{
+  "version": "1.0",
+  "resource": "/my/path",
+  "path": "/my/path",
+  "httpMethod": "GET",
+  "headers": {"header1": "value1"},
+  "multiValueHeaders": {"header1": ["value1", "value2"]},
+  "queryStringParameters": {"parameter1": "value1"},
+  "multiValueQueryStringParameters": {"parameter1": ["value1", "value2"]},
+  "requestContext": {
+    "apiId": "example",
+    "httpMethod": "GET",
+    "path": "/my/path",
+    "protocol": "HTTP/1.1",
+    "identity": {"sourceIp": "192.0.2.1", "accessKey": null},
+    "authorizer": {"claims": null, "scopes": null}
+  },
+  "body": null,
+  "isBase64Encoded": false,
+  "pathParameters": null,
+  "stageVariables": null
+}
