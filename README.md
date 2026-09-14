@@ -14,6 +14,12 @@ v2 output. The buffered HTTP writer, gateway header conversion, public invocatio
 methods, and identity extraction are not implemented yet; the adapter cannot yet
 be registered as a Lambda handler.
 
+The accepted streaming design now has a private bridge with incremental delivery,
+backpressure, cancellation, cleanup, and terminal-error handling. Its lifecycle
+is covered by race-enabled synthetic concurrency tests. HTTP streaming framing
+and public streaming entry points remain under construction; deployed API Gateway
+streaming has not been verified.
+
 - [Implementation plan](docs/plan.md)
 - [Design decisions](docs/decisions/README.md)
 - [Repository working agreement](AGENTS.md)

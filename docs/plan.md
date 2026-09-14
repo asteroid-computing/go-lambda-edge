@@ -110,11 +110,22 @@ resource and compatibility justification. Streaming is now being discussed in
 [decision 0008](decisions/0008-streaming-architecture.md): explicit REST response
 streaming alongside the buffered adapter, sharing HTTP/identity foundations.
 The high-level architecture is accepted. [Decision 0009](decisions/0009-streaming-boundaries.md)
-proposes concrete APIs and an ownership/state graph. A local SDK Runtime API
+accepts concrete APIs and an ownership/state graph. The private bridge and shared
+invocation ownership primitives are implemented. A local SDK Runtime API
 probe demonstrates incremental delivery, raw/typed capture, closure, and error
 trailers; it also exposes a bytes-plus-error reader issue and a missing header
 relative to AWS's documented streaming contract. No production streaming API is
 implemented, and deployed API Gateway behavior is not verified.
+
+The private bridge publishes an owned prefix through an explicit handoff before
+body writes can block, uses an unbuffered pipe, and transfers cleanup to one
+producer. Close and parent cancellation release blocked I/O; terminal reads and
+Close join cleanup and error reporting. Early panics are rethrown at entry, late
+panics become sanitized terminal errors, and reader results defer errors that
+accompany bytes. Synthetic concurrency tests cover these boundaries and reporter
+failures. Full race tests (including the existing SDK probe), vet, formatting,
+and Linux arm64/amd64 builds pass on Go 1.27.1. HTTP streaming commitment,
+sniffing, framing validation, and public entry points remain to be implemented.
 
 Implemented under decision 0006: bounded direct JSON v2 envelope encoding,
 text/base64 body selection, and a shared invocation scope that preserves primary
@@ -152,8 +163,10 @@ presenting an entire frozen public API at once.
 - [x] Implement the private decoder and typed semantic validators with direct
       JSON v2, SDK types, opaque authorizer data, fixtures, and fuzzing.
 - [x] Implement shared HTTP request conversion and request-lifetime cleanup.
-- [ ] Implement buffered responses and move cleanup into a shared invocation scope.
+- [ ] Implement the buffered HTTP writer and gateway response conversion.
 - [x] Implement bounded envelope/body encoding and shared invocation cleanup.
+- [x] Extract shared invocation ownership and implement the private streaming
+      bridge, with handoff, backpressure, cancellation, cleanup, and error tests.
 - [ ] Implement the minimum reviewed identity/context and native gateway producers
       needed to honor WithGatewayIdentity(true) before publishing invocation.
 - [ ] Implement raw invocation after the remaining transport contracts are reviewed.

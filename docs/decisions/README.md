@@ -17,4 +17,4 @@ Keep related decisions small enough to review and implement independently.
 | [0006: Buffered responses](0006-buffered-responses.md) | Accepted | How should HTTP responses, unsupported capabilities, and completion failures behave? |
 | [0007: Response metadata](0007-response-metadata.md) | Qualified direction accepted; details open | What metadata budgets and V2 joinable-field set should apply? |
 | [0008: Streaming architecture](0008-streaming-architecture.md) | Accepted | How should REST response streaming fit alongside the buffered adapter? |
-| [0009: Streaming boundaries](0009-streaming-boundaries.md) | Proposed | What API, lifecycle, handoff, and error rules should streaming use? |
+| [0009: Streaming boundaries](0009-streaming-boundaries.md) | Accepted | What API, lifecycle, handoff, and error rules should streaming use? |

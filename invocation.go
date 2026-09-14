@@ -21,29 +21,44 @@ func (inv *invocation) ownRequest(r *http.Request) {
 	inv.body = r.Body
 }
 
+// cleanup runs once under the invocation owner's control, after application
+// execution. Transport errors remain primary; cleanup details stay private.
+func (inv *invocation) cleanup(err error) error {
+	if inv.body != nil {
+		if closeErr := inv.body.Close(); closeErr != nil {
+			err = errors.Join(err, errors.New("edge: request body cleanup failed"))
+		}
+	}
+	if inv.request != nil && inv.request.MultipartForm != nil {
+		if removeErr := inv.request.MultipartForm.RemoveAll(); removeErr != nil {
+			err = errors.Join(err, errors.New("edge: multipart cleanup failed"))
+		}
+	}
+	return err
+}
+
+func invocationContext(parent context.Context) (context.Context, context.CancelFunc, error) {
+	if parent == nil {
+		return nil, nil, errors.New("edge: nil invocation context")
+	}
+	if err := parent.Err(); err != nil {
+		return nil, nil, err
+	}
+	ctx, cancel := context.WithCancel(parent)
+	return ctx, cancel, nil
+}
+
 // withInvocation scopes conversion, identity, serving, and finalization. A panic
 // passes through after cleanup. The caller must discard its result on error.
 func withInvocation(parent context.Context, run func(context.Context, *invocation) error) (err error) {
-	if parent == nil {
-		return errors.New("edge: nil invocation context")
-	}
-	if err := parent.Err(); err != nil {
+	ctx, cancel, err := invocationContext(parent)
+	if err != nil {
 		return err
 	}
-	ctx, cancel := context.WithCancel(parent)
 	defer cancel()
 	var inv invocation
 	defer func() {
-		if inv.body != nil {
-			if closeErr := inv.body.Close(); closeErr != nil {
-				err = errors.Join(err, errors.New("edge: request body cleanup failed"))
-			}
-		}
-		if inv.request != nil && inv.request.MultipartForm != nil {
-			if removeErr := inv.request.MultipartForm.RemoveAll(); removeErr != nil {
-				err = errors.Join(err, errors.New("edge: multipart cleanup failed"))
-			}
-		}
+		err = inv.cleanup(err)
 		// Normal child cancellation is not a failed invocation. Preserve an
 		// existing operation/cleanup error when the parent also canceled.
 		if err == nil {

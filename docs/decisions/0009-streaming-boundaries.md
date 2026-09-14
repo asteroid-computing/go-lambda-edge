@@ -1,10 +1,10 @@
 # 0009: Streaming entry points, ownership, and failure boundaries
 
-Status: proposed; high-level architecture accepted in decision 0008.
+Status: accepted by the user on 2026-09-14; implementation in progress.
 
 ## Recommended public boundary
 
-Keep a distinct adapter in the root edge package. Proposed signatures:
+Keep a distinct adapter in the root edge package. Accepted signatures:
 
 ```go
 func NewStreaming(handler http.Handler, opts ...Option) (*StreamingAdapter, error)
@@ -143,7 +143,7 @@ of cooperative handlers, not the ability to kill arbitrary application code.
 
 The late-panic rule intentionally differs from the SDK's synchronous panic path,
 which can terminate the process. Do not introduce os.Exit or an unhandled worker
-panic into the library. This difference needs explicit user approval.
+panic into the library. The user explicitly approved this difference.
 
 AWS says midstream error trailers are treated as a successful response with error
 metadata. Do not claim they necessarily increment Lambda's ordinary invocation
@@ -225,5 +225,23 @@ behavior, not API Gateway delivery or billing/error metrics.
 
 The first complete buffered adapter remains the initial deliverable. The local
 SDK probe and design allow streaming requirements to shape shared ownership now.
-The detailed API and policy in this record are proposed, not implemented or
-approved by the prior agreement to the high-level architecture.
+The user approved the detailed API, ownership, handoff, and failure policies on
+2026-09-14 and asked to start with the private bridge. This acceptance does not
+resolve the separate metadata-policy or AWS compatibility questions above.
+
+Implemented on 2026-09-14: shared invocation context/cleanup primitives and the
+private bridge in `stream.go`. Publication waits for the entry point to accept
+ownership before body writes; the producer cannot finish publication ahead of
+that handoff. The bridge copies its prefix and otherwise uses io.Pipe without
+body accumulation. The future framing layer must validate and bound that prefix.
+
+Tests in `stream_test.go` cover incremental reads, backpressure, prefix ownership,
+concurrent Close/Read, parent cancellation/deadlines without a consumer, waiting
+for cleanup before terminal results, error precedence, both panic boundaries,
+reporter panic isolation, and bytes-plus-error normalization. Go 1.27 synctest
+bubbles also require their goroutines to exit. Full race tests, the existing SDK
+probe, vet, formatting, and Linux arm64/amd64 builds pass on Go 1.27.1.
+
+This is the ownership/transport foundation. It does not yet implement the HTTP
+streaming writer, prefix codec/limit, constructor/options, or public entry points,
+and it does not resolve the documented AWS Runtime API header mismatch.
