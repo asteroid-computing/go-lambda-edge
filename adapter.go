@@ -1,6 +1,5 @@
 // Package edge provides the foundation for adapting AWS API Gateway events to
-// net/http handlers. Public invocation and response encoding are not yet
-// implemented.
+// net/http handlers. Public invocation is not yet implemented.
 package edge
 
 import (

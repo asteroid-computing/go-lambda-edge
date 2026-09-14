@@ -254,7 +254,13 @@ func TestRequestMatchesLocalHTTPServer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := adapter.serveHTTP(httptest.NewRecorder(), r); err != nil {
+	err = withInvocation(t.Context(), func(ctx context.Context, inv *invocation) error {
+		r = r.WithContext(ctx)
+		inv.ownRequest(r)
+		adapter.handler.ServeHTTP(httptest.NewRecorder(), r)
+		return nil
+	})
+	if err != nil {
 		t.Fatal(err)
 	}
 	if got := <-observations; got != want {
@@ -272,7 +278,7 @@ func (b *trackedBody) Close() error {
 	return nil
 }
 
-func TestServeHTTPCleansUp(t *testing.T) {
+func TestInvocationCleansUpMultipart(t *testing.T) {
 	for _, panicHandler := range []bool{false, true} {
 		var data bytes.Buffer
 		writer := multipart.NewWriter(&data)
@@ -319,18 +325,24 @@ func TestServeHTTPCleansUp(t *testing.T) {
 		var recovered any
 		func() {
 			defer func() { recovered = recover() }()
-			if err := adapter.serveHTTP(httptest.NewRecorder(), r); err != nil {
+			err := withInvocation(t.Context(), func(ctx context.Context, inv *invocation) error {
+				r = r.WithContext(ctx)
+				inv.ownRequest(r)
+				adapter.handler.ServeHTTP(httptest.NewRecorder(), r)
+				return nil
+			})
+			if err != nil {
 				t.Error(err)
 			}
 		}()
 		if (recovered != nil) != panicHandler {
-			t.Errorf("serveHTTP panic = %v, want panic %v", recovered, panicHandler)
+			t.Errorf("invocation panic = %v, want panic %v", recovered, panicHandler)
 		}
 		if !body.closed || handlerContext.Err() != context.Canceled || t.Context().Err() != nil {
-			t.Error("serveHTTP did not close body/cancel child, or canceled invocation parent")
+			t.Error("invocation did not close body/cancel child, or canceled parent")
 		}
 		if _, err := os.Stat(temporaryPath); !errors.Is(err, os.ErrNotExist) {
-			t.Errorf("multipart file remains after serveHTTP: %v", err)
+			t.Errorf("multipart file remains after invocation: %v", err)
 		}
 	}
 }

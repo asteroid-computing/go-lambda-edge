@@ -8,10 +8,13 @@ The root package is `edge`. This project is being designed and built from scratc
 The constructor, options, private event decoder, and request conversion are implemented. The decoder
 uses AWS Lambda Go v1.55.0 event structs and encoding/json/v2 directly, retaining
 authorizer JSON separately. Request conversion covers URLs, headers, body bytes,
-and request lifetime. Buffered responses, public invocation methods, and identity
-extraction are not implemented yet; the adapter cannot yet be registered as a
-Lambda handler.
+and request lifetime. A shared invocation scope now covers cleanup and cancellation;
+private response encoding provides text/base64 selection and bounded direct JSON
+v2 output. The buffered HTTP writer, gateway header conversion, public invocation
+methods, and identity extraction are not implemented yet; the adapter cannot yet
+be registered as a Lambda handler.
 
 - [Implementation plan](docs/plan.md)
 - [Design decisions](docs/decisions/README.md)
 - [Repository working agreement](AGENTS.md)
+- [Initial codec benchmarks](docs/benchmarks.md)

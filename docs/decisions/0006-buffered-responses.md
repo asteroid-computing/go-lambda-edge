@@ -1,6 +1,11 @@
 # 0006: Buffered HTTP responses and invocation completion
 
-Status: proposed; awaiting user review.
+Status: accepted with the 2026-09-14 review refinements; implementation underway.
+
+Reviewed against the implemented decoder/request layer on 2026-09-14. The
+[plan review](../reviews/2026-09-14-plan-review.md) was approved by the user and its
+refinements are incorporated below. Exact metadata budgets and the initial V2
+joinable-field set remain separate specifications before dependent implementation.
 
 ## Question
 
@@ -60,17 +65,23 @@ format, and handle features or failures that a buffered invocation cannot carry?
   Canonicalize header names and retain all values; use deterministic traversal
   for differently cased keys supplied by direct Header map assignment.
 - Derive Content-Length from the buffered bytes when absent. If explicitly
-  supplied, require one valid nonnegative decimal length and enforce it: an
+  present with a nil/empty slice, suppress inference. Otherwise require one valid
+  nonnegative decimal length and enforce it: an
   overflowing Write returns http.ErrContentLength; a mismatch at completion is
   an invocation error. Transport faults remain faults even if the handler ignores
   a Write error. Ordinary application 4xx/5xx responses still return nil Go error.
 - For HEAD, accept/count writes and retain at most the sniffing prefix, but emit
-  no body. Honor a supplied representation length; otherwise infer a length only
+  no body. Capture the original request method before application code runs.
+  Honor a supplied representation length; otherwise infer a length only
   when the handler actually wrote representation bytes. Do not require HEAD's
   declared length to match an omitted representation body.
-- For 204/304, emit no body and return http.ErrBodyNotAllowed from Write. That
+- For 204/205/304, emit no body and return http.ErrBodyNotAllowed from a nonempty
+  Write. A zero-length Write commits an implicit response and returns (0, nil).
+  That
   error alone does not invalidate the committed bodyless response. Suppress
-  Content-Length for both statuses and Content-Type for 304, matching Go's server.
+  Content-Length for these statuses and Content-Type for 304. Bodyless 205 follows
+  RFC 9110 and intentionally differs from Go 1.27.1's body-allowed helper.
+  [205 semantics](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.3.6)
 
 ### Capabilities the buffered adapter cannot provide
 
@@ -92,10 +103,12 @@ format, and handle features or failures that a buffered invocation cannot carry?
   or responses. Always set an explicit final status and body representation.
 - V1 uses MultiValueHeaders for every response header, including each Set-Cookie.
   Leave the redundant single-value Headers map empty.
-- V2 moves Set-Cookie values into Cookies. Combine other repeated header values
-  with a comma and space into Headers, without deduplicating or interpreting
-  commas already inside a value. Leave MultiValueHeaders empty. V2 cannot retain
-  general header line boundaries; applications needing those must choose V1.
+- V2 moves Set-Cookie values into Cookies. Join repeated values with a comma and
+  space only for a documented, audited set of list-valued fields. Reject repeated
+  singleton or unknown fields. Preserve order and commas inside individual
+  values. Leave MultiValueHeaders empty. Specify the initial list separately;
+  V2 cannot retain general header line boundaries, so applications requiring
+  them must choose V1.
 - Emit text directly only when bytes are valid UTF-8, Content-Encoding is absent
   or identity, and the media type is textual: text/*, application/json,
   application/xml, application/javascript, application/x-www-form-urlencoded,
@@ -108,13 +121,17 @@ format, and handle features or failures that a buffered invocation cannot carry?
 
 ### Bounds and completion
 
-- Initially cap stored response body bytes at 6,000,000, an intentionally
-  conservative interpretation of AWS's documented 6 MB limit. Reject a Write
+- Initially cap stored response body bytes at 6,291,456 (6 MiB). AWS explicitly
+  defines its documented MB unit as 1,024 KB in the
+  [Lambda quotas](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html).
+  This corrects the draft's earlier 6,000,000-byte interpretation. Reject a Write
   crossing the cap without retaining a partial write, and record a sticky fault.
   Check base64 expansion before allocating the encoded body. No new public
   size-tuning option is proposed for the first implementation.
-- Invoke also checks the final serialized envelope against 6,000,000 bytes,
-  including JSON overhead. A body below the cap can still fail this final check.
+- Invoke uses json/v2.MarshalWrite with a bounded destination to enforce
+  6,291,456 bytes including JSON overhead while retaining encoded output.
+  A body below the cap can still fail this check. Preflight committed metadata
+  bytes and entry counts before copying; specify those exact budgets separately.
   A typed method cannot measure the exact envelope produced by its caller's
   serializer without violating the agreed JSON-free typed boundary; document
   that the caller/runtime owns that final limit. Apply the common body/expansion
@@ -123,12 +140,18 @@ format, and handle features or failures that a buffered invocation cannot carry?
 - Propagate handler panics to the Lambda runtime after cleanup; do not convert
   them into successful HTTP 500 responses. Direct Go callers retain normal panic
   behavior. Do not add logging to the adapter.
-- Before returning success, check the invocation parent context. If it is
+- One invocation scope covers conversion, identity, serving, finalization, and
+  cleanup. Reject an already-canceled parent before running application code.
+  Before returning success, check the invocation parent context. If it is
   canceled, return its error and no usable response. Check the parent, not the
-  child context that serveHTTP cancels during normal cleanup. This deliberately
+  child context canceled during normal cleanup. This deliberately
   makes cancellation win over a just-completed HTTP response when already known.
 - Cleanup failures are invocation failures even after a handler produced a
   response. Keep diagnostics free of file paths, bodies, tokens, and header values.
+  Preserve a primary operation error and join sanitized cleanup failures. Parent
+  cancellation replaces only an otherwise successful result. Preserve errors.Is
+  for context and standard HTTP errors; review exported adapter error categories
+  separately before publishing the invocation methods.
 
 ### Multipart cleanup limit discovered during implementation
 
@@ -165,8 +188,11 @@ multivalue headers, v2 cookies, unsupported capability checks, panic cleanup,
 parent cancellation, and cleanup failure propagation. Verify raw registration
 through lambda.NewHandler(adapter).Invoke and typed method registration through
 the SDK wrapper once the remaining gateway-identity path permits public wiring.
+Add explicit 205 divergence, zero-length writes, suppressed inferred length,
+exact envelope boundaries, metadata bounds, and sequential/concurrent isolation.
 
 ## Resolution
 
-Pending user approval. No buffered writer or response encoding is implemented
-under this proposal yet.
+Accepted by the user on 2026-09-14 with the plan-review enhancements. Implement
+settled behavior now; resolve the separately identified metadata, header-list,
+error API, and identity details before their dependent implementation.

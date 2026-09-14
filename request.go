@@ -178,28 +178,6 @@ func newRequest(ctx context.Context, r *http.Request, body string, binary bool) 
 	return r.WithContext(ctx), nil
 }
 
-// serveHTTP owns the transport-created body and the handler's request lifetime.
-// Identity production belongs before this call. Response encoding belongs after
-// it. Cleanup runs on panic too; deciding panic/result policy is the invoker's job.
-func (a *Adapter) serveHTTP(w http.ResponseWriter, r *http.Request) (err error) {
-	ctx, cancel := context.WithCancel(r.Context())
-	r = r.WithContext(ctx)
-	body := r.Body
-	defer func() {
-		cancel()
-		if closeErr := body.Close(); closeErr != nil {
-			err = errors.Join(err, errors.New("edge: request body cleanup failed"))
-		}
-		if r.MultipartForm != nil {
-			if removeErr := r.MultipartForm.RemoveAll(); removeErr != nil {
-				err = errors.Join(err, errors.New("edge: multipart cleanup failed"))
-			}
-		}
-	}()
-	a.handler.ServeHTTP(w, r)
-	return nil
-}
-
 // validToken implements the shared HTTP method/field-name token grammar.
 func validToken(s string) bool {
 	if s == "" {

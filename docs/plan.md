@@ -91,9 +91,23 @@ request URLs, header/query merging, cookies, body handling, invocation metadata,
 and request ownership. Shared request conversion is implemented with local HTTP
 comparisons, race tests, fuzzing, vet, and Lambda-target builds passing.
 
-Current review: [decision 0006](decisions/0006-buffered-responses.md) proposes
+Accepted: [decision 0006](decisions/0006-buffered-responses.md) specifies
 buffered response commitment/encoding, unsupported features, payload bounds,
 invocation completion, and the documented multipart cleanup limit.
+
+The accepted [2026-09-14 plan review](reviews/2026-09-14-plan-review.md) requires
+response-contract refinements and completing a runnable adapter, including the
+minimum gateway identity foundation, before broader authentication work. These
+enhancements are incorporated into decision 0006. Concrete metadata/header
+policies, exported error categories, and identity APIs remain separate reviews.
+
+Implemented under decision 0006: bounded direct JSON v2 envelope encoding,
+text/base64 body selection, and a shared invocation scope that preserves primary
+errors, cleans up on failures/panics, and checks parent cancellation. The HTTP
+writer and gateway header conversion await the concrete policy in
+[decision 0007](decisions/0007-response-metadata.md). Public wiring still awaits
+the minimum identity contracts. [Initial codec benchmarks](benchmarks.md) record
+allocation baselines; they do not establish a peak-memory bound.
 
 Research and present a contract covering:
 
@@ -123,16 +137,30 @@ presenting an entire frozen public API at once.
 - [x] Implement the private decoder and typed semantic validators with direct
       JSON v2, SDK types, opaque authorizer data, fixtures, and fuzzing.
 - [x] Implement shared HTTP request conversion and request-lifetime cleanup.
+- [ ] Implement buffered responses and move cleanup into a shared invocation scope.
+- [x] Implement bounded envelope/body encoding and shared invocation cleanup.
+- [ ] Implement the minimum reviewed identity/context and native gateway producers
+      needed to honor WithGatewayIdentity(true) before publishing invocation.
 - [ ] Implement raw invocation after the remaining transport contracts are reviewed.
 - [ ] Implement the accepted typed entry points after shared HTTP translation
       review, documenting upstream codec ownership.
 - Implement the adapter from scratch using JSON v2 directly.
 - Test raw invocation through the actual pinned AWS Lambda Go SDK boundary.
+- Add runnable raw/typed registration examples, sequential/concurrent invocation
+  isolation checks, and ServeMux, Redirect, ServeContent/Range, compression, and
+  cookie integration cases.
 - Exercise documented event fixtures and adversarial/malformed input.
 - Compare relevant request/response behavior with real `net/http` serving,
   documenting unavoidable transport differences.
 - Fuzz decoding and path/query conversion; add targeted allocation benchmarks.
 - Run appropriate tests, race detection, vet, and Lambda-target build checks.
+- Put those checks in Go 1.27 CI and establish raw/typed, binary, and near-limit
+  allocation baselines before setting performance thresholds.
+
+CI configuration is present for Go 1.27.0/latest 1.27 patch tests, race detection,
+vet, and Lambda-target builds. It has not run on GitHub yet. Local Go 1.27.1 race
+tests, vet, formatting checks, and both target builds pass for the initial
+encoding/lifetime implementation.
 
 Acceptance: the same application handler behaves as specified across all three
 event cases; no auth or codec behavior depends on accidental SDK dispatch.
