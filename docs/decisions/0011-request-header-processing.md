@@ -100,15 +100,106 @@ Missing/malformed action selections should ordinarily produce an application
 and unknown-action policy. Authentication/authorization response policy remains
 the separate authn/authz contract. No fallback/default action is inferred.
 
-## Decisions still to review
+## Concrete recommendations for the open decisions
 
-- Middleware interface/function-adapter names and whether a composition helper
-  materially improves ordinary Wrap calls.
-- Consumer action-header name and identifier grammar. A clarification was sent;
-  no concrete consumer format is assumed accepted.
-- Strict selection helper signature and inspectable error categories.
-- Whether action metadata is entirely consumer-owned or a demonstrated shared
-  authz/dispatcher need warrants a small transport-independent action type.
+The user asked for recommendations for these remaining choices. The following
+replaces the open-ended alternatives with a proposed initial contract; approval
+is still pending.
+
+### Interface and composition
+
+Keep RequestMiddleware.Wrap and add the function adapter:
+
+```go
+type RequestMiddlewareFunc func(http.Handler) http.Handler
+func (f RequestMiddlewareFunc) Wrap(next http.Handler) http.Handler
+```
+
+Use ordinary explicit composition: outer.Wrap(inner.Wrap(dispatcher)). The
+outer processor runs first on the request. Do not add WithRequestMiddleware,
+a Chain helper, implicit reordering, or another middleware package initially.
+The same composed handler goes to edge.New, edge.NewStreaming, or net/http.
+This keeps execution order visible and does not tie header processing to an AWS
+constructor. Nil function adapters/next handlers are invalid programmer inputs,
+like using an unusable http.HandlerFunc; the adapter is not a fallible factory.
+Consumer middleware factories can return their own configuration errors.
+
+### Action header and identifier grammar
+
+Require an explicit header name at selector construction. Use Action with a
+value such as orders.create in examples, but do not make it a default or reserve
+the name globally. Existing consumer names remain supported. Avoid introducing
+an X- prefix simply to designate an application-defined field.
+[RFC 6648](https://www.rfc-editor.org/rfc/rfc6648.html#section-3).
+
+For the built-in selector, trim outer SP/HTAB and require a nonempty HTTP token,
+preserving case. The existing validToken helper already implements this grammar.
+This admits common identifiers such as orders.create, CreateOrder and
+orders-create, while excluding commas, embedded whitespace, quoting, colon,
+slash and non-ASCII text. HTTP does not mandate this grammar for action headers;
+it is our recommended selector contract. A consumer with a different protocol
+can implement its own parser behind RequestMiddleware without changing gateway
+translation or weakening the standard selector.
+[HTTP token grammar](https://www.rfc-editor.org/rfc/rfc9110.html#section-5.6.2).
+
+### Selector API and errors
+
+Recommend a reusable immutable selector in the root edge package:
+
+```go
+func NewActionHeader(name string) (*ActionHeader, error)
+func (h *ActionHeader) Parse(headers http.Header) (string, error)
+```
+
+Construction validates/canonicalizes the configured field name. The zero value
+and nil receiver are unusable and Parse returns a configuration error for them.
+Parse neither modifies headers nor writes a response. It needs no context,
+AWS event types, or JSON processing. An instance can be reused concurrently;
+callers must not concurrently mutate a Header map being inspected.
+
+Match header names using ASCII case-insensitive comparison, even when a consumer supplies a Header map
+with noncanonical direct assignments. Count represented values across all
+matching aliases; do not rely solely on Header.Get or Header.Values. Count a
+nil/empty value slice as zero values. Multiple represented values are ambiguous
+even when identical, and take precedence over errors in an individual value.
+
+Export three action-selection sentinels, inspected with errors.Is:
+
+| Error | Meaning |
+| --- | --- |
+| ErrActionMissing | No represented value, including an absent field or nil/empty slices |
+| ErrActionAmbiguous | More than one represented value, or one containing a comma |
+| ErrActionInvalid | Exactly one value that is empty after SP/HTAB trimming or fails token grammar |
+
+For one comma-bearing value, ambiguity classification precedes token validation;
+it deliberately covers both Gateway-combined values and a literal comma, whose
+origins cannot be distinguished. Return an empty action on every error. Do not
+include the supplied action or other header values in error messages. Invalid
+constructor configuration is separate from these request-input categories.
+
+Keep these application-input errors separate from transport invocation faults.
+The parsing helper does not encode HTTP statuses. Recommend 400 for selection
+errors and, for the header-dispatched API convention, 400 with a distinct
+consumer-owned unknown-action code for a syntactically valid but unregistered
+action. The consumer retains its response schema and disclosure policy. General
+authentication and action authorization retain their separate authn/authz rules.
+
+### Action metadata ownership
+
+Return a string and keep action metadata consumer-owned. Do not add an edge.Action
+type, global action context key, or action package at this stage. The dispatcher
+can convert the validated string into its own action type, pass it directly to
+its authorizer/handler, or attach it through a private typed context key.
+
+Resolve once, authorize that same selection, and execute it. If selecting a
+registered operation produces an immutable operation descriptor, pass that
+descriptor through authorization and execution instead of resolving again from
+mutable headers. This supports first-class selection without coupling the
+transport module to a consumer's action registry or permissions model.
+
+These recommendations settle what to implement next for this feature if
+approved. They do not imply approval of decision 0010's separate response-header
+budgets/combination policy or settle the broader identity/error APIs.
 
 Validate custom headers, missing/empty values, casing, repeated/conflicting and
 identical values, flattened comma values, native HTTP behavior, both raw/typed
