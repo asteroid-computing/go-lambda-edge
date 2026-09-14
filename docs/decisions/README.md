@@ -19,3 +19,4 @@ Keep related decisions small enough to review and implement independently.
 | [0008: Streaming architecture](0008-streaming-architecture.md) | Accepted | How should REST response streaming fit alongside the buffered adapter? |
 | [0009: Streaming boundaries](0009-streaming-boundaries.md) | Accepted | What API, lifecycle, handoff, and error rules should streaming use? |
 | [0010: Response header design](0010-response-header-design.md) | Proposed | How should shared snapshots, V2 combination, resource accounting, and streaming prefix limits work? |
+| [0011: Request header processing](0011-request-header-processing.md) | Requirement accepted; API proposed | How can consumers process custom headers and safely select actions for their own dispatchers? |

@@ -2,6 +2,12 @@
 
 Status: proposed for user review on 2026-09-14. No dependent implementation yet.
 
+Terminology: V1/V2 in this record mean API Gateway payload formats 1.0/2.0,
+not versions of this Go module. The field-combination table concerns outgoing
+responses only. It does not restrict custom incoming request headers.
+The user's action-dispatch requirement is recorded separately in
+[decision 0011](0011-request-header-processing.md).
+
 ## Recommendation
 
 Keep the application boundary as http.Header. Capture one private, owned,

@@ -20,6 +20,11 @@ port, source copy, or compatibility-preserving update of Beakley.
   handling. Do not route our codec through `encoding/json`'s compatibility API.
   Check third-party parser behavior separately during dependency selection.
 - Keep ordinary `http.Handler` as the application boundary.
+- Provide first-class consumer request-header processing for header-selected
+  action dispatchers. Preserve custom incoming headers independently of response
+  combination rules. [Decision 0011](decisions/0011-request-header-processing.md)
+  proposes the extension interface and strict selection support; API details
+  and the consumer action-header contract remain under review.
 - Own event serialization at a raw Lambda invocation boundary implementing
   `Invoke(context.Context, []byte) ([]byte, error)`.
 - Reuse AWS Lambda Go event/response structs where they meet the contract;
