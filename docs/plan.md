@@ -22,6 +22,11 @@ port, source copy, or compatibility-preserving update of Beakley.
 - Keep ordinary `http.Handler` as the application boundary.
 - Own event serialization at a raw Lambda invocation boundary implementing
   `Invoke(context.Context, []byte) ([]byte, error)`.
+- Reuse AWS Lambda Go event/response structs where they meet the contract;
+  reserve custom representations for demonstrated limitations.
+- Support already typed events without an envelope JSON round trip inside edge.
+  Decision 0004 accepts HandleV1 and HandleV2 with matching AWS request/response
+  types, sharing translation and identity policy with raw invocation.
 - Support REST API proxy events, HTTP API payload 1.0, and HTTP API payload 2.0.
   API product and payload version are distinct concepts.
 - Start with buffered responses. Streaming is a separate future capability.
@@ -74,8 +79,11 @@ constructor/options foundation is implemented while the event/HTTP contracts are
 reviewed. Constructor tests pass with race detection, vet and formatting checks
 pass, and package builds pass for Linux arm64 and amd64.
 
-Current review: [decision 0003](decisions/0003-event-decoding.md) proposes private
-wire types, version dispatch, structural validation, and a decoder fixture matrix.
+Current review: [decision 0003](decisions/0003-event-decoding.md) records accepted
+AWS type reuse and proposes version dispatch, structural validation, and a decoder
+fixture matrix. [Decision 0004](decisions/0004-typed-events.md) accepts typed
+methods that skip envelope JSON work inside edge. These entry points await the
+remaining decoding and shared HTTP translation contracts before implementation.
 
 Research and present a contract covering:
 
@@ -103,6 +111,8 @@ presenting an entire frozen public API at once.
 
 - [x] Create the Go 1.27 module and constructor/options foundation after review.
 - [ ] Implement raw invocation after the remaining transport contracts are reviewed.
+- [ ] Implement the accepted typed entry points after shared HTTP translation
+      review, documenting upstream codec ownership.
 - Implement the adapter from scratch using JSON v2 directly.
 - Test raw invocation through the actual pinned AWS Lambda Go SDK boundary.
 - Exercise documented event fixtures and adversarial/malformed input.

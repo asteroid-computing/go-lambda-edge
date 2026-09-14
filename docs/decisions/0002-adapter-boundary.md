@@ -101,8 +101,9 @@ public sentinel/type taxonomy. Those require the relevant contracts.
   unknown. Prefer a consistent error path for adapter failures.
 - Return Lambda errors for every HTTP 4xx/5xx: loses the handler's intended
   response and misclassifies ordinary application outcomes as invocation faults.
-- Export event unions or typed proxy methods now: adds public compatibility
-  obligations without improving the ordinary handler or Lambda startup path.
+- Export event unions or typed proxy methods at the time of this decision:
+  deferred pending a concrete consumer need. The user's subsequent request and
+  acceptance of [decision 0004](0004-typed-events.md) add HandleV1 and HandleV2.
 
 ## Validation
 
