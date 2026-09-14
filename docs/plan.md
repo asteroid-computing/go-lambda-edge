@@ -101,6 +101,13 @@ minimum gateway identity foundation, before broader authentication work. These
 enhancements are incorporated into decision 0006. Concrete metadata/header
 policies, exported error categories, and identity APIs remain separate reviews.
 
+The user accepted the qualification to decision 0007: do not freeze arbitrary
+64 KiB/1,024-entry metadata limits or the initial ten-field list without stronger
+resource and compatibility justification. Streaming is now being discussed in
+[decision 0008](decisions/0008-streaming-architecture.md): explicit REST response
+streaming alongside the buffered adapter, sharing HTTP/identity foundations.
+This is a proposed architecture, not implemented streaming support.
+
 Implemented under decision 0006: bounded direct JSON v2 envelope encoding,
 text/base64 body selection, and a shared invocation scope that preserves primary
 errors, cleans up on failures/panics, and checks parent cancellation. The HTTP

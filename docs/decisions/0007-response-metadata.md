@@ -1,6 +1,23 @@
 # 0007: Response metadata budgets and V2 list fields
 
-Status: proposed; awaiting user review.
+Status: qualified direction accepted; concrete metadata policy remains unresolved.
+
+## Accepted qualification
+
+The user accepted the qualified recommendation: keep the documented Lambda
+envelope limit and semantics-preserving header translation, but do not freeze
+the proposed 64 KiB/1,024-entry limits without stronger justification. The ten
+fields below are an initial audit, not an AWS allowlist or an exhaustive set of
+valid list-valued fields. Broader compatibility must be considered before fixing
+that set as the library contract. No numeric metadata limit or exact joinable
+set has been approved or implemented.
+
+The numeric proposal was a library resource policy, not an AWS quota or a result
+of header-allocation benchmarks. Its intended protection was to bound additional
+snapshot allocations, not memory already allocated by the application. Current
+AWS HTTP API quotas explicitly limit the request line and headers; that does not
+establish the same limit for an edge response snapshot.
+[HTTP API quotas](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-quotas.html)
 
 ## Question and evidence
 
@@ -18,7 +35,7 @@ HTTP does not define one universal field-size limit. A library metadata budget
 is our resource policy, not a claim about gateway quotas.
 [HTTP field limits](https://www.rfc-editor.org/rfc/rfc9110.html#section-5.4)
 
-## Recommendation
+## Initial proposal retained for discussion (not accepted as written)
 
 Before sorting, canonicalizing, or cloning a committed Header map, allow at most
 64 KiB (65,536 bytes) of names plus values and 1,024 entries. Count each original
@@ -67,5 +84,6 @@ V1. Hop-by-hop fields are removed under decision 0006 before V2 joining.
 
 ## Resolution
 
-Pending user approval. The response snapshot and V2 header conversion depend on
-this decision. Bounded envelope encoding and invocation lifetime work do not.
+The user agreed with the qualification above. Resolve evidence-based resource
+budgets and broader field compatibility before implementing those policies.
+Bounded envelope encoding and invocation lifetime work do not depend on them.
