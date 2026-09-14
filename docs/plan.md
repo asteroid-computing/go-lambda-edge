@@ -106,7 +106,10 @@ policies, exported error categories, and identity APIs remain separate reviews.
 
 The user accepted the qualification to decision 0007: do not freeze arbitrary
 64 KiB/1,024-entry metadata limits or the initial ten-field list without stronger
-resource and compatibility justification. Streaming is now being discussed in
+resource and compatibility justification. [Decision 0010](decisions/0010-response-header-design.md)
+now proposes shared snapshots, a 25-field V2 combination audit, weighted resource
+accounting, and a conservative exact streaming-prefix limit. These details await
+user review; no header-policy implementation has been added. Streaming is specified in
 [decision 0008](decisions/0008-streaming-architecture.md): explicit REST response
 streaming alongside the buffered adapter, sharing HTTP/identity foundations.
 The high-level architecture is accepted. [Decision 0009](decisions/0009-streaming-boundaries.md)

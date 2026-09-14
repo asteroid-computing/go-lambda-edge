@@ -2,6 +2,11 @@
 
 Status: qualified direction accepted; concrete metadata policy remains unresolved.
 
+The concrete follow-up is [decision 0010](0010-response-header-design.md), proposed
+after the streaming bridge implementation. It recommends a broader field audit,
+weighted resource accounting, and separate encoded-output limits. Its details
+still require user review; this record preserves the earlier qualification.
+
 ## Accepted qualification
 
 The user accepted the qualified recommendation: keep the documented Lambda

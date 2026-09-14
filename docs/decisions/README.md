@@ -18,3 +18,4 @@ Keep related decisions small enough to review and implement independently.
 | [0007: Response metadata](0007-response-metadata.md) | Qualified direction accepted; details open | What metadata budgets and V2 joinable-field set should apply? |
 | [0008: Streaming architecture](0008-streaming-architecture.md) | Accepted | How should REST response streaming fit alongside the buffered adapter? |
 | [0009: Streaming boundaries](0009-streaming-boundaries.md) | Accepted | What API, lifecycle, handoff, and error rules should streaming use? |
+| [0010: Response header design](0010-response-header-design.md) | Proposed | How should shared snapshots, V2 combination, resource accounting, and streaming prefix limits work? |
