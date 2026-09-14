@@ -1,6 +1,6 @@
 # 0001: Explicit gateway identity
 
-Status: proposed; awaiting user review of the concrete contract.
+Status: accepted by the user.
 
 ## Context and user direction
 
@@ -29,14 +29,14 @@ assertions to establish application identity.
 - Our repository currently has no runtime code. No existing API constrains the
   new option name or default.
 
-## Recommendation for review
+## Decision
 
-Use the provisional variadic option `WithGatewayIdentity(enabled bool)` with a
+Use the variadic option `WithGatewayIdentity(enabled bool)` with a
 default of false. The positive opt-in call reads `WithGatewayIdentity(true)`;
 the boolean permits configuration helpers to explicitly disable it without a
 second negatively named option.
 
-Proposed behavior:
+Accepted behavior:
 
 | Configuration | Result |
 | --- | --- |
@@ -44,16 +44,16 @@ Proposed behavior:
 | `WithGatewayIdentity(true)` | Derive identity from supported native gateway JWT/Cognito and IAM assertions |
 | Local bearer middleware explicitly configured | Verify the supplied token under caller-provided issuer/client policy |
 
-The option should cover both IAM and JWT/Cognito assertions. Custom-authorizer
+The option covers both IAM and JWT/Cognito assertions. Custom-authorizer
 contexts require an explicit mapper; their schema must not be guessed.
 
-The base adapter should not insert an anonymous identity solely to mark itself
+The base adapter must not insert an anonymous identity solely to mark itself
 as having run. Reading absent identity still yields the anonymous zero value,
 and protected routes deny it. Invocation metadata can remain available separately.
 This does not promise to preserve an identity from an unrelated invocation or
 settle precedence between multiple configured producers.
 
-Gateway mode should use asserted event claims without supplementing permissions
+Gateway mode uses asserted event claims without supplementing permissions
 from an unverified header token. It assumes the deployment restricts invocation
 to the intended trusted integration. It does not independently verify SigV4 or
 JWT signatures, discover an issuer, or configure AWS authorization.
@@ -82,13 +82,12 @@ JWT signatures, discover an issuer, or configure AWS authorization.
 - Claims unavailable at full fidelity from the gateway remain unavailable through
   that source. Local verification is the path to trusted raw-token fidelity.
 
-## Review requested
-
-Approve or redirect the proposed name/shape and the policy that gateway identity
-is opt-in for both IAM and JWT/Cognito, while the default performs only transport
-adaptation and leaves authentication to explicit composition.
-
 ## Resolution
 
-Pending. The user's default-direction preference is recorded above; the concrete
-API and behavior in this proposal have not yet been approved.
+The user replied "approved" to the concrete proposal: `WithGatewayIdentity(true)`
+opts in to both IAM and JWT/Cognito assertions, the default performs transport
+adaptation without establishing identity or fetching keys, and local verification
+is explicitly composed. This approves the decision above, not the remaining
+constructor, precedence, mapper, or error-policy decisions.
+
+Implementation status: not yet implemented. The transport API is the next review.

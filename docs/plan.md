@@ -36,10 +36,11 @@ port, source copy, or compatibility-preserving update of Beakley.
 - Research substantive decisions and bring recommendations to the user before
   implementing dependent behavior. See `AGENTS.md`.
 
-The user's follow-up supersedes the review's initial gateway-default proposal:
-prefer no gateway-derived identity by default, with an explicit positive option
-to enable it. Exact option naming, IAM scope, and composition remain proposed in
-[decision 0001](decisions/0001-gateway-identity.md).
+The user approved [decision 0001](decisions/0001-gateway-identity.md), superseding
+the review's initial gateway-default proposal: no gateway-derived identity by
+default; `WithGatewayIdentity(true)` opts in for both IAM and JWT/Cognito. Local
+verification is explicitly composed. Constructor details and precedence between
+multiple identity producers remain separate decisions.
 
 ## Planned package boundaries
 
@@ -63,9 +64,13 @@ does not need to precede a working adapter.
 - [x] Create a working branch from the initial `main` commit.
 - [x] Record accepted direction and review findings.
 - [x] Establish decision records and review workflow.
-- [ ] Resolve decision 0001 before implementing authentication defaults.
+- [x] Resolve decision 0001 before implementing authentication defaults.
 
 ### 1. Specify the transport contracts
+
+Current review: [decision 0002](decisions/0002-adapter-boundary.md) proposes
+construction, option application, and invocation-failure handling. It is pending;
+the gateway-identity approval does not settle these contracts.
 
 Research and present a contract covering:
 
