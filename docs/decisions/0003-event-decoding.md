@@ -193,5 +193,5 @@ Validation: documented-shape synthetic fixtures, malformed/unsupported envelopes
 opaque authorizer ownership and precision, error redaction, and SDK serialization
 compatibility pass. Race tests, vet, and Linux arm64/amd64 builds pass. A 15-second
 fuzz run completed 1,553,008 executions without a failure. Public Invoke and typed
-HTTP entry points still await the HTTP translation and response contracts; these
+HTTP entry points still await response encoding and gateway identity production; these
 checks do not claim end-to-end Lambda adaptation is implemented.

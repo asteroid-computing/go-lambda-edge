@@ -84,11 +84,16 @@ version dispatch, structural validation, and the decoder fixture matrix. The
 private decoder and typed validators are implemented and tested against AWS
 Lambda Go v1.55.0. [Decision 0004](decisions/0004-typed-events.md) accepts typed
 methods that skip envelope JSON work inside edge. These entry points await the
-shared HTTP translation contract before implementation.
+response contract and gateway identity production before public wiring.
 
-Current review: [decision 0005](decisions/0005-http-request-translation.md) proposes
+Accepted: [decision 0005](decisions/0005-http-request-translation.md) settles
 request URLs, header/query merging, cookies, body handling, invocation metadata,
-and request ownership. The buffered response contract follows separately.
+and request ownership. Shared request conversion is implemented with local HTTP
+comparisons, race tests, fuzzing, vet, and Lambda-target builds passing.
+
+Current review: [decision 0006](decisions/0006-buffered-responses.md) proposes
+buffered response commitment/encoding, unsupported features, payload bounds,
+invocation completion, and the documented multipart cleanup limit.
 
 Research and present a contract covering:
 
@@ -117,6 +122,7 @@ presenting an entire frozen public API at once.
 - [x] Create the Go 1.27 module and constructor/options foundation after review.
 - [x] Implement the private decoder and typed semantic validators with direct
       JSON v2, SDK types, opaque authorizer data, fixtures, and fuzzing.
+- [x] Implement shared HTTP request conversion and request-lifetime cleanup.
 - [ ] Implement raw invocation after the remaining transport contracts are reviewed.
 - [ ] Implement the accepted typed entry points after shared HTTP translation
       review, documenting upstream codec ownership.

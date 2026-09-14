@@ -1,6 +1,6 @@
 # 0005: Translating gateway requests into net/http
 
-Status: proposed; awaiting user review.
+Status: accepted by the user; shared request conversion implemented.
 
 ## Question
 
@@ -33,7 +33,7 @@ including information that API Gateway has already decoded, combined, or lost?
   It does not yet construct HTTP requests. Beakley's decoded-path reparsing and
   wholesale single-map loss are independently reproduced requirements to avoid.
 
-## Recommendation
+## Decision
 
 ### Paths and queries
 
@@ -56,6 +56,8 @@ including information that API Gateway has already decoded, combined, or lost?
 - V2: use rawQueryString unchanged, including repeated parameters and encoding.
   Never reconstruct it from the comma-flattened map or split values on commas.
   Leave query parsing and its errors to the handler's ordinary net/url APIs.
+  Request-line syntax validation rejects literal ASCII whitespace/control bytes;
+  it does not decode query values or reject malformed query percent escapes.
 - Populate RequestURI from the escaped path and query. V1 necessarily receives
   a reconstructed target. A lost empty trailing question mark or API mapping
   prefix cannot be recovered. Never populate Fragment, User, or Opaque.
@@ -96,7 +98,7 @@ including information that API Gateway has already decoded, combined, or lost?
   Content-Length header to that length, and remove Transfer-Encoding and Trailer
   declarations because the Lambda envelope has already framed the complete body
   and supplies no streaming trailers. Leave TransferEncoding and Trailer empty.
-  These are transport normalization choices for review, not claims of original
+  These are accepted transport normalization choices, not claims of original
   client framing fidelity.
 - Supply http.NoBody for an empty body and a fresh readable body otherwise.
   Own request headers, query value slices, and body state; do not mutate or alias
@@ -159,4 +161,21 @@ response contract makes those public entry points implementable.
 
 ## Resolution
 
-Pending review. No HTTP request translation is implemented under this proposal.
+The user approved this request-translation contract. Shared V1/V2 conversion and
+request-lifetime management are implemented in request.go. Response behavior
+remains a separate decision; public invocation methods are not implemented yet.
+
+Validation passed: request observations compared with a real local HTTP server,
+independent request-target parsing, header/query merge and ownership checks,
+binary bodies, malformed-input rejection, context cancellation, and body/multipart
+cleanup on normal return and panic. Race tests, vet, formatting, and Linux arm64
+and amd64 builds passed. V2 target fuzzing completed 687,712 executions and V1
+query fuzzing completed 113,979 executions without failures, following an earlier
+1,054,667-execution path-only run.
+
+Implementation limit: automatic multipart cleanup reaches forms attached to the
+served request. Forms first parsed on middleware-created request copies are not
+visible to the adapter, matching the standard Go server's limitation. The
+recommendation to document middleware ownership for those forms is included in
+[decision 0006](0006-buffered-responses.md) for review. Do not claim cleanup of
+every independently created request or multipart reader.

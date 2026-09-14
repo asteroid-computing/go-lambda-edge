@@ -33,7 +33,8 @@ func (a *Adapter) HandleV2(ctx context.Context, event events.APIGatewayV2HTTPReq
 ```
 
 The user approved these names, exact signatures, and the boundary contract below.
-They are not implemented yet; shared HTTP translation still needs review.
+They are not implemented yet; request conversion is complete, while response
+encoding and gateway identity production remain under development.
 
 The ordinary raw registration remains lambda.Start(adapter). A caller that
 chooses a fixed payload family can register lambda.Start(adapter.HandleV1) or

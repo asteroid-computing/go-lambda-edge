@@ -13,4 +13,5 @@ Keep related decisions small enough to review and implement independently.
 | [0002: Adapter boundary](0002-adapter-boundary.md) | Accepted | How should construction fail, and which failures become Lambda invocation errors? |
 | [0003: Event decoding](0003-event-decoding.md) | Accepted | How should SDK types, dispatch, and wire validation work together? |
 | [0004: Typed events](0004-typed-events.md) | Accepted | How can already typed events bypass edge's envelope JSON work? |
-| [0005: HTTP requests](0005-http-request-translation.md) | Proposed | How should raw and typed events become ordinary server requests? |
+| [0005: HTTP requests](0005-http-request-translation.md) | Accepted | How should raw and typed events become ordinary server requests? |
+| [0006: Buffered responses](0006-buffered-responses.md) | Proposed | How should HTTP responses, unsupported capabilities, and completion failures behave? |
