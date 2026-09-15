@@ -15,8 +15,8 @@ Keep related decisions small enough to review and implement independently.
 | [0004: Typed events](0004-typed-events.md) | Accepted | How can already typed events bypass edge's envelope JSON work? |
 | [0005: HTTP requests](0005-http-request-translation.md) | Accepted | How should raw and typed events become ordinary server requests? |
 | [0006: Buffered responses](0006-buffered-responses.md) | Accepted | How should HTTP responses, unsupported capabilities, and completion failures behave? |
-| [0007: Response metadata](0007-response-metadata.md) | Qualified direction accepted; details open | What metadata budgets and V2 joinable-field set should apply? |
+| [0007: Response metadata](0007-response-metadata.md) | Qualification resolved by 0010 | What metadata budgets and V2 joinable-field set should apply? |
 | [0008: Streaming architecture](0008-streaming-architecture.md) | Accepted | How should REST response streaming fit alongside the buffered adapter? |
 | [0009: Streaming boundaries](0009-streaming-boundaries.md) | Accepted | What API, lifecycle, handoff, and error rules should streaming use? |
-| [0010: Response header design](0010-response-header-design.md) | Proposed | How should shared snapshots, V2 combination, resource accounting, and streaming prefix limits work? |
+| [0010: Response header design](0010-response-header-design.md) | Accepted | How should shared snapshots, V2 combination, resource accounting, and streaming prefix limits work? |
 | [0011: Request header processing](0011-request-header-processing.md) | Accepted | How can consumers process custom headers and safely select actions for their own dispatchers? |

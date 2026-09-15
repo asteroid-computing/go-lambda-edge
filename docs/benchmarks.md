@@ -79,3 +79,35 @@ an AWS quota or a proven universal memory bound. See
 
 The isolated probe passes race detection, vet and formatting/diff checks. No
 production adapter code changed, and no live AWS services were invoked.
+
+## Implemented response-header layer
+
+After approval of decision 0010, repeated measurements against the actual
+snapshot and projection functions on the same Go 1.27.1 / Apple M2 environment:
+
+```sh
+go test -run '^TestResponseHeaderRetainedMemory$' -v -count=3
+go test -run '^$' -bench '^BenchmarkResponseHeaders$' -benchmem -benchtime=200ms -count=3
+```
+
+Median cumulative allocations in bytes per operation; projection columns include
+snapshot construction and independently owned projection storage:
+
+| Fixture | Snapshot only | Snapshot + V1 | Snapshot + V2 | Retained snapshot heap |
+| --- | ---: | ---: | ---: | ---: |
+| Ordinary headers/cookies | 600 | 712 | 1,016 | 728–1,048 |
+| 6,553 distinct names near default 256 KiB charge | 607,557 | 1,106,130 | 937,527 | 498,648–498,760 |
+| 157,286 distinct names near explicit 6 MiB charge | 17,633,192 | 32,743,176 | 28,129,496 | 15,110,248–15,126,208 |
+
+The default's high-cardinality retained snapshot remains about 0.48 MiB, matching
+the candidate probe. Projections add allocations, especially with the largest
+opt-in budget. Suppressed entries are omitted from output; projection maps are
+sized for represented fields, not the number of suppression markers.
+
+These helper benchmarks exclude the HTTP writer, body handling and final JSON
+encoding. Compiler escape analysis can also differ once they are called through
+the future public invocation path. Retained heap excludes the application input
+and projections; it is not peak memory or RSS. Median snapshot timings were
+approximately 1.36 µs, 1.27 ms and 52.17 ms respectively, with substantial timing
+variation in the largest case. These are exploratory samples, not CI thresholds
+or Lambda latency claims. They do not warrant changing the approved default.

@@ -4,8 +4,8 @@ Status: accepted with the 2026-09-14 review refinements; implementation underway
 
 Reviewed against the implemented decoder/request layer on 2026-09-14. The
 [plan review](../reviews/2026-09-14-plan-review.md) was approved by the user and its
-refinements are incorporated below. Exact metadata budgets and the initial V2
-joinable-field set remain separate specifications before dependent implementation.
+refinements are incorporated below. Decision 0010 now settles the exact metadata
+budget and V2 joinable-field set; their private shared layer is implemented.
 
 ## Question
 
@@ -106,7 +106,7 @@ format, and handle features or failures that a buffered invocation cannot carry?
 - V2 moves Set-Cookie values into Cookies. Join repeated values with a comma and
   space only for a documented, audited set of list-valued fields. Reject repeated
   singleton or unknown fields. Preserve order and commas inside individual
-  values. Leave MultiValueHeaders empty. Specify the initial list separately;
+  values. Leave MultiValueHeaders empty. Decision 0010 specifies the initial list;
   V2 cannot retain general header line boundaries, so applications requiring
   them must choose V1.
 - Emit text directly only when bytes are valid UTF-8, Content-Encoding is absent
@@ -131,7 +131,7 @@ format, and handle features or failures that a buffered invocation cannot carry?
 - Invoke uses json/v2.MarshalWrite with a bounded destination to enforce
   6,291,456 bytes including JSON overhead while retaining encoded output.
   A body below the cap can still fail this check. Preflight committed metadata
-  bytes and entry counts before copying; specify those exact budgets separately.
+  using decision 0010's weighted resource charge before copying.
   A typed method cannot measure the exact envelope produced by its caller's
   serializer without violating the agreed JSON-free typed boundary; document
   that the caller/runtime owns that final limit. Apply the common body/expansion

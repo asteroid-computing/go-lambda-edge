@@ -34,15 +34,21 @@ func marshalResponse(response any) ([]byte, error) {
 // allocate temporary codec storage; this is not a total-memory guarantee.
 type responseBuffer struct {
 	data []byte
+	// A zero limit selects the buffered-response ceiling.
+	limit int
 }
 
 func (b *responseBuffer) Write(p []byte) (int, error) {
-	if len(p) > maxResponseBytes-len(b.data) {
+	limit := b.limit
+	if limit == 0 {
+		limit = maxResponseBytes
+	}
+	if len(p) > limit-len(b.data) {
 		return 0, errResponseTooLarge
 	}
 	n := len(b.data) + len(p)
 	if n > cap(b.data) {
-		capacity := min(maxResponseBytes, max(n, 2*cap(b.data), 512))
+		capacity := min(limit, max(n, 2*cap(b.data), 512))
 		data := make([]byte, len(b.data), capacity)
 		copy(data, b.data)
 		b.data = data

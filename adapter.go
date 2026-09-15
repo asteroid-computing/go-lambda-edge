@@ -18,7 +18,8 @@ type Adapter struct {
 }
 
 type config struct {
-	gatewayIdentity bool
+	gatewayIdentity      bool
+	responseHeaderBudget int
 }
 
 // Option configures an [Adapter] during construction.
@@ -35,6 +36,19 @@ type Option func(*config)
 func WithGatewayIdentity(enabled bool) Option {
 	return func(c *config) {
 		c.gatewayIdentity = enabled
+	}
+}
+
+// WithResponseHeaderBudget sets the response header resource budget in bytes.
+// The default is 256 KiB. New rejects a final configured value outside 1..6 MiB;
+// zero does not disable the bound. Each original value costs its name length,
+// value length and 32 bytes; nil/empty slices cost their name length and 32.
+// Generated headers also consume the budget. This is a library resource policy,
+// not an AWS quota or a bound on total heap usage. It does not change the separate
+// buffered envelope or streaming metadata limits. Invocation is not yet wired.
+func WithResponseHeaderBudget(bytes int) Option {
+	return func(c *config) {
+		c.responseHeaderBudget = bytes
 	}
 }
 
@@ -58,12 +72,15 @@ func New(handler http.Handler, opts ...Option) (*Adapter, error) {
 		}
 	}
 
-	var cfg config
+	cfg := config{responseHeaderBudget: defaultResponseHeaderBudget}
 	for i, opt := range opts {
 		if opt == nil {
 			return nil, fmt.Errorf("edge: nil option at index %d", i)
 		}
 		opt(&cfg)
+	}
+	if cfg.responseHeaderBudget <= 0 || cfg.responseHeaderBudget > maxResponseBytes {
+		return nil, errors.New("edge: response header budget must be between 1 and 6291456 bytes")
 	}
 	return &Adapter{handler: handler, config: cfg}, nil
 }

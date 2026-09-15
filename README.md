@@ -10,14 +10,17 @@ uses AWS Lambda Go v1.55.0 event structs and encoding/json/v2 directly, retainin
 authorizer JSON separately. Request conversion covers URLs, headers, body bytes,
 and request lifetime. A shared invocation scope now covers cleanup and cancellation;
 private response encoding provides text/base64 selection and bounded direct JSON
-v2 output. The buffered HTTP writer, gateway header conversion, public invocation
-methods, and identity extraction are not implemented yet; the adapter cannot yet
+v2 output. Private response-header snapshots and V1/V2 projections now enforce
+the accepted syntax, suppression, cookie and field-combination rules. The
+buffered HTTP writer, public invocation methods, and identity extraction are not
+implemented yet; the adapter cannot yet
 be registered as a Lambda handler.
 
 The accepted streaming design now has a private bridge with incremental delivery,
 backpressure, cancellation, cleanup, and terminal-error handling. Its lifecycle
-is covered by race-enabled synthetic concurrency tests. HTTP streaming framing
-and public streaming entry points remain under construction; deployed API Gateway
+is covered by race-enabled synthetic concurrency tests. Bounded JSON v2 metadata
+prefix encoding is implemented. HTTP streaming commitment and public streaming
+entry points remain under construction; deployed API Gateway
 streaming has not been verified.
 
 ## Header-selected actions
@@ -39,6 +42,17 @@ unfinished Lambda invocation methods.
 
 See the [runnable middleware example](action_example_test.go) and
 [accepted header contract](docs/decisions/0011-request-header-processing.md).
+
+## Response header budget
+
+Response headers have a 256 KiB weighted resource budget, configurable with
+`edge.WithResponseHeaderBudget(bytes)` from 1 byte through 6 MiB. Each original
+value costs `len(name) + len(value) + 32`; nil/empty slices still cost a name plus
+32, and generated headers consume remaining budget. This is separate from the
+complete buffered-envelope limit and the 16,000-byte streaming metadata prefix
+(including its delimiter). It is neither an AWS quota nor a total heap bound.
+The option validates configuration now; the HTTP writers will apply it at
+commitment when invocation is wired.
 
 - [Implementation plan](docs/plan.md)
 - [Design decisions](docs/decisions/README.md)

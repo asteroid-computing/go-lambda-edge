@@ -1,11 +1,13 @@
 # 0007: Response metadata budgets and V2 list fields
 
-Status: qualified direction accepted; concrete metadata policy remains unresolved.
+Status: historical qualification; concrete metadata policy resolved by accepted
+decision 0010 on 2026-09-15.
 
 The concrete follow-up is [decision 0010](0010-response-header-design.md), proposed
 after the streaming bridge implementation. It recommends a broader field audit,
-weighted resource accounting, and separate encoded-output limits. Its details
-still require user review; this record preserves the earlier qualification.
+weighted resource accounting, and separate encoded-output limits. The user has
+accepted its measured default and override; this record preserves the earlier
+qualification and the superseded initial proposal below.
 
 ## Accepted qualification
 
@@ -13,9 +15,8 @@ The user accepted the qualified recommendation: keep the documented Lambda
 envelope limit and semantics-preserving header translation, but do not freeze
 the proposed 64 KiB/1,024-entry limits without stronger justification. The ten
 fields below are an initial audit, not an AWS allowlist or an exhaustive set of
-valid list-valued fields. Broader compatibility must be considered before fixing
-that set as the library contract. No numeric metadata limit or exact joinable
-set has been approved or implemented.
+valid list-valued fields. Broader compatibility was considered in decision 0010's
+accepted 25-field audit and measured resource policy.
 
 The numeric proposal was a library resource policy, not an AWS quota or a result
 of header-allocation benchmarks. Its intended protection was to bound additional
@@ -89,6 +90,6 @@ V1. Hop-by-hop fields are removed under decision 0006 before V2 joining.
 
 ## Resolution
 
-The user agreed with the qualification above. Resolve evidence-based resource
-budgets and broader field compatibility before implementing those policies.
-Bounded envelope encoding and invocation lifetime work do not depend on them.
+The user agreed with the qualification above, then approved the evidence-based
+resource budget and broader field audit in decision 0010. Follow that later
+record for the current contract and implementation status.

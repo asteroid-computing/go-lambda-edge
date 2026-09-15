@@ -1,7 +1,8 @@
 # 0010: Shared response headers and transport-specific encoding
 
-Status: proposed for user review on 2026-09-14; resource recommendation revised
-with allocation evidence on 2026-09-15. No dependent production implementation.
+Status: accepted by the user on 2026-09-15, including the measured 256 KiB
+default and explicit override up to 6 MiB. Shared snapshots, projections and
+streaming-prefix encoding are implemented; HTTP writer wiring follows.
 
 Terminology: V1/V2 in this record mean API Gateway payload formats 1.0/2.0,
 not versions of this Go module. The field-combination table concerns outgoing
@@ -19,7 +20,7 @@ comma combination; REST streaming shares V1's multivalue representation.
 Replace decision 0007's initial ten-field audit with the broader table below.
 Replace its unaccepted 64 KiB/1,024-entry pair with a single weighted resource
 budget with a measured default and explicit override. Keep actual envelope and
-stream-prefix checks separate. These are proposed refinements, not changes to
+stream-prefix checks separate. These are accepted refinements, not changes to
 the already implemented bridge.
 
 ## Evidence and limits of the evidence
@@ -134,7 +135,7 @@ empty list elements, invalid dictionary members, or invalid singleton-alternativ
 combinations. Original within-slice order is preserved, including for ordered
 fallbacks, challenges and signature dictionaries.
 
-### Proposed initial V2 combination table
+### Accepted initial V2 combination table
 
 | Fields | Definition supporting combination |
 | --- | --- |
@@ -184,7 +185,7 @@ budget. Recommend accepting positive values up to the existing 6,291,456-byte
 response ceiling, rejecting invalid configuration in New/NewStreaming. Omission
 uses the default; an explicit zero does not disable the bound. This follows the
 existing options' last-assignment-wins rule and fixed constructor configuration.
-The numeric default and option are proposed API/library policy, not AWS quotas.
+The numeric default and option are accepted API/library policy, not AWS quotas.
 
 The earlier proposal used 6 MiB unconditionally. A prototype with 157,286 distinct
 names near that weighted ceiling retained approximately 14.41 MiB for its
@@ -207,7 +208,7 @@ allowing at most 7,943 entries; the 6 MiB override permits at most 190,650.
 Counting only name/value bytes would admit arbitrarily large slices of empty
 strings; the per-entry charge prevents this without a second count setting.
 
-This is a proposed library policy. A response below an AWS envelope limit can
+This is a library policy. A response below an AWS envelope limit can
 still exceed the weighted budget. A passing weighted budget does not promise
 that a response fits Lambda JSON, API Gateway, a browser, or a low-memory Lambda
 configuration. Map overhead, backing strings, encoding temporaries and the
@@ -257,12 +258,44 @@ the already implemented bridge for the body.
 - Full semantic registry/parser: significantly larger scope than transport
   adaptation; unnecessary for ordinary single values and V1 preservation.
 
-After approval, implement snapshot/preflight and the V1/V2 projections first.
-Test mutation after commitment, case collisions, nil/empty distinctions, control
-bytes/UTF-8, Connection nominations, cookies, quoted commas, list/dictionary
-order, rejected repeated fields and weighted boundaries. Run allocation probes
-before settling the resource implementation. Then add bounded stream-prefix
-encoding and connect the shared snapshot to the separate HTTP writers.
+The shared layer is implemented in response_headers.go. It owns canonical maps
+and value slices, tracks the original preflight charge without refunds, preserves
+automatic-header suppression and returns independent V1/V2 projections. New
+validates WithResponseHeaderBudget after option application, so the final scalar
+assignment wins. Only final status/body behavior and HTTP commitment timing
+remain responsibilities of the separate writers.
+
+Connection parsing tolerates empty list elements under RFC 9110 section 5.6.1.2;
+the input budget bounds that scanning. Nonempty malformed tokens remain faults.
+TrailerPrefix entries, represented Trailer/Upgrade values and upgrade nominations
+are unsupported; nil/empty Trailer/Upgrade slices emit nothing and are removed.
+Strict Content-Length validation follows hop-field removal. A nominated length
+cannot reappear through inference. These details follow the accepted transport
+and suppression rules; they add no new public policy controls.
+[HTTP list recipient requirements](https://www.rfc-editor.org/rfc/rfc9110.html#section-5.6.1.2).
+
+stream_encoding.go encodes explicit status and multivalue metadata through direct
+JSON v2, using the shared bounded destination with a 15,992-byte JSON limit. It
+returns exactly sized storage containing JSON plus eight NUL bytes. It never
+returns a partial prefix. A bridge test verifies that oversized metadata fails
+before either headers or body become available.
+
+Tests cover input/projection ownership, casing, suppression, syntax/UTF-8,
+Connection filtering, cookies, all 25 joinable names, ordered challenges and
+signature dictionaries, rejected repeats, Content-Length syntax, configuration,
+exact resource boundaries, generated-field accounting and exact encoded prefix
+limits including escaping. Over-budget preflight rejection allocates no snapshot.
+Production allocation samples are recorded in [the benchmark report](../benchmarks.md).
+
+Validation on Go 1.27.1: full race tests, vet, formatting/diff checks and Linux
+arm64/amd64 builds pass. The default's measured retained snapshot matches the
+probe at approximately 0.48 MiB for the high-cardinality fixture. Projection
+allocations are reported separately; no new resource policy is needed.
+
+Next connect these primitives to the buffered and streaming HTTP writers, with
+status/method rules, sniffing, length enforcement, commitment timing and late
+unsupported-trailer detection. Constructor options and private primitives do
+not make the unfinished adapter usable as a Lambda handler yet.
 
 Public invocation/identity work and the SDK Runtime API header compatibility
 question remain separate. No account APIs or live AWS deployments were used for

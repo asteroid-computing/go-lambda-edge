@@ -107,17 +107,20 @@ invocation completion, and the documented multipart cleanup limit.
 The accepted [2026-09-14 plan review](reviews/2026-09-14-plan-review.md) requires
 response-contract refinements and completing a runnable adapter, including the
 minimum gateway identity foundation, before broader authentication work. These
-enhancements are incorporated into decision 0006. Concrete metadata/header
-policies, exported error categories, and identity APIs remain separate reviews.
+enhancements are incorporated into decision 0006. Decision 0010 settles concrete
+metadata/header policies; exported error categories and identity APIs remain
+separate reviews.
 
 The user accepted the qualification to decision 0007: do not freeze arbitrary
 64 KiB/1,024-entry metadata limits or the initial ten-field list without stronger
 resource and compatibility justification. [Decision 0010](decisions/0010-response-header-design.md)
-now proposes shared snapshots, a 25-field V2 combination audit, weighted resource
+now accepts shared snapshots, a 25-field V2 combination audit, weighted resource
 accounting, and a conservative exact streaming-prefix limit. The 2026-09-15
-allocation probe revises the proposed resource policy to a 256 KiB default with
-an explicit positive override up to 6 MiB; this is not yet accepted. These details await
-user review; no header-policy implementation has been added. Streaming is specified in
+allocation probe revised the resource policy to a 256 KiB default with
+an explicit positive override up to 6 MiB; the user approved it on 2026-09-15.
+The shared snapshot, suppression/accounting logic, V1/V2 projections, option
+validation and bounded streaming metadata prefix are implemented. Writer wiring
+remains. Streaming is specified in
 [decision 0008](decisions/0008-streaming-architecture.md): explicit REST response
 streaming alongside the buffered adapter, sharing HTTP/identity foundations.
 The high-level architecture is accepted. [Decision 0009](decisions/0009-streaming-boundaries.md)
@@ -141,8 +144,8 @@ sniffing, framing validation, and public entry points remain to be implemented.
 Implemented under decision 0006: bounded direct JSON v2 envelope encoding,
 text/base64 body selection, and a shared invocation scope that preserves primary
 errors, cleans up on failures/panics, and checks parent cancellation. The HTTP
-writer and gateway header conversion await the concrete policy in
-[decision 0007](decisions/0007-response-metadata.md). Public wiring still awaits
+writer can now use the shared header implementation from
+[decision 0010](decisions/0010-response-header-design.md). Public wiring still awaits
 the minimum identity contracts. [Initial codec benchmarks](benchmarks.md) record
 allocation baselines; they do not establish a peak-memory bound.
 
@@ -176,6 +179,8 @@ presenting an entire frozen public API at once.
 - [x] Implement shared HTTP request conversion and request-lifetime cleanup.
 - [x] Implement the accepted action-header selector with ordinary HTTP middleware
       examples and native HTTP/raw/typed Gateway request contract tests.
+- [x] Implement shared response-header snapshots, budget configuration, V1/V2
+      projections and bounded REST streaming metadata prefix encoding.
 - [ ] Implement the buffered HTTP writer and gateway response conversion.
 - [x] Implement bounded envelope/body encoding and shared invocation cleanup.
 - [x] Extract shared invocation ownership and implement the private streaming
