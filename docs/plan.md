@@ -217,6 +217,13 @@ event cases; no auth or codec behavior depends on accidental SDK dispatch.
 
 ### 3. Identity and gateway producers
 
+Design graph prepared on 2026-09-15 in [decision 0012](decisions/0012-shared-identity.md),
+with [public invocation errors in decision 0013](decisions/0013-public-invocation-errors.md).
+Both are proposals awaiting review, not implemented or approved contracts.
+The recommended order is caller/context/error foundations, precise claim API and
+native-producer fixtures, then raw/typed buffered invocation. Broader local
+authentication and authorization follow that shared foundation.
+
 - Review caller constructors, immutable/owned data, validation, anonymous state,
   and context-presence semantics.
 - Preserve issuer plus subject for JWT application identity; do not treat a
