@@ -1,6 +1,7 @@
 # 0010: Shared response headers and transport-specific encoding
 
-Status: proposed for user review on 2026-09-14. No dependent implementation yet.
+Status: proposed for user review on 2026-09-14; resource recommendation revised
+with allocation evidence on 2026-09-15. No dependent production implementation.
 
 Terminology: V1/V2 in this record mean API Gateway payload formats 1.0/2.0,
 not versions of this Go module. The field-combination table concerns outgoing
@@ -17,7 +18,7 @@ comma combination; REST streaming shares V1's multivalue representation.
 
 Replace decision 0007's initial ten-field audit with the broader table below.
 Replace its unaccepted 64 KiB/1,024-entry pair with a single weighted resource
-budget tied to the existing Lambda envelope ceiling. Keep actual envelope and
+budget with a measured default and explicit override. Keep actual envelope and
 stream-prefix checks separate. These are proposed refinements, not changes to
 the already implemented bridge.
 
@@ -176,14 +177,35 @@ Counting suppressed entries is an additional edge policy that bounds copying
 and sorting even when map values are empty. It also avoids an independent,
 arbitrary value-count limit.
 
-Recommend starting with the existing 6,291,456-byte response ceiling as this
-resource budget, on both buffered and streaming paths, without a new public
-tuning option in the first implementation. This is intentionally a broad
-compatibility ceiling rather than an attempt to duplicate smaller deployment
-quotas. It limits copied logical bytes and, because every valid key costs at
-least 33 bytes per entry, permits at most 190,650 charged entries. Counting only
-name/value bytes would admit arbitrarily large slices of empty strings; this
-cannot. The previous paired proposal also bounded count, using a separate knob.
+Following the allocation probe, recommend a **262,144-byte (256 KiB) default**
+resource budget on both buffered and streaming paths, with an explicit
+WithResponseHeaderBudget(bytes int) Option for applications that need another
+budget. Recommend accepting positive values up to the existing 6,291,456-byte
+response ceiling, rejecting invalid configuration in New/NewStreaming. Omission
+uses the default; an explicit zero does not disable the bound. This follows the
+existing options' last-assignment-wins rule and fixed constructor configuration.
+The numeric default and option are proposed API/library policy, not AWS quotas.
+
+The earlier proposal used 6 MiB unconditionally. A prototype with 157,286 distinct
+names near that weighted ceiling retained approximately 14.41 MiB for its
+snapshot and cumulatively allocated 16.82 MiB per operation, even after
+preallocating sorting storage. At a 256 KiB fixture charge, 6,553 distinct names
+retained approximately 0.48 MiB and cumulatively allocated 0.58 MiB. A 1 MiB
+candidate retained approximately 1.90 MiB. These are measured shapes, not
+worst-case proofs. See [the allocation report](../benchmarks.md#response-header-allocation-probe).
+
+The default aims to keep additional metadata storage modest while leaving an
+explicit route for applications with unusual headers. The original 6 MiB remains
+the largest opt-in budget; it is no longer the default memory tradeoff for every
+application. The 256 KiB choice is an engineering judgment informed by these
+measurements, not a uniquely correct threshold derived from AWS documentation.
+An override does not change the independent response-envelope or streaming-prefix
+limits, and does not guarantee acceptance by API Gateway.
+
+At the default, every valid key costs at least 33 bytes per charged entry,
+allowing at most 7,943 entries; the 6 MiB override permits at most 190,650.
+Counting only name/value bytes would admit arbitrarily large slices of empty
+strings; the per-entry charge prevents this without a second count setting.
 
 This is a proposed library policy. A response below an AWS envelope limit can
 still exceed the weighted budget. A passing weighted budget does not promise
@@ -191,12 +213,13 @@ that a response fits Lambda JSON, API Gateway, a browser, or a low-memory Lambda
 configuration. Map overhead, backing strings, encoding temporaries and the
 application's existing allocations are not an exact 6 MiB heap guarantee.
 
-Before finalizing the implementation, measure ordinary headers/cookies, many
-empty values, many distinct names, mixed-case collisions and escaped values.
-Record cumulative allocations and retained snapshot size separately. If the
-high-cardinality cases make this broad ceiling impractical, bring measured
-evidence and a lower/configurable policy back for review; do not silently
-substitute another small fixed limit.
+The isolated, test-only internal/headerprobe package now measures ordinary
+headers/cookies, many empty values, many distinct names, suppressed names,
+mixed-case collisions, escaped values and rejection before copying. It does not
+implement production header validation, filtering or projection. Retained heap
+deltas keep the input alive and exclude application allocations; neither these
+deltas nor cumulative allocations measure peak memory or RSS. Repeat the probes
+against the actual implementation before treating these figures as its baseline.
 
 Independently enforce the existing complete buffered JSON envelope limit on raw
 Invoke. Typed buffered methods still perform no response JSON round trip and
@@ -225,6 +248,10 @@ the already implemented bridge for the body.
 - Preserve every field in every format: impossible with V2's single-string map.
 - Fixed 64 KiB plus 1,024 entries: still lacks a demonstrated resource/compatibility
   reason for those numbers. A weighted budget replaces both controls.
+- Fixed 6 MiB weighted default: broad compatibility, but the prototype retains
+  roughly 14.41 MiB for one high-cardinality snapshot before application and
+  response-encoding allocations. Prefer a smaller default with an explicit
+  override rather than assigning that tradeoff to every consumer.
 - Reuse Gateway's smallest quota globally: would conflate request/response,
   endpoint configuration, HTTP field bytes and JSON framing bytes.
 - Full semantic registry/parser: significantly larger scope than transport
