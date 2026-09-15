@@ -20,6 +20,26 @@ is covered by race-enabled synthetic concurrency tests. HTTP streaming framing
 and public streaming entry points remain under construction; deployed API Gateway
 streaming has not been verified.
 
+## Header-selected actions
+
+`edge.NewActionHeader("Action")` creates an immutable selector whose
+`Parse(r.Header)` method returns an action string or an error. Configure the
+header name explicitly. Selection preserves case, trims outer spaces/tabs, and
+requires a nonempty HTTP token. Repeated values and comma-bearing values are
+rejected, including Gateway payload 2.0's comma-combined duplicates. Use
+`errors.Is` with `edge.ErrActionMissing`, `edge.ErrActionAmbiguous`, or
+`edge.ErrActionInvalid` to distinguish request-input failures.
+
+Use ordinary `http.Handler` middleware to process this and other custom headers.
+The consumer owns its action registry, metadata, authorization and HTTP error
+responses. Select once, authorize that selection, then execute it; do not select
+again from mutable headers. An action header does not authenticate a caller.
+The selector is usable now with ordinary Go HTTP servers, independently of the
+unfinished Lambda invocation methods.
+
+See the [runnable middleware example](action_example_test.go) and
+[accepted header contract](docs/decisions/0011-request-header-processing.md).
+
 - [Implementation plan](docs/plan.md)
 - [Design decisions](docs/decisions/README.md)
 - [Repository working agreement](AGENTS.md)

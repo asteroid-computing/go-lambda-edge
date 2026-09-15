@@ -1,6 +1,7 @@
 # 0011: Consumer request-header processing and action dispatch
 
-Status: first-class support required by the user; concrete API proposed for review.
+Status: accepted on 2026-09-15, including the Go review's standard HTTP boundary
+and immutable value selector. Selector and consumer middleware example implemented.
 
 ## Requirement and terminology
 
@@ -66,10 +67,10 @@ edge to own the application's action registry.
 
 Recommend providing a shared strict single-value header selector for consumers
 to use inside their middleware/dispatcher, with inspectable missing/invalid/
-ambiguous outcomes. The proposed signatures and errors below remain subject to
-review alongside the shared error API. Parsing needs no AWS event types or JSON.
+ambiguous outcomes. The signatures and errors below are accepted independently
+of the broader transport error API. Parsing needs no AWS event types or JSON.
 
-Pending consumer details, recommend:
+The accepted selection contract is:
 
 - Configure the action header name explicitly; do not hard-code an X-Action
   convention. Validate its name at construction.
@@ -99,11 +100,10 @@ Missing/malformed action selections should ordinarily produce an application
 and unknown-action policy. Authentication/authorization response policy remains
 the separate authn/authz contract. No fallback/default action is inferred.
 
-## Concrete recommendations for the open decisions
+## Accepted API and behavior
 
-The user asked for recommendations for these remaining choices. The following
-replaces the open-ended alternatives with a proposed initial contract; approval
-is still pending.
+The user accepted the following contract, including the Go review refinements
+recorded below.
 
 ### Interface and composition
 
@@ -232,12 +232,34 @@ It does not replace this selector or settle decision 0010's budgets.
 [synctest.Sleep](https://pkg.go.dev/testing/synctest#Sleep),
 [http.Server](https://pkg.go.dev/net/http#Server).
 
-These recommendations settle what to implement next for this feature if
-approved. They do not imply approval of decision 0010's separate response-header
+These accepted recommendations settle the initial implementation for this
+feature. They do not imply approval of decision 0010's separate response-header
 budgets/combination policy or settle the broader identity/error APIs.
 
-Validate custom headers, missing/empty values, casing, repeated/conflicting and
-identical values, flattened comma values, native HTTP behavior, both raw/typed
-Gateway payloads, middleware ordering, context propagation, rejected-request
-short circuiting and authorization-before-streaming. No production API changes
-are made by this record.
+## Implementation and validation
+
+action.go implements the immutable value selector and three sentinel errors.
+It reuses the HTTP token validator and compares canonical field names, including
+noncanonical direct map assignments, without Unicode case folding. Selection
+does not mutate the request or encode JSON.
+
+Tests cover custom header names, missing/empty values, token grammar, casing,
+repeated/conflicting and identical values, comma values, sanitized errors,
+zero configuration, copying and concurrent selector reuse. The request matrix
+covers native HTTP through Go 1.27's in-memory test server, raw REST and HTTP
+payload 1.0/2.0 decoding, and already typed V1/V2 request conversion. It preserves
+the accepted distinction between V1 values mirrored across maps and actual
+repeats within multivalue lists.
+
+The runnable consumer example uses ordinary http.Handler middleware and a
+consumer-owned context key. Composition tests cover extra-header metadata,
+ordering, rejected-request short circuiting, context ancestry/cancellation and
+using the same selection for authorization and execution after a header change.
+They exercise the existing constructor and private request foundations, not
+public Lambda invocation, which is still pending. Authorization-before-streaming
+integration remains an acceptance test for the future public streaming writer;
+this feature adds no streaming API or response-header policy.
+
+Validation on Go 1.27.1: focused action tests and the runnable example, the full
+race suite (including the existing SDK streaming probe), go vet, formatting/diff
+checks, and Linux arm64/amd64 builds all pass. No live AWS resources were used.

@@ -23,8 +23,9 @@ port, source copy, or compatibility-preserving update of Beakley.
 - Provide first-class consumer request-header processing for header-selected
   action dispatchers. Preserve custom incoming headers independently of response
   combination rules. [Decision 0011](decisions/0011-request-header-processing.md)
-  proposes the standard HTTP extension boundary and strict selection support;
-  API details and the consumer action-header contract remain under review.
+  accepts the standard HTTP extension boundary and immutable ActionHeader
+  selector, with explicit configuration and strict missing/ambiguous/invalid
+  selection errors. The user approved the Go review refinements on 2026-09-15.
 - Own event serialization at a raw Lambda invocation boundary implementing
   `Invoke(context.Context, []byte) ([]byte, error)`.
 - Reuse AWS Lambda Go event/response structs where they meet the contract;
@@ -171,6 +172,8 @@ presenting an entire frozen public API at once.
 - [x] Implement the private decoder and typed semantic validators with direct
       JSON v2, SDK types, opaque authorizer data, fixtures, and fuzzing.
 - [x] Implement shared HTTP request conversion and request-lifetime cleanup.
+- [x] Implement the accepted action-header selector with ordinary HTTP middleware
+      examples and native HTTP/raw/typed Gateway request contract tests.
 - [ ] Implement the buffered HTTP writer and gateway response conversion.
 - [x] Implement bounded envelope/body encoding and shared invocation cleanup.
 - [x] Extract shared invocation ownership and implement the private streaming
