@@ -158,8 +158,10 @@ func TestResponseHeaderBudgetAndAutomaticFields(t *testing.T) {
 		}
 	}
 	tooMany := http.Header{"A": make([]string, defaultResponseHeaderBudget/33+1)}
+	// Charging must not copy rejected input. The caller now separately allocates
+	// a bounded InvocationError describing the configured limit.
 	if allocations := testing.AllocsPerRun(10, func() {
-		_, _ = snapshotResponseHeaders(tooMany, defaultResponseHeaderBudget)
+		_, _ = chargeResponseHeaders(tooMany, defaultResponseHeaderBudget)
 	}); allocations != 0 {
 		t.Errorf("over-budget preflight allocated %g objects; want none", allocations)
 	}

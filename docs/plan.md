@@ -186,6 +186,8 @@ presenting an entire frozen public API at once.
 - [x] Implement shared response-header snapshots, budget configuration, V1/V2
       projections and bounded REST streaming metadata prefix encoding.
 - [x] Implement the private buffered HTTP writer and gateway response conversion.
+- [x] Implement accepted public error categories and sanitized diagnostics across
+      existing private stages, including cleanup and streaming bridge faults.
 - [x] Implement bounded envelope/body encoding and shared invocation cleanup.
 - [x] Extract shared invocation ownership and implement the private streaming
       bridge, with handoff, backpressure, cancellation, cleanup, and error tests.
@@ -219,8 +221,9 @@ event cases; no auth or codec behavior depends on accidental SDK dispatch.
 
 Design graph prepared on 2026-09-15 in [decision 0012](decisions/0012-shared-identity.md),
 with [public invocation errors in decision 0013](decisions/0013-public-invocation-errors.md).
-Both are proposals awaiting review, not implemented or approved contracts.
-The recommended order is caller/context/error foundations, precise claim API and
+The user accepted both records as a starting point on 2026-09-15. The explicitly
+deferred claim API, resource limits, and producer coverage remain follow-up work.
+The accepted order is caller/context/error foundations, precise claim API and
 native-producer fixtures, then raw/typed buffered invocation. Broader local
 authentication and authorization follow that shared foundation.
 

@@ -1,6 +1,6 @@
 # 0012: Shared identity, provenance, and producer composition
 
-Status: proposed for user review on 2026-09-15. Not implemented.
+Status: accepted as the starting contract on 2026-09-15; implementation pending.
 
 This walks the dependencies needed for the first callable buffered adapter.
 Decision 0013 covers the public errors used at those boundaries. Approval of the
@@ -351,4 +351,8 @@ inheritance. No live AWS invocation is needed for this design review.
 
 ## Resolution
 
-Awaiting user review. None of the proposed shared identity API is implemented.
+The user agreed with all recommendations as a starting point on 2026-09-15.
+This accepts I1-I8 and the implementation order. The explicitly deferred claim
+accessor inventory, claim resource limits, producer fixture coverage, and later
+authn/custom-mapper policies still require their recorded follow-up review.
+None of the shared identity API is implemented yet.

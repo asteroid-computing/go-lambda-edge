@@ -1,6 +1,6 @@
 # 0013: Public invocation error contracts
 
-Status: proposed for user review on 2026-09-15. Not implemented.
+Status: accepted on 2026-09-15; implemented for existing private transport stages.
 
 ## Evidence
 
@@ -201,5 +201,23 @@ release gate from decision 0009.
 
 ## Resolution
 
-Awaiting user review. This is a documentation proposal; no runtime behavior has
-changed.
+The user agreed with all recommendations as a starting point on 2026-09-15.
+This accepts E1-E5, including the public categories and diagnostic methods.
+Classification of the existing private transport stages is the first independent
+implementation step. Public invocation still depends on the identity work.
+
+Implemented: eight public categories and InvocationError with Error, Unwrap,
+Operation, and Limit. Existing decoder, semantic validation, request conversion,
+response snapshots/projection, buffered writer, bounded encoding, cleanup, and
+bridge-owned streaming failures now supply classified errors. Private low-level
+charging/buffering errors remain allocation-free and receive diagnostics at the
+stage that knows the original resource maximum. JSON encoder error trees are
+discarded even when their safe limit cause is recognized.
+
+Validation covers wrapping and joined cleanup inspection, complete exposed error
+trees, declared-length errors, original versus remaining header budgets, body
+and envelope limits, stream metadata limits, private cancellation causes, late
+producer/reporter panic categories, and successful HTTP 401/403/500/503 responses.
+Go 1.27.1 tests with race detection, vet, formatting checks, and Linux arm64/amd64
+builds pass. Public identity errors and raw/typed invocation registration tests
+remain dependent on the identity producers; they are not claimed as implemented.

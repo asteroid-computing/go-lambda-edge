@@ -22,10 +22,10 @@ func marshalResponse(response any) ([]byte, error) {
 	var out responseBuffer
 	if err := json.MarshalWrite(&out, response); err != nil {
 		if errors.Is(err, errResponseTooLarge) {
-			return nil, errResponseTooLarge
+			return nil, limitError("encode", "buffered_envelope", maxResponseBytes, errResponseTooLarge)
 		}
 		// Codec errors can include application values. Do not expose that chain.
-		return nil, errors.New("edge: response JSON encoding failed")
+		return nil, invocationError("encode", ErrResponse, "response JSON encoding failed")
 	}
 	return out.data, nil
 }
@@ -61,7 +61,7 @@ func (b *responseBuffer) Write(p []byte) (int, error) {
 // changes only the gateway envelope representation, never the content bytes.
 func encodeResponseBody(body []byte, header http.Header) (string, bool, error) {
 	if len(body) > maxResponseBytes {
-		return "", false, errResponseTooLarge
+		return "", false, limitError("response", "buffered_body", maxResponseBytes, errResponseTooLarge)
 	}
 	if len(body) == 0 {
 		return "", false, nil
@@ -70,7 +70,7 @@ func encodeResponseBody(body []byte, header http.Header) (string, bool, error) {
 		return string(body), false, nil
 	}
 	if base64.StdEncoding.EncodedLen(len(body)) > maxResponseBytes {
-		return "", false, errResponseTooLarge
+		return "", false, limitError("response", "buffered_body", maxResponseBytes, errResponseTooLarge)
 	}
 	return base64.StdEncoding.EncodeToString(body), true, nil
 }

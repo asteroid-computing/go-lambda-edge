@@ -20,5 +20,5 @@ Keep related decisions small enough to review and implement independently.
 | [0009: Streaming boundaries](0009-streaming-boundaries.md) | Accepted | What API, lifecycle, handoff, and error rules should streaming use? |
 | [0010: Response header design](0010-response-header-design.md) | Accepted | How should shared snapshots, V2 combination, resource accounting, and streaming prefix limits work? |
 | [0011: Request header processing](0011-request-header-processing.md) | Accepted | How can consumers process custom headers and safely select actions for their own dispatchers? |
-| [0012: Shared identity](0012-shared-identity.md) | Proposed | What caller, claim fidelity, provenance, and producer-composition contracts should be shared? |
-| [0013: Invocation errors](0013-public-invocation-errors.md) | Proposed | How should callers inspect sanitized failures across raw, typed, and streaming boundaries? |
+| [0012: Shared identity](0012-shared-identity.md) | Accepted; detailed claims follow-up pending | What caller, claim fidelity, provenance, and producer-composition contracts should be shared? |
+| [0013: Invocation errors](0013-public-invocation-errors.md) | Accepted | How should callers inspect sanitized failures across raw, typed, and streaming boundaries? |

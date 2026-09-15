@@ -2,7 +2,6 @@ package edge
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"slices"
 	"strconv"
@@ -14,10 +13,10 @@ const defaultResponseHeaderBudget = 256 * 1024
 
 var (
 	errResponseHeaderBudget = errors.New("edge: response header budget exceeded")
-	errResponseHeaders      = errors.New("edge: invalid response headers")
-	errResponseTrailers     = fmt.Errorf("edge: response trailers: %w", http.ErrNotSupported)
-	errResponseUpgrade      = fmt.Errorf("edge: response upgrade: %w", http.ErrNotSupported)
-	errResponseHeaderRepeat = errors.New("edge: repeated response field cannot be represented in payload 2.0")
+	errResponseHeaders      = invocationError("response", ErrResponse, "invalid response headers")
+	errResponseTrailers     = invocationError("response", ErrResponse, "response trailers are unsupported", http.ErrNotSupported)
+	errResponseUpgrade      = invocationError("response", ErrResponse, "response upgrade is unsupported", http.ErrNotSupported)
+	errResponseHeaderRepeat = invocationError("response", ErrResponse, "repeated response field cannot be represented in payload 2.0")
 )
 
 // responseHeaders owns its map and value slices. Strings are immutable and may
@@ -26,6 +25,7 @@ var (
 type responseHeaders struct {
 	fields          http.Header
 	remaining       int
+	budget          int
 	noContentType   bool
 	noContentLength bool
 }
@@ -54,11 +54,11 @@ func chargeResponseHeaders(fields http.Header, remaining int) (int, error) {
 
 func snapshotResponseHeaders(fields http.Header, budget int) (*responseHeaders, error) {
 	if budget <= 0 || budget > maxResponseBytes {
-		return nil, errors.New("edge: invalid response header budget")
+		return nil, invocationError("validate", ErrInvalidInvocation, "invalid response header budget")
 	}
 	remaining, err := chargeResponseHeaders(fields, budget)
 	if err != nil {
-		return nil, err
+		return nil, limitError("response", "response_headers", int64(budget), errResponseHeaderBudget)
 	}
 	keys := make([]string, 0, len(fields))
 	for name, values := range fields {
@@ -76,7 +76,7 @@ func snapshotResponseHeaders(fields http.Header, budget int) (*responseHeaders, 
 		keys = append(keys, name)
 	}
 	slices.Sort(keys)
-	h := &responseHeaders{fields: make(http.Header, len(fields)), remaining: remaining}
+	h := &responseHeaders{fields: make(http.Header, len(fields)), remaining: remaining, budget: budget}
 	for _, key := range keys {
 		name := http.CanonicalHeaderKey(key)
 		values := slices.Grow(h.fields[name], len(fields[key]))
@@ -142,7 +142,7 @@ func (h *responseHeaders) automatic(name, value string) error {
 	}
 	remaining, err := chargeResponseHeaders(http.Header{name: {value}}, h.remaining)
 	if err != nil {
-		return err
+		return limitError("response", "response_headers", int64(h.budget), errResponseHeaderBudget)
 	}
 	h.fields[name] = []string{value}
 	h.remaining = remaining

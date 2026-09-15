@@ -26,12 +26,12 @@ func (inv *invocation) ownRequest(r *http.Request) {
 func (inv *invocation) cleanup(err error) error {
 	if inv.body != nil {
 		if closeErr := inv.body.Close(); closeErr != nil {
-			err = errors.Join(err, errors.New("edge: request body cleanup failed"))
+			err = errors.Join(err, invocationError("cleanup", ErrCleanup, "request body cleanup failed"))
 		}
 	}
 	if inv.request != nil && inv.request.MultipartForm != nil {
 		if removeErr := inv.request.MultipartForm.RemoveAll(); removeErr != nil {
-			err = errors.Join(err, errors.New("edge: multipart cleanup failed"))
+			err = errors.Join(err, invocationError("cleanup", ErrCleanup, "multipart cleanup failed"))
 		}
 	}
 	return err
@@ -39,7 +39,7 @@ func (inv *invocation) cleanup(err error) error {
 
 func invocationContext(parent context.Context) (context.Context, context.CancelFunc, error) {
 	if parent == nil {
-		return nil, nil, errors.New("edge: nil invocation context")
+		return nil, nil, invocationError("validate", ErrInvalidInvocation, "nil invocation context")
 	}
 	if err := parent.Err(); err != nil {
 		return nil, nil, err

@@ -17,6 +17,14 @@ length enforcement and typed AWS response projection. Public invocation methods
 and identity extraction are not implemented yet; the adapter cannot yet be
 registered as a Lambda handler.
 
+The shared invocation error contract is implemented across those private stages:
+public categories support `errors.Is`, and `errors.AsType[*edge.InvocationError]`
+exposes sanitized operation and resource-limit diagnostics. HTTP error responses
+remain successful transport outcomes; operation, cleanup, cancellation, and late
+stream failures retain their accepted ownership and precedence. The shared
+identity design is accepted, with precise claim accessors and resource limits
+still awaiting their follow-up design review.
+
 The accepted streaming design now has a private bridge with incremental delivery,
 backpressure, cancellation, cleanup, and terminal-error handling. Its lifecycle
 is covered by race-enabled synthetic concurrency tests. Bounded JSON v2 metadata

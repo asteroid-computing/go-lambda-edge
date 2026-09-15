@@ -408,6 +408,14 @@ func TestStreamLateFailurePreservesBytesAndReportsAfterCleanup(t *testing.T) {
 				if mode == "panic" && !errors.Is(err, errStreamPanic) {
 					t.Errorf("late panic = %v, want stream panic error", err)
 				}
+				if mode == "panic" || mode == "reporter_panic" {
+					if diagnostic, ok := errors.AsType[*InvocationError](err); !errors.Is(err, ErrStream) || !ok || diagnostic.Operation() != "stream" {
+						t.Errorf("late panic classification = %v; want ErrStream with stream diagnostic", err)
+					}
+				}
+				if mode == "cleanup_error" && (!errors.Is(err, ErrCleanup) || !errors.Is(reported, ErrCleanup)) {
+					t.Errorf("late cleanup classification = %v; reported %v; want ErrCleanup on both", err, reported)
+				}
 				if mode != "panic" && mode != "cleanup_error" && !errors.Is(err, http.ErrContentLength) {
 					t.Errorf("terminal error lost primary fault: %v", err)
 				}
