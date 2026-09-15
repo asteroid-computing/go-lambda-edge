@@ -32,14 +32,13 @@ focused search of Beakley also found no such contract.
 
 ## Recommended extension boundary
 
-Expose a small consumer-implemented interface at the ordinary HTTP middleware
-boundary, with a function adapter for consumers who prefer functions:
+Use the standard http.Handler interface as the supported consumer boundary.
+Consumers implement handlers or compose middleware with the ordinary function
+shape:
 
 ```go
-// Proposed signature, not implemented.
-type RequestMiddleware interface {
-    Wrap(next http.Handler) http.Handler
-}
+// Consumer-defined middleware; not an additional exported edge type.
+func processHeaders(next http.Handler) http.Handler
 ```
 
 Header processing can inspect the complete normalized *http.Request, attach
@@ -55,7 +54,7 @@ usual ResponseWriter lifetime. Middleware construction occurs outside request
 execution; the wrapped handler must be safe for the application's concurrency.
 Do not add a raw AWS-event hook for this feature.
 
-This interface is intentionally broader than a callback returning a header map:
+The HTTP handler contract is broader than a callback returning a header map:
 an action dispatcher needs validation, request metadata and controlled rejection,
 not just header rewriting. Keep the business action registry, payload schemas,
 handler resolution and action-specific authorization in the consuming dispatcher.
@@ -67,8 +66,8 @@ edge to own the application's action registry.
 
 Recommend providing a shared strict single-value header selector for consumers
 to use inside their middleware/dispatcher, with inspectable missing/invalid/
-ambiguous outcomes. Its exact exported signature and error types need review
-alongside the shared error API. It must not require AWS dependencies or JSON.
+ambiguous outcomes. The proposed signatures and errors below remain subject to
+review alongside the shared error API. Parsing needs no AWS event types or JSON.
 
 Pending consumer details, recommend:
 
@@ -108,21 +107,19 @@ is still pending.
 
 ### Interface and composition
 
-Keep RequestMiddleware.Wrap and add the function adapter:
+Use http.Handler directly, with http.HandlerFunc when adapting a handler
+function. Do not export RequestMiddleware or RequestMiddlewareFunc: no edge API
+consumes their proposed Wrap method, and the standard interface already supplies
+the required extension point. Consumers may define their own processor types
+without adopting an additional edge interface.
 
-```go
-type RequestMiddlewareFunc func(http.Handler) http.Handler
-func (f RequestMiddlewareFunc) Wrap(next http.Handler) http.Handler
-```
-
-Use ordinary explicit composition: outer.Wrap(inner.Wrap(dispatcher)). The
+Use ordinary explicit composition: outer(inner(dispatcher)). The
 outer processor runs first on the request. Do not add WithRequestMiddleware,
 a Chain helper, implicit reordering, or another middleware package initially.
 The same composed handler goes to edge.New, edge.NewStreaming, or net/http.
 This keeps execution order visible and does not tie header processing to an AWS
-constructor. Nil function adapters/next handlers are invalid programmer inputs,
-like using an unusable http.HandlerFunc; the adapter is not a fallible factory.
-Consumer middleware factories can return their own configuration errors.
+constructor. Consumer middleware factories can return their own configuration
+errors before composition and follow the ordinary HTTP handler contract.
 
 ### Action header and identifier grammar
 
@@ -138,7 +135,7 @@ This admits common identifiers such as orders.create, CreateOrder and
 orders-create, while excluding commas, embedded whitespace, quoting, colon,
 slash and non-ASCII text. HTTP does not mandate this grammar for action headers;
 it is our recommended selector contract. A consumer with a different protocol
-can implement its own parser behind RequestMiddleware without changing gateway
+can implement its own parser in HTTP middleware without changing gateway
 translation or weakening the standard selector.
 [HTTP token grammar](https://www.rfc-editor.org/rfc/rfc9110.html#section-5.6.2).
 
@@ -147,12 +144,14 @@ translation or weakening the standard selector.
 Recommend a reusable immutable selector in the root edge package:
 
 ```go
-func NewActionHeader(name string) (*ActionHeader, error)
-func (h *ActionHeader) Parse(headers http.Header) (string, error)
+func NewActionHeader(name string) (ActionHeader, error)
+func (h ActionHeader) Parse(headers http.Header) (string, error)
 ```
 
-Construction validates/canonicalizes the configured field name. The zero value
-and nil receiver are unusable and Parse returns a configuration error for them.
+Construction validates/canonicalizes the configured field name, stored privately.
+The selector is a small immutable value: copying it is safe and it needs neither
+shared mutable state nor pointer identity. Its zero value has no configured name,
+so Parse returns a configuration error rather than inferring a default header.
 Parse neither modifies headers nor writes a response. It needs no context,
 AWS event types, or JSON processing. An instance can be reused concurrently;
 callers must not concurrently mutate a Header map being inspected.
@@ -196,6 +195,42 @@ registered operation produces an immutable operation descriptor, pass that
 descriptor through authorization and execution instead of resolving again from
 mutable headers. This supports first-class selection without coupling the
 transport module to a consumer's action registry or permissions model.
+
+## Go rules and Go 1.27 review — 2026-09-15
+
+Reviewed the Go rules skill's core, types, naming, functions, errors, commentary
+and testing guidance, the official Go 1.27 release notes, and the current
+adapter/request code. This review replaces the earlier proposed Wrap interface
+and pointer-returning selector with the recommendations above. The changes follow
+the rules on least mechanism, interfaces at their consumption boundary, and
+value semantics for small immutable types. They are API design judgments, not
+new Go 1.27 requirements. The user-requested consumer interface remains
+http.Handler; first-class header support includes the selector, documentation,
+examples and contract tests.
+
+Keep the constructor because explicit startup validation is useful. A standalone
+ParseActionHeader(headers, name) helper would repeat configuration validation on
+every request. A useful implicit zero value would require choosing a default
+header name, which conflicts with the explicit configuration recommendation.
+Keep three sentinel errors with errors.Is; they classify failures without
+inventing a structured error payload. errors.AsType is useful when callers need
+a typed error's data, but is not a replacement for sentinel matching here.
+
+Go 1.27 supports generic methods, but this selector has no requirement for a
+generic method or generic action type. Consumers can convert the returned string
+to their own action type. Direct encoding/json/v2 remains the accepted JSON
+boundary; the selector and HTTP middleware need no JSON processing.
+[Go 1.27 release notes](https://go.dev/doc/go1.27).
+
+For subsequent contract tests, consider httptest.NewTestServer for ordinary HTTP
+integration using its in-memory network, and synctest.Sleep when a streaming
+test needs both virtual time advancement and quiescence. Existing tests need no
+mechanical rewrite. Go 1.27's Server.MaxHeaderValueCount is an HTTP server request
+limit; it neither validates action ambiguity nor bounds Lambda response headers.
+It does not replace this selector or settle decision 0010's budgets.
+[httptest.NewTestServer](https://pkg.go.dev/net/http/httptest#NewTestServer),
+[synctest.Sleep](https://pkg.go.dev/testing/synctest#Sleep),
+[http.Server](https://pkg.go.dev/net/http#Server).
 
 These recommendations settle what to implement next for this feature if
 approved. They do not imply approval of decision 0010's separate response-header
