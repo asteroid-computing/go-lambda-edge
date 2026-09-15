@@ -2,7 +2,8 @@
 
 Status: accepted by the user on 2026-09-15, including the measured 256 KiB
 default and explicit override up to 6 MiB. Shared snapshots, projections and
-streaming-prefix encoding are implemented; HTTP writer wiring follows.
+streaming-prefix encoding are implemented and connected to the private buffered
+HTTP writer. Streaming HTTP writer wiring follows.
 
 Terminology: V1/V2 in this record mean API Gateway payload formats 1.0/2.0,
 not versions of this Go module. The field-combination table concerns outgoing
@@ -262,8 +263,8 @@ The shared layer is implemented in response_headers.go. It owns canonical maps
 and value slices, tracks the original preflight charge without refunds, preserves
 automatic-header suppression and returns independent V1/V2 projections. New
 validates WithResponseHeaderBudget after option application, so the final scalar
-assignment wins. Only final status/body behavior and HTTP commitment timing
-remain responsibilities of the separate writers.
+assignment wins. Final status/body behavior and HTTP commitment timing belong
+to the separate writers; the buffered writer now implements those rules.
 
 Connection parsing tolerates empty list elements under RFC 9110 section 5.6.1.2;
 the input budget bounds that scanning. Nonempty malformed tokens remain faults.
@@ -292,9 +293,10 @@ arm64/amd64 builds pass. The default's measured retained snapshot matches the
 probe at approximately 0.48 MiB for the high-cardinality fixture. Projection
 allocations are reported separately; no new resource policy is needed.
 
-Next connect these primitives to the buffered and streaming HTTP writers, with
-status/method rules, sniffing, length enforcement, commitment timing and late
-unsupported-trailer detection. Constructor options and private primitives do
+The buffered writer now uses these primitives for status/method rules, sniffing,
+length enforcement, commitment timing and late unsupported-trailer detection.
+The streaming HTTP writer remains to be implemented. Constructor options and
+private primitives do
 not make the unfinished adapter usable as a Lambda handler yet.
 
 Public invocation/identity work and the SDK Runtime API header compatibility

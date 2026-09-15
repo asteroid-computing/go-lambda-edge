@@ -1,6 +1,8 @@
 # 0006: Buffered HTTP responses and invocation completion
 
-Status: accepted with the 2026-09-14 review refinements; implementation underway.
+Status: accepted with the 2026-09-14 review refinements. Private buffered writer,
+header/body finalization and SDK response projections implemented on 2026-09-15.
+Public invocation still awaits the minimum identity and exported error contracts.
 
 Reviewed against the implemented decoder/request layer on 2026-09-14. The
 [plan review](../reviews/2026-09-14-plan-review.md) was approved by the user and its
@@ -196,3 +198,47 @@ exact envelope boundaries, metadata bounds, and sequential/concurrent isolation.
 Accepted by the user on 2026-09-14 with the plan-review enhancements. Implement
 settled behavior now; resolve the separately identified metadata, header-list,
 error API, and identity details before their dependent implementation.
+
+## Implementation and validation — 2026-09-15
+
+buffered.go provides the private writer, synchronous serveBuffered call and typed
+AWS response projections. It captures the original request method, snapshots
+headers on the first final status, retains bounded body storage and reports
+sticky write failures at completion. Automatic fields consume the remaining
+metadata budget and respect explicit suppression and Connection nominations.
+Typed projection does no JSON work; the separate raw encoder still accounts for
+the complete envelope, including its overhead.
+
+HEAD counts successful representation writes while retaining at most 512 bytes.
+It honors the supplied length without requiring that all representation bytes
+be written, but rejects writes exceeding a supplied length, as Go's server does.
+Its emitted body is empty. Statuses 204/205/304 reject nonempty writes without
+turning that rejection alone into an invocation failure. Bodyless 205 remains
+the accepted intentional difference from Go's behavior.
+
+Installed Go 1.27.1 server source was checked for response.WriteHeader,
+response.write and chunkWriter.writeHeader. Once final status is committed, all
+later WriteHeader calls are ignored, including invalid or informational codes.
+This follows Go's superfluous-status behavior; it does not permit an initial
+informational response. Late TrailerPrefix entries or represented Trailer
+declarations still fail at completion. Ordinary late header-map changes cannot
+alter the committed response. Header-map edits that are added and removed before
+the writer observes them have no transport effect.
+
+Tests compare small-response status, body, Content-Type, Content-Length,
+suppression, redirects and HEAD/204/304 behavior with Go 1.27's real HTTP server
+over its in-memory test network. Additional cases cover 205, status validation,
+ignored write errors, large HEAD representations, exact stored-body boundaries,
+raw-envelope overhead, text/base64 conversion, cookies and repeated fields,
+unsupported ResponseController capabilities and late trailers. Both Gateway
+request formats exercise ServeMux path parameters, ServeContent ranges, gzip
+output and request-body echoing. Invocation-scope tests cover cleanup on write
+failure, panic, parent cancellation and cleanup failure.
+
+These tests assemble the private primitives inside the existing invocation scope.
+They do not publish the pending Lambda invocation methods or establish gateway
+identity. Streaming HTTP writer behavior is a separate implementation milestone.
+
+Validation: focused writer/integration tests, full race suite, vet, formatting
+and diff checks, and Linux arm64/amd64 builds pass on Go 1.27.1. No live AWS
+resources were invoked.

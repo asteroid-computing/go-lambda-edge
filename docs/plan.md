@@ -119,8 +119,9 @@ accounting, and a conservative exact streaming-prefix limit. The 2026-09-15
 allocation probe revised the resource policy to a 256 KiB default with
 an explicit positive override up to 6 MiB; the user approved it on 2026-09-15.
 The shared snapshot, suppression/accounting logic, V1/V2 projections, option
-validation and bounded streaming metadata prefix are implemented. Writer wiring
-remains. Streaming is specified in
+validation and bounded streaming metadata prefix are implemented. The buffered
+writer now uses the shared header layer; streaming HTTP writer wiring remains.
+Streaming is specified in
 [decision 0008](decisions/0008-streaming-architecture.md): explicit REST response
 streaming alongside the buffered adapter, sharing HTTP/identity foundations.
 The high-level architecture is accepted. [Decision 0009](decisions/0009-streaming-boundaries.md)
@@ -144,8 +145,11 @@ sniffing, framing validation, and public entry points remain to be implemented.
 Implemented under decision 0006: bounded direct JSON v2 envelope encoding,
 text/base64 body selection, and a shared invocation scope that preserves primary
 errors, cleans up on failures/panics, and checks parent cancellation. The HTTP
-writer can now use the shared header implementation from
-[decision 0010](decisions/0010-response-header-design.md). Public wiring still awaits
+writer now uses the shared header implementation from
+[decision 0010](decisions/0010-response-header-design.md), enforces commitment and
+body/length/status rules, and returns typed AWS response projections without
+JSON work. Tests compare ordinary behavior with net/http and exercise request
+conversion, mux/range/gzip handling and invocation cleanup. Public wiring still awaits
 the minimum identity contracts. [Initial codec benchmarks](benchmarks.md) record
 allocation baselines; they do not establish a peak-memory bound.
 
@@ -181,7 +185,7 @@ presenting an entire frozen public API at once.
       examples and native HTTP/raw/typed Gateway request contract tests.
 - [x] Implement shared response-header snapshots, budget configuration, V1/V2
       projections and bounded REST streaming metadata prefix encoding.
-- [ ] Implement the buffered HTTP writer and gateway response conversion.
+- [x] Implement the private buffered HTTP writer and gateway response conversion.
 - [x] Implement bounded envelope/body encoding and shared invocation cleanup.
 - [x] Extract shared invocation ownership and implement the private streaming
       bridge, with handoff, backpressure, cancellation, cleanup, and error tests.
