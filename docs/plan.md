@@ -349,6 +349,13 @@ storms, and dependency outages remain distinguishable from invalid credentials.
 
 ### 5. Authorization and consumer ergonomics
 
+[Decision 0021](decisions/0021-authorization-rules.md) records the proposed initial
+authz API and design graph. It recommends immutable rules over explicit caller,
+action and resource facts, exact predicates and ordered combinators. Application
+principal/grant resolution and HTTP dispatch initially remain consumer-owned
+through context-aware custom checks and runnable examples. That narrowing and
+the public/error contracts await user review; no authz code is implemented yet.
+
 - Implement reviewed rules/combinators, scope/group/grant separation, principal
   resolution, and explicit authentication precedence.
 - Review missing/invalid credential responses (ordinarily 401), authenticated
