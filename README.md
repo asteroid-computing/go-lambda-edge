@@ -39,8 +39,12 @@ proof; `iamproof.NewVerifier` submits that client-signed request to AWS and retu
 a verified IAM caller. Both are implemented using the latest stable SDK core
 v1.47.0 and STS v1.51.0, checked on 2026-09-16. See the
 [IAM proof guide](docs/iamproof.md) and [runnable examples](iamproof/example_test.go).
-The common HTTP credential selector, OAuth verification and application
-authorization remain planned. No live STS interoperability test has run.
+The shared `authn` selector and required-authentication middleware are implemented.
+Configure Bearer and/or IAM-proof verifier functions; the
+[authentication guide](docs/authn.md) shows the required IAM error mapping and
+the custom dispatcher/HTTP response boundaries. The first-party Cognito/JWT/JWKS
+verifier and authz package remain planned. Applications must supply actual Bearer
+verification and authorize each action. No live STS interoperability test has run.
 
 The accepted streaming design now has a private bridge with incremental delivery,
 backpressure, cancellation, cleanup, and terminal-error handling. Its lifecycle

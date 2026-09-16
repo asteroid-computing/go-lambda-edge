@@ -2,7 +2,8 @@
 
 Status: architecture and exported Go client helper accepted on 2026-09-16.
 The detailed IAM protocol/API was subsequently approved and implemented under
-0017. The shared HTTP selector is proposed in 0019 and awaits review.
+0017. The shared HTTP selector was accepted and implemented under 0019.
+First-party JWT verification and authorization remain separate work.
 
 ## Requirement and correction
 
@@ -34,8 +35,8 @@ planned IAM authentication path.
   permission for the operation. It does not establish application permissions.
 
 AWS definitions were checked through public AWS MCP; the authenticator's own
-documentation supplies implementation-pattern evidence. Current code has no authn
-middleware. The source rules in 0012 permit gateway/custom IAM and locally verified
+documentation supplies implementation-pattern evidence. At proposal time there
+was no authn middleware. The source rules in 0012 permit gateway/custom IAM and locally verified
 JWT; online IAM verification requires a provenance refinement before implementation.
 
 ## Accepted direction
@@ -110,5 +111,6 @@ error behavior. Acceptance of the architecture does not freeze these details.
 
 [Decision 0017](0017-iam-proof-protocol.md) subsequently settled those details
 and its production helper/verifier are implemented with local validation.
-[Decision 0019](0019-http-authentication-selector.md) now proposes the remaining
-shared HTTP selector API and response contract. No live STS check has run.
+[Decision 0019](0019-http-authentication-selector.md) settled the remaining
+shared HTTP selector API and response contract, now implemented with local
+validation and synthetic Bearer fixtures. No live STS check has run.

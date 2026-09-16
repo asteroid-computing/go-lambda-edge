@@ -1,8 +1,8 @@
 # 0019: HTTP authentication selection and challenges
 
-Status: proposed on 2026-09-16; awaiting user review. The user authorized this
-design walk after implementation of iamproof. No authn API or middleware is
-implemented by this record. Recommendations A1-A6 are reviewable together.
+Status: accepted on 2026-09-16. The user approved A1-A6 and authorized
+implementation after reviewing this design. Configuration, header selection,
+verification/result checks, errors, middleware and examples are implemented.
 
 ## Evidence and existing contracts
 
@@ -265,7 +265,7 @@ handler accidentally becoming an implicit 200 on an otherwise live native HTTP
 connection. Edge's invocation cancellation rules still suppress a usable Lambda
 response when its parent context is canceled. Do not promise wire delivery.
 
-This is an HTTP-level refinement awaiting approval, not a change to the existing
+This is an accepted HTTP-level refinement, not a change to the existing
 iamproof error contract. Malformed proof/token content still yields 401; malformed
 Authorization framing yields 400. Authorization owns permission denial and 403.
 
@@ -312,5 +312,33 @@ headers are not sufficient evidence to authenticate a caller.
 
 ## Resolution
 
-Pending user review of A1-A6, especially the public config/API, explicit IAM error
-adapter, 400/401/431 distinction, and default cancellation response behavior.
+The user approved A1-A6 on 2026-09-16, including the public config/API, explicit
+IAM error adapter, 400/401/431 distinction and default cancellation response.
+Implement within these boundaries; Cognito/JWKS and authz remain separate reviews.
+
+## Implementation evidence
+
+The production authn package implements A1-A6. Dependency inspection confirms
+only standard-library and identity imports; no iamproof or AWS SDK dependency
+is introduced. The explicit IAM error adapter is documented and tested, including
+the qualified 503 behavior when consumers omit it.
+
+Local tests cover case aliases, empty/repeated/comma-combined fields, grammar and
+size limits, scheme selection, no fallback, error precedence and sanitization,
+wrong caller kinds/sources, gateway/local conflicts, cancellation, context and
+challenge ownership, concurrency, and propagation of verifier panics. Actual
+IAM generation/verification uses synthetic STS transport fixtures through native
+HTTP and all raw/typed Gateway entry points. Both caller kinds reach one consumer
+dispatcher with independent action permission checks. Challenge combination
+works in payload 2.0 without changing the existing header contract. Inputs that
+transport validation rejects earlier remain outside the HTTP middleware contract.
+
+Runnable examples cover the explicit error adapter, synthetic consumer Bearer
+verification, a shared action dispatcher and direct JSON v2 failure responses.
+They clearly distinguish synthetic token fixtures from production verification.
+The [consumer guide](../authn.md) records deployment and composition constraints.
+
+Full module race tests, vet, formatting checks and Linux arm64/amd64 builds pass
+on Go 1.27.1. A ten-second Authorization fuzz run completed 726,457 executions
+without failures. No live AWS verification, resource deployment or GitHub CI run
+was performed. Existing CI automatically includes the new package.

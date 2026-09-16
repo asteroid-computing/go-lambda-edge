@@ -3,7 +3,8 @@
 Status: accepted on 2026-09-16. The user approved P1-P5 and the four caller forms
 in decision 0015. The production iamproof generator and verifier are implemented
 after the shared caller and buffered-adapter foundations, with local validation.
-Common HTTP authentication selection and live AWS interoperability remain pending.
+Common HTTP authentication selection is implemented under decision 0019;
+live AWS interoperability remains pending.
 
 ## Evidence
 
@@ -245,8 +246,8 @@ Verify any further service-specific aliases against official sources and fixture
 before adding them. Unrecognized errors fail closed as unavailable; throttling
 remains unavailable even with HTTP 400. Caller cancellation returns the context error;
 writing a response after disconnection follows the HTTP middleware lifecycle.
-WWW-Authenticate challenges and shared selector API belong to the HTTP authn
-review, not the proof verifier. These are HTTP failures, not Lambda invocation
+WWW-Authenticate challenges and the shared selector API are specified by
+decision 0019, separately from the proof verifier. These are HTTP failures, not Lambda invocation
 errors under decision 0013.
 
 ## Design graph and implementation sequence

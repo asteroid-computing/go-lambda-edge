@@ -61,8 +61,9 @@ The user approved [decision 0001](decisions/0001-gateway-identity.md), supersedi
 the review's initial gateway-default proposal: no gateway-derived identity by
 default; `WithGatewayIdentity(true)` opts in for both IAM and JWT/Cognito. Local
 verification is explicitly composed. Constructor details and producer conflicts
-are settled in decisions 0012–0018; the common HTTP authentication-selector API
-remains a later review.
+are settled in decisions 0012–0018; decision 0019 accepts the now-implemented
+common HTTP authentication selector. First-party JWT verification and authz
+remain separate reviews.
 
 ## Planned package boundaries
 
@@ -286,23 +287,35 @@ claims cannot be silently mixed; unavailable claim fidelity remains explicit.
 
 ### 4. Local authentication: Cognito/JWKS and IAM credentials
 
-The next design graph is recorded in proposed
+The implemented HTTP authentication design is recorded in accepted
 [decision 0019](decisions/0019-http-authentication-selector.md): shared HTTP
 selection, explicit verifier dependencies, header limits, context composition,
-error interoperability and challenges. It awaits user review before authn
-implementation; the IAM proof package remains independently usable.
+error interoperability and challenges. The user approved A1-A6 on 2026-09-16;
+authn configuration, selection, errors, middleware and examples are implemented.
+The IAM proof package remains independently usable.
 
 - [x] Implement the accepted protocol/helper/verifier contract in decision 0017
   after the shared foundation and callable buffered adapter. Production iamproof
   uses SDK core v1.47.0 and STS v1.51.0, rechecked as latest stable on 2026-09-16.
   [The consumer guide](iamproof.md) covers credential ownership, endpoints,
   replay/limits, error handling and the remaining integration qualifications.
-- Implement the accepted client-helper/server-verifier direction in decisions
-  0016/0017. Review the common HTTP authentication selector API and challenges;
-  preserve the accepted proof, provenance, binding, replay, endpoint and error rules.
-  Do not promise offline IAM verification or ordinary SigV4-client compatibility.
+- [x] Implement the shared HTTP selector and challenges under decision 0019,
+  preserving the proof, provenance, binding, replay, endpoint and error contracts.
+  Configuration and verifier functions are explicit, with an SDK-independent
+  package and consumer-owned action dispatch and authorization.
+  [The authn guide](authn.md) documents IAM error mapping, header bounds,
+  cancellation and custom JSON response handling.
 - Provide exported Go proof generation and consumer documentation with runnable
   examples showing IAM and OAuth clients calling the same protected route.
+  IAM generation, selector/dispatcher examples and local mixed-identity contract
+  tests now exist; the example Bearer verifier is explicitly synthetic. Real
+  first-party Cognito/OAuth verification and deployed interoperability remain.
+
+The authn milestone passes full module race tests, vet, formatting checks and
+Linux arm64/amd64 builds on Go 1.27.1. Authorization-parser fuzzing completed
+726,457 executions without failures. Native in-memory HTTP and raw/typed
+Gateway fixtures verify challenges and IAM-helper composition with local STS
+fixtures. No live AWS or GitHub CI run was performed for these changes.
 
 - Review a verifier requiring explicit issuer/client restrictions; accepting all
   pool clients must be a deliberate policy.

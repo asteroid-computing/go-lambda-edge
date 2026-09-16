@@ -8,8 +8,8 @@ The verifier never signs using the Lambda role or other server credentials.
 
 This is a library-defined proof protocol, not an ordinary SigV4 request to your
 API, an EKS token, or an OAuth bearer token. The shared HTTP credential selector
-and OAuth verification remain separate work. Merely registering the edge adapter
-does not authenticate an Authorization header.
+is implemented in `authn`; first-party OAuth verification remains separate work.
+Merely registering the edge adapter does not authenticate an Authorization header.
 
 ## Client
 
@@ -53,8 +53,9 @@ representation grants no application permission.
 
 The authentication layer must select exactly one credential, call exactly one
 verifier, install the returned caller using identity.WithCaller, then authorize
-the selected application action. Shared middleware and its HTTP challenges will
-be reviewed separately. Never fall back to another verifier after a rejection.
+the selected application action. The [authn guide](authn.md) shows this middleware
+and the explicit adapter mapping iamproof.ErrInvalidProof to
+authn.ErrInvalidCredentials. Never fall back to another verifier after rejection.
 
 | Outcome | Inspect with errors.Is | Intended HTTP treatment |
 | --- | --- | --- |
