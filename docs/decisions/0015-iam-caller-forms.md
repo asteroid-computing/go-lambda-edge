@@ -1,6 +1,7 @@
 # 0015: Initial IAM caller forms
 
-Status: proposed on 2026-09-16; awaiting review.
+Status: accepted on 2026-09-16, including the four initial caller forms, with
+approval of decision 0017. Constructor/view implementation is complete.
 
 Decision 0012 requires validation of an actual caller principal form and explicitly
 defers the supported-form fixtures. Implementing NewIAM now reaches that gate.
@@ -30,7 +31,7 @@ Initially accept these exact forms in NewIAM:
 - STS federated-user session: arn:<partition>:sts::<account>:federated-user/<name>.
 
 Preserve spelling, partition, account and full resource including session. Reject
-bare account IDs, IAM role ARNs, wildcards and policy-only principal forms in this
+bare account IDs, IAM role ARNs, wildcard expressions outside literal user paths and policy-only principal forms in this
 initial request-caller constructor. Do not transform a role session into a role.
 Recognizing root is a representation capability, not permission to perform an
 application action. Root policy-principal delegation semantics are not applied.
@@ -100,3 +101,25 @@ locally verified JWT authentication. No such producer is approved or implemented
 The user's subsequent same-route IAM/OAuth clarification is recorded in 0016.
 For that goal, the proposed path is explicit mixed-credential middleware with an
 online IAM proof verifier. Built-in AWS_IAM alone does not satisfy the goal.
+
+## Accepted lexical refinement and implementation
+
+On 2026-09-16 the user approved preserving literal `*` and `?` in valid IAM user
+paths. [CreateUser](https://docs.aws.amazon.com/IAM/latest/APIReference/API_CreateUser.html)
+permits these characters in its path grammar. Caller identifiers are exact facts,
+never policy patterns. Wildcard account IDs, usernames, role names and session
+names remain invalid. Follow the formal path pattern's U+0021..U+007E range;
+the page's prose mentions DEL but its formal pattern excludes it.
+
+The constructor follows documented name/path lengths: IAM username 1..64 and
+path 1..512; role name 1..64; session name 2..64 under
+[AssumeRole](https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html);
+federated username 2..32 under
+[GetFederationToken](https://docs.aws.amazon.com/STS/latest/APIReference/API_GetFederationToken.html).
+The account is exactly twelve ASCII digits and the ARN's region is empty.
+Partition validation is lexical, not an assertion that an AWS partition exists;
+the authenticating producer must enforce its configured partition.
+
+NewIAM and its read-only view are implemented with account consistency,
+duplicate-option rejection, exact session preservation and sanitized diagnostics.
+Online verification is not implemented by this constructor.

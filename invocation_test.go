@@ -8,7 +8,37 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/asteroid-computing/go-lambda-edge/identity"
 )
+
+func TestInvocationRejectsInheritedCaller(t *testing.T) {
+	caller, err := identity.NewIAM("arn:aws:iam::123456789012:user/Alice", identity.SourceGatewayAssertion)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parent, err := identity.WithCaller(t.Context(), caller)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ran := false
+	err = withInvocation(parent, func(context.Context, *invocation) error {
+		ran = true
+		return nil
+	})
+	if ran || !errors.Is(err, ErrIdentity) || !errors.Is(err, identity.ErrConflict) {
+		t.Fatalf("inherited caller: ran=%t, err=%v; want identity conflict before work", ran, err)
+	}
+	if detail, ok := errors.AsType[*InvocationError](err); !ok || detail.Operation() != "identity" {
+		t.Errorf("inherited caller error = %v, want identity operation", err)
+	}
+	if strings.Contains(err.Error(), "Alice") {
+		t.Error("isolation error leaked caller identity")
+	}
+	if err := withInvocation(t.Context(), func(context.Context, *invocation) error { return nil }); err != nil {
+		t.Errorf("independent next invocation rejected: %v", err)
+	}
+}
 
 func TestInvocationRejectsInvalidContextBeforeRunning(t *testing.T) {
 	canceled, cancel := context.WithCancel(t.Context())

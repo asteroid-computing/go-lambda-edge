@@ -69,7 +69,8 @@ multiple identity producers remain separate decisions.
 | --- | --- |
 | `edge` (root) | Invocation adapter, payload decoding, HTTP translation, gateway metadata, optional gateway identity extraction |
 | `identity` | Validated callers, claim representation, context transport; standard library only |
-| `authn` | Explicit IAM-proof/OAuth selection, online STS verification, Cognito verification and JWKS caching |
+| `authn` | Explicit IAM-proof/OAuth selection, Cognito verification and JWKS caching |
+| `iamproof` | Exported client proof generator and bounded online STS verifier |
 | `authz` | Decisions, rules, combinators, middleware, application-principal resolution |
 | `edgetest` | Consumer identity fixtures and gateway event helpers |
 
@@ -78,13 +79,13 @@ event types out of transport-independent packages. Reassess any additional
 exported package against a concrete consumer need; version-reporting machinery
 does not need to precede a working adapter.
 
-The accepted IAM client helper belongs to the module's exported Go API. Its
-package placement and credential-provider dependency are part of the detailed
-0016 protocol review; do not assume a new package or root reexport prematurely.
-[Decision 0017](decisions/0017-iam-proof-protocol.md) proposes a focused `iamproof`
+The accepted IAM client helper belongs to the module's exported Go API.
+[Decision 0017](decisions/0017-iam-proof-protocol.md), accepted on 2026-09-16,
+specifies a focused `iamproof`
 package, compact versioned proof, signed audience, short freshness policy and
-bounded regional STS verification. Its isolated SDK probe passes; all production
-API and trust-boundary choices in that record remain pending review.
+bounded regional STS verification. Its isolated SDK probe passes. The user also
+approved the IAM caller forms in decision 0015. The shared caller/context
+foundation is now implemented; gateway producers precede local authentication.
 
 ## Milestones and acceptance criteria
 
@@ -252,10 +253,12 @@ implemented. The adapter budget option is validated and a private invocation-err
 translation boundary is tested; gateway extraction and invocation remain unwired.
 Production allocation measurements supplement the original probe. Contract tests,
 SDK integration, race detection, vet, JSON fuzzing and Lambda-target builds pass.
-Caller/context construction and JWT normalization remain pending; proposed
-[decision 0015](decisions/0015-iam-caller-forms.md) resolves the supported IAM forms
-explicitly deferred by 0012 before publishing the complete caller union.
-Native-producer fixture review remains separate from the claims approval.
+Caller/context construction, JWT normalization and dedicated-scope accounting
+are now implemented after approval of [decision 0015](decisions/0015-iam-caller-forms.md)
+and 0017. IAM literal path punctuation follows the user's approved refinement.
+The private invocation guard rejects inherited callers. Full race tests, vet,
+formatting and Linux arm64/amd64 builds pass. Native-producer fixture review
+remains separate from the foundation approval; see proposed decision 0018.
 
 - Review caller constructors, immutable/owned data, validation, anonymous state,
   and context-presence semantics.
@@ -273,14 +276,13 @@ claims cannot be silently mixed; unavailable claim fidelity remains explicit.
 
 ### 4. Local authentication: Cognito/JWKS and IAM credentials
 
-- Review the concrete protocol/helper/verifier proposal in decision 0017,
-  including replay, size and STS quota tradeoffs, before dependent implementation.
+- Implement the accepted protocol/helper/verifier contract in decision 0017
+  after the shared foundation and callable buffered adapter.
   The standalone probe uses latest stable SDK core v1.47.0 and STS v1.51.0 as
   resolved on 2026-09-16; root production dependencies have not changed.
-- Implement the accepted client-helper/server-verifier direction in decision 0016
-  after its detailed protocol review. Review a single authentication
-  selector, online STS proof verification and its provenance, application binding,
-  freshness/replay rules, endpoint constraints and dependency-error semantics.
+- Implement the accepted client-helper/server-verifier direction in decisions
+  0016/0017. Review the common HTTP authentication selector API and challenges;
+  preserve the accepted proof, provenance, binding, replay, endpoint and error rules.
   Do not promise offline IAM verification or ordinary SigV4-client compatibility.
 - Provide exported Go proof generation and consumer documentation with runnable
   examples showing IAM and OAuth clients calling the same protected route.

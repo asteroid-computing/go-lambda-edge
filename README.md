@@ -22,16 +22,17 @@ public categories support `errors.Is`, and `errors.AsType[*edge.InvocationError]
 exposes sanitized operation and resource-limit diagnostics. HTTP error responses
 remain successful transport outcomes; operation, cleanup, cancellation, and late
 stream failures retain their accepted ownership and precedence. The shared
-claims API and resource limits are implemented in `identity`. Caller/context
-construction, JWT normalization and gateway producers remain pending; the initial
-IAM caller forms are recorded separately for review.
+claims API, caller/context construction, JWT normalization and resource limits
+are implemented in `identity`. The private invocation boundary rejects inherited
+callers. Native gateway extraction remains pending its fixture/recognition review.
 
 The accepted authentication direction supports IAM credentials or an OAuth
 bearer token on the same route without built-in `AWS_IAM` authorization. IAM
 clients will use an exported Go helper to generate a signed STS GetCallerIdentity
 proof; the server verifier submits that client-signed request to AWS and uses the
 verified identity for application authorization. The helper, verifier and their
-client/server examples are planned; the detailed protocol/API is not implemented.
+client/server examples are planned. The detailed protocol/API is accepted in
+[decision 0017](docs/decisions/0017-iam-proof-protocol.md), but not implemented.
 
 The accepted streaming design now has a private bridge with incremental delivery,
 backpressure, cancellation, cleanup, and terminal-error handling. Its lifecycle
@@ -72,6 +73,17 @@ The option validates configuration now, and the private buffered writer applies
 it at commitment. Public invocation and the streaming HTTP writer remain pending.
 
 ## Owned claims
+
+`identity.NewJWT` and `identity.NewIAM` construct immutable, mutually exclusive
+caller views. Zero Caller is anonymous. Constructors validate facts and source
+attribution; they do not authenticate credentials or grant permissions.
+JWT issuer, subject, client ID, audience, scopes and Cognito groups stay distinct.
+Ambiguous gateway collections remain unavailable, while conflicting interpretable
+scope sets fail. IAM callers retain exact ARN paths and session names.
+
+`identity.WithCaller` installs one caller in a derived context and rejects
+replacement, even by an apparently identical caller. `identity.FromContext`
+returns anonymous when absent. See the [caller examples](identity/caller_example_test.go).
 
 `identity.ParseClaims`, `identity.NewClaims`, and `identity.NewTextClaims` accept
 raw JSON, decoded Go values, and gateway string maps respectively. Claims are

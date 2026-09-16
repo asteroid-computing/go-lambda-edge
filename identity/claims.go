@@ -1,5 +1,6 @@
-// Package identity provides owned claim representations for authenticated callers.
-// Constructing claims validates and copies data; it does not authenticate it.
+// Package identity provides immutable callers, owned claims and context transport.
+// Construction validates representation; producers authenticate, and application
+// policy authorizes. The package performs no network or signature verification.
 package identity
 
 import (

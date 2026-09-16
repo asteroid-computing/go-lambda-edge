@@ -1,7 +1,8 @@
 # 0012: Shared identity, provenance, and producer composition
 
 Status: accepted as the starting contract on 2026-09-15; claims foundation
-implemented under 0014, caller/context and gateway producers pending.
+implemented under 0014; caller/context and JWT normalization implemented on
+2026-09-16. Native gateway producers remain pending their fixture review.
 
 This walks the dependencies needed for the first callable buffered adapter.
 Decision 0013 covers the public errors used at those boundaries. Approval of the
@@ -357,13 +358,20 @@ This accepts I1-I8 and the implementation order. The explicitly deferred claim
 accessor inventory, claim resource limits, producer fixture coverage, and later
 authn/custom-mapper policies still require their recorded follow-up review.
 The claims constructors, immutable views and resource/error foundation are now
-implemented under accepted decision 0014. Caller/context construction and native
-gateway producers remain pending. Decision 0015 presents the supported IAM caller
-forms left open by I5 for review before the complete caller union is published.
+implemented under accepted decision 0014. Caller/context construction, JWT
+normalization and dedicated-scope accounting are now implemented. The user
+approved IAM caller forms in 0015/0017 and the literal user-path refinement.
+Native gateway producers remain pending the fixture/recognition review in 0018.
 
 Accepted follow-up 0016 adds an online STS-verified IAM proof producer alongside
-the gateway/custom producers described in I2. Its provenance representation will
-be settled in the protocol/API review. For I8, one explicitly configured selector
+the gateway/custom producers described in I2. Accepted decision 0017 adds
+SourceVerifiedIAMProof, restricted to IAM callers. For I8, one explicitly configured selector
 may choose IAM proof or OAuth verification per request on the same route. It
 still installs only one caller and never retries another credential mechanism
 after authentication failure or merges identities.
+
+The private shared invocation boundary now rejects inherited nonanonymous
+callers with ErrIdentity and identity.ErrConflict before running request work.
+Tests cover source/kind restrictions, exact IAM facts, scope consistency and
+budgets, collection ownership, context collisions and sanitized diagnostics.
+Full race tests, vet and Linux arm64/amd64 builds pass on Go 1.27.1.

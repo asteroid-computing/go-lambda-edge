@@ -1,8 +1,8 @@
 # 0017: IAM proof protocol and Go helper
 
-Status: proposed on 2026-09-16; awaiting review. Decision 0016 accepts the
-architecture and exported helper, not the protocol/API details below. Only an
-isolated SDK probe is implemented; there is no production IAM authentication yet.
+Status: accepted on 2026-09-16. The user approved P1-P5 and the four caller forms
+in decision 0015. The shared caller foundation and an isolated SDK probe are
+implemented; there is no production IAM proof generation or authentication yet.
 
 ## Evidence
 
@@ -284,4 +284,7 @@ authorized integration check can later validate deployed interoperability.
 
 ## Resolution
 
-Pending user review. No production API or trust policy is changed by this record.
+The user approved this proposal and decision 0015 on 2026-09-16 and authorized
+implementation in the recorded order. Complete the shared caller/context and
+buffered adapter foundation before the IAM helper/verifier and authn middleware.
+The isolated probe remains the only implemented IAM-proof artifact at approval.

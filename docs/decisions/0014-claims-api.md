@@ -1,8 +1,9 @@
 # 0014: Owned claims, numeric fidelity, and resource limits
 
 Status: accepted on 2026-09-16; claims constructors/accessors and error foundation
-implemented. JWT normalization and dedicated-scope accounting await caller
-construction. This completes the claims design follow-up left open by 0012.
+implemented. JWT normalization and dedicated-scope accounting were implemented
+with caller construction on 2026-09-16. This completes the claims design follow-up
+left open by 0012.
 
 ## Evidence and scope
 
@@ -252,6 +253,8 @@ limits without misreporting depth as bytes. Neither is wired to invocation yet.
 
 Production allocation measurements are recorded in docs/benchmarks.md. Race tests,
 vet, JSON fuzzing and both Lambda-target builds validate the claims foundation.
-Caller construction, dedicated scope accounting and JWT normalization are still
-pending. Decision 0015 surfaces the explicitly deferred IAM caller-form review
-before publishing the complete caller union; no placeholder constructor exists.
+Caller construction, dedicated scope accounting and JWT normalization are now
+implemented following approval of 0015/0017. WithGatewayScopes owns its supplied
+collection, charges the remaining claims allowance and rejects disagreement.
+Raw gateway string collections remain unavailable, even when the containing
+envelope preserved JSON syntax. Race tests cover the completed foundation.

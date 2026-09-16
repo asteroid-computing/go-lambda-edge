@@ -3,6 +3,10 @@ package identity
 import "errors"
 
 var (
+	// ErrInvalidCaller indicates invalid caller facts, provenance or options.
+	ErrInvalidCaller = errors.New("identity: invalid caller")
+	// ErrConflict indicates an attempt to replace an established caller.
+	ErrConflict = errors.New("identity: caller conflict")
 	// ErrInvalidClaims indicates malformed JSON, unsupported typed values,
 	// invalid UTF-8, nonfinite numbers, or excessive container nesting.
 	ErrInvalidClaims = errors.New("identity: invalid claims")

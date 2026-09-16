@@ -20,9 +20,10 @@ Keep related decisions small enough to review and implement independently.
 | [0009: Streaming boundaries](0009-streaming-boundaries.md) | Accepted | What API, lifecycle, handoff, and error rules should streaming use? |
 | [0010: Response header design](0010-response-header-design.md) | Accepted | How should shared snapshots, V2 combination, resource accounting, and streaming prefix limits work? |
 | [0011: Request header processing](0011-request-header-processing.md) | Accepted | How can consumers process custom headers and safely select actions for their own dispatchers? |
-| [0012: Shared identity](0012-shared-identity.md) | Accepted; claims settled by 0014 | What caller, claim fidelity, provenance, and producer-composition contracts should be shared? |
+| [0012: Shared identity](0012-shared-identity.md) | Accepted; caller/context foundation implemented | What caller, claim fidelity, provenance, and producer-composition contracts should be shared? |
 | [0013: Invocation errors](0013-public-invocation-errors.md) | Accepted | How should callers inspect sanitized failures across raw, typed, and streaming boundaries? |
 | [0014: Claims API](0014-claims-api.md) | Accepted; claims foundation implemented | Which checked claim reads, SDK numeric inputs, ownership rules, and measured resource limits should identity expose? |
-| [0015: IAM caller forms](0015-iam-caller-forms.md) | Proposed | Which ARN forms represent an authenticated request caller in the initial IAM constructor? |
+| [0015: IAM caller forms](0015-iam-caller-forms.md) | Accepted | Which ARN forms represent an authenticated request caller in the initial IAM constructor? |
 | [0016: Mixed IAM/OAuth authentication](0016-mixed-iam-oauth-authentication.md) | Architecture and exported Go helper accepted; protocol/API pending | How can one route accept IAM credentials or OAuth tokens without built-in AWS_IAM authorization? |
-| [0017: IAM proof protocol](0017-iam-proof-protocol.md) | Proposed; isolated SDK probe passes | What helper/verifier API, wire format, destination binding, replay policy and STS boundary should the IAM path use? |
+| [0017: IAM proof protocol](0017-iam-proof-protocol.md) | Accepted; isolated SDK probe passes | What helper/verifier API, wire format, destination binding, replay policy and STS boundary should the IAM path use? |
+| [0018: Gateway identity recognition](0018-gateway-identity-recognition.md) | Proposed | Which native field mappings, presence rules and fixture qualifications should precede public invocation wiring? |

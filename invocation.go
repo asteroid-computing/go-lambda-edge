@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 	"net/http"
+
+	"github.com/asteroid-computing/go-lambda-edge/identity"
 )
 
 // invocation owns the transport-created request and original body. The context
@@ -43,6 +45,9 @@ func invocationContext(parent context.Context) (context.Context, context.CancelF
 	}
 	if err := parent.Err(); err != nil {
 		return nil, nil, err
+	}
+	if identity.FromContext(parent).Kind() != identity.KindAnonymous {
+		return nil, nil, invocationError("identity", ErrIdentity, "invocation context already has a caller", identity.ErrConflict)
 	}
 	ctx, cancel := context.WithCancel(parent)
 	return ctx, cancel, nil
