@@ -1,8 +1,8 @@
 # 0016: IAM credentials or OAuth tokens on the same route
 
 Status: architecture and exported Go client helper accepted on 2026-09-16.
-Detailed protocol/API design remains pending. No authentication producer or
-client helper has been implemented.
+The detailed IAM protocol/API was subsequently approved and implemented under
+0017. The shared HTTP selector is proposed in 0019 and awaits review.
 
 ## Requirement and correction
 
@@ -108,6 +108,7 @@ credential-provider dependencies, versioned wire format and HTTP transport,
 application binding, expiry/replay policy, endpoint/region policy, provenance and
 error behavior. Acceptance of the architecture does not freeze these details.
 
-[Decision 0017](0017-iam-proof-protocol.md) now proposes those details, supported
-by a standalone SDK reconstruction/size probe. It awaits user review; the probe
-is not a production helper or authentication implementation.
+[Decision 0017](0017-iam-proof-protocol.md) subsequently settled those details
+and its production helper/verifier are implemented with local validation.
+[Decision 0019](0019-http-authentication-selector.md) now proposes the remaining
+shared HTTP selector API and response contract. No live STS check has run.

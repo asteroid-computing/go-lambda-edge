@@ -286,6 +286,12 @@ claims cannot be silently mixed; unavailable claim fidelity remains explicit.
 
 ### 4. Local authentication: Cognito/JWKS and IAM credentials
 
+The next design graph is recorded in proposed
+[decision 0019](decisions/0019-http-authentication-selector.md): shared HTTP
+selection, explicit verifier dependencies, header limits, context composition,
+error interoperability and challenges. It awaits user review before authn
+implementation; the IAM proof package remains independently usable.
+
 - [x] Implement the accepted protocol/helper/verifier contract in decision 0017
   after the shared foundation and callable buffered adapter. Production iamproof
   uses SDK core v1.47.0 and STS v1.51.0, rechecked as latest stable on 2026-09-16.
