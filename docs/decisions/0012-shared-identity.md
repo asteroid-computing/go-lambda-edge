@@ -2,13 +2,14 @@
 
 Status: accepted as the starting contract on 2026-09-15; claims foundation
 implemented under 0014; caller/context and JWT normalization implemented on
-2026-09-16. Native gateway producers remain pending their fixture review.
+2026-09-16. Native gateway producers and buffered public invocation are now
+implemented under accepted decision 0018.
 
 This walks the dependencies needed for the first callable buffered adapter.
 Decision 0013 covers the public errors used at those boundaries. Approval of the
 implementation order does not approve these new API and trust decisions.
 
-## Evidence and constraints
+## Evidence and constraints at proposal time
 
 - `adapter.go` records WithGatewayIdentity, but does not yet produce identity.
 - `decode.go` preserves raw authorizer JSON separately from SDK event types.
@@ -361,7 +362,8 @@ The claims constructors, immutable views and resource/error foundation are now
 implemented under accepted decision 0014. Caller/context construction, JWT
 normalization and dedicated-scope accounting are now implemented. The user
 approved IAM caller forms in 0015/0017 and the literal user-path refinement.
-Native gateway producers remain pending the fixture/recognition review in 0018.
+Native gateway producers are implemented under the approved fixture/recognition
+contract in 0018, with raw/typed fidelity qualifications documented separately.
 
 Accepted follow-up 0016 adds an online STS-verified IAM proof producer alongside
 the gateway/custom producers described in I2. Accepted decision 0017 adds

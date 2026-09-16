@@ -131,5 +131,8 @@ external dependencies. Tests cover nil/typed-nil handlers, nil options, and
 construction without handler invocation. `go test -race ./...`, `go vet ./...`,
 and Linux arm64/amd64 package builds pass on Go 1.27.1; formatting is clean.
 
-`Invoke`, identity behavior, duplicate-option behavior as observed during an
-invocation, and integration tests follow the remaining payload/HTTP contracts.
+Update 2026-09-16: Invoke, HandleV1 and HandleV2 are implemented using the shared
+HTTP, native identity, response and cleanup boundaries. Lambda SDK object/function
+registration tests pass alongside malformed-input, application-error, binary,
+cookie, cancellation, panic and invocation-isolation cases. Registration examples
+are runnable. Current public behavior is described in README.md and decision 0018.

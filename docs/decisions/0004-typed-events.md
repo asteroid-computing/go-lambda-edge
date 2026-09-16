@@ -1,6 +1,6 @@
 # 0004: Typed event entry points
 
-Status: accepted by the user; not implemented yet.
+Status: accepted by the user; implemented and SDK-tested on 2026-09-16.
 
 ## Question
 
@@ -33,13 +33,13 @@ func (a *Adapter) HandleV2(ctx context.Context, event events.APIGatewayV2HTTPReq
 ```
 
 The user approved these names, exact signatures, and the boundary contract below.
-They are not implemented yet; request conversion is complete, while response
-encoding and gateway identity production remain under development.
+Both methods are implemented, sharing the same request, response, ownership and
+gateway identity primitives as raw invocation.
 
 The ordinary raw registration remains lambda.Start(adapter). A caller that
 chooses a fixed payload family can register lambda.Start(adapter.HandleV1) or
 lambda.Start(adapter.HandleV2), or pass an already decoded struct directly.
-These examples describe the planned API, not working functionality today.
+These registrations are exercised through the actual SDK handler wrapper.
 
 Use shared internal HTTP translation, response capture, and identity policy for
 both raw and typed entry points. Do not marshal a typed event and call Invoke;
@@ -62,7 +62,7 @@ correct field presence, or preserved arbitrary numbers. In particular, V1 has
 no Version field to validate. Do not promise raw-wire validation equivalence or
 recover values lost by a caller's decoder. Identity extraction must respect the
 fidelity of the supplied source and must never supplement it with unverified
-header JWT claims. Detailed authorizer representations remain under review.
+header JWT claims. Authorizer mappings are settled in accepted decision 0018.
 
 ## Alternatives and tradeoffs
 
@@ -92,7 +92,6 @@ upgrades must preserve the typed API and pass boundary compatibility tests.
 
 The user approved the proposed methods and boundary contract. This extends the
 earlier decision 0002 deferral of typed proxy methods in response to a concrete
-consumer requirement; its raw invocation contract remains accepted. Record the
-remaining decoding and HTTP translation decisions before implementing behavior
-that depends on them. Do not add nonfunctional public method stubs merely to
-claim the accepted API is implemented.
+consumer requirement; its raw invocation contract remains accepted. The later
+HTTP and identity decisions are now implemented behind both complete typed methods.
+Tests verify SDK registration and the documented upstream-codec qualifications.

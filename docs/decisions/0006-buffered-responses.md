@@ -235,9 +235,12 @@ request formats exercise ServeMux path parameters, ServeContent ranges, gzip
 output and request-body echoing. Invocation-scope tests cover cleanup on write
 failure, panic, parent cancellation and cleanup failure.
 
-These tests assemble the private primitives inside the existing invocation scope.
-They do not publish the pending Lambda invocation methods or establish gateway
-identity. Streaming HTTP writer behavior is a separate implementation milestone.
+At that implementation stage these tests assembled private primitives. Update
+2026-09-16: public Invoke/HandleV1/HandleV2 now use the same scope and establish
+opted-in native gateway identity under decision 0018. Public-boundary tests cover
+SDK registration, ServeMux path parameters/redirects, ServeContent ranges, cookies,
+binary responses, complete raw-envelope limits, multipart cleanup and isolation.
+Streaming HTTP writer behavior remains a separate implementation milestone.
 
 Validation: focused writer/integration tests, full race suite, vet, formatting
 and diff checks, and Linux arm64/amd64 builds pass on Go 1.27.1. No live AWS

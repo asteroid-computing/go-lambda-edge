@@ -4,18 +4,23 @@ A Go 1.27 module being built to serve AWS API Gateway requests through ordinary
 `net/http` handlers in AWS Lambda, with companion identity, authentication, and
 authorization packages.
 
-The root package is `edge`. This project is being designed and built from scratch.
-The constructor, options, private event decoder, and request conversion are implemented. The decoder
-uses AWS Lambda Go v1.55.0 event structs and encoding/json/v2 directly, retaining
-authorizer JSON separately. Request conversion covers URLs, headers, body bytes,
-and request lifetime. A shared invocation scope now covers cleanup and cancellation;
-private response encoding provides text/base64 selection and bounded direct JSON
-v2 output. Private response-header snapshots and V1/V2 projections now enforce
-the accepted syntax, suppression, cookie and field-combination rules. The private
-buffered HTTP writer now implements commitment, sniffing, bodyless/HEAD responses,
-length enforcement and typed AWS response projection. Public invocation methods
-and identity extraction are not implemented yet; the adapter cannot yet be
-registered as a Lambda handler.
+The root package is `edge`. The buffered adapter is implemented for REST proxy,
+HTTP API payload 1.0 and HTTP API payload 2.0. It uses AWS Lambda Go v1.55.0 types
+and direct encoding/json/v2 processing. Raw and already typed entry points share
+HTTP conversion, response capture, identity policy, cancellation and cleanup.
+
+Create an adapter with `edge.New(handler, options...)`, handle the constructor
+error, then register it with `lambda.Start(adapter)`. Pass the object, not
+`adapter.Invoke`, to retain the raw JSON v2 boundary. For a fixed payload family,
+use `lambda.Start(adapter.HandleV1)` or `lambda.Start(adapter.HandleV2)`; these
+delegate envelope JSON to the SDK and do no envelope serialization inside edge.
+See the [runnable registration examples](adapter_example_test.go).
+
+Gateway identity is disabled by default. `edge.WithGatewayIdentity(true)` enables
+the reviewed native IAM and JWT/Cognito field mappings. Invalid, conflicting or
+unsupported assertions fail before the handler; custom-authorizer mapping remains
+unimplemented. Authorization headers are not independently authenticated. See the
+[fixture coverage and fidelity qualifications](docs/gateway-fixtures.md).
 
 The shared invocation error contract is implemented across those private stages:
 public categories support `errors.Is`, and `errors.AsType[*edge.InvocationError]`
@@ -23,8 +28,9 @@ exposes sanitized operation and resource-limit diagnostics. HTTP error responses
 remain successful transport outcomes; operation, cleanup, cancellation, and late
 stream failures retain their accepted ownership and precedence. The shared
 claims API, caller/context construction, JWT normalization and resource limits
-are implemented in `identity`. The private invocation boundary rejects inherited
-callers. Native gateway extraction remains pending its fixture/recognition review.
+are implemented in `identity`. Every invocation rejects an inherited caller,
+including when gateway identity is disabled. Constructors themselves do not
+authenticate credentials or authorize application actions.
 
 The accepted authentication direction supports IAM credentials or an OAuth
 bearer token on the same route without built-in `AWS_IAM` authorization. IAM
@@ -55,8 +61,7 @@ Use ordinary `http.Handler` middleware to process this and other custom headers.
 The consumer owns its action registry, metadata, authorization and HTTP error
 responses. Select once, authorize that selection, then execute it; do not select
 again from mutable headers. An action header does not authenticate a caller.
-The selector is usable now with ordinary Go HTTP servers, independently of the
-unfinished Lambda invocation methods.
+The selector works with both ordinary Go HTTP servers and the Lambda adapter.
 
 See the [runnable middleware example](action_example_test.go) and
 [accepted header contract](docs/decisions/0011-request-header-processing.md).
@@ -69,8 +74,9 @@ value costs `len(name) + len(value) + 32`; nil/empty slices still cost a name pl
 32, and generated headers consume remaining budget. This is separate from the
 complete buffered-envelope limit and the 16,000-byte streaming metadata prefix
 (including its delimiter). It is neither an AWS quota nor a total heap bound.
-The option validates configuration now, and the private buffered writer applies
-it at commitment. Public invocation and the streaming HTTP writer remain pending.
+The buffered writer applies the allowance at commitment. Raw invocation also
+checks the complete serialized response against 6 MiB; typed callers own their
+final envelope serialization and size. The streaming HTTP writer remains pending.
 
 ## Owned claims
 
@@ -101,8 +107,13 @@ The default claim allowance is 256 KiB, configurable with
 object-name, string and exact-number text bytes. Raw JSON also has a wire-length
 limit of the same size. Nesting is limited to 64 containers. These are resource
 policies, not heap caps; [measurements](docs/benchmarks.md) include allocation and
-retained-memory costs. `edge.WithIdentityClaimsBudget(bytes)` records the matching
-gateway configuration, whose producer wiring remains pending.
+retained-memory costs. `edge.WithIdentityClaimsBudget(bytes)` applies the matching
+allowance to gateway claims and dedicated scopes.
+
+Handlers receive an owned request body and canceled context after invocation.
+Multipart files parsed on the served request are removed on success, error or
+panic. Middleware that parses multipart on a separate request copy owns cleanup
+of files attached only to that copy. Handler panics propagate after cleanup.
 
 - [Implementation plan](docs/plan.md)
 - [Design decisions](docs/decisions/README.md)

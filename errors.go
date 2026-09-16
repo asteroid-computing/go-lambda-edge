@@ -107,7 +107,7 @@ func limitError(operation, name string, maximum int64, reason error) *Invocation
 
 // claimsError translates only package-owned claim failures. It deliberately
 // rebuilds a safe error tree instead of wrapping the supplied error or its text.
-// Gateway preparation will use this boundary when its producers are implemented.
+// Gateway preparation uses this boundary for raw and typed claim construction.
 func claimsError(err error) *InvocationError {
 	if limit, ok := errors.AsType[*identity.ClaimsLimitError](err); ok {
 		return limitError("identity", "identity_claims", limit.Maximum(), errors.Join(ErrIdentity, identity.ErrClaimsLimit))

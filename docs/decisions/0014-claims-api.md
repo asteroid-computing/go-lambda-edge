@@ -236,7 +236,7 @@ status is recorded below; no live AWS resources were invoked.
 
 The user approved C1–C5 on 2026-09-16 and authorized implementation, including
 the narrow json.Number data-type compatibility and gateway qualifications.
-The native-producer fixture review remains a separate step before gateway wiring.
+The separate native-producer fixture review was later completed in decision 0018.
 
 ## Implementation status
 
@@ -249,7 +249,8 @@ and typed SDK number-preserving paths are tested through the actual SDK wrapper.
 
 The root adapter records and validates WithIdentityClaimsBudget. A private error
 translation boundary classifies claim failures and reports identity_claims byte
-limits without misreporting depth as bytes. Neither is wired to invocation yet.
+limits without misreporting depth as bytes. Both are now wired to raw and typed
+invocation through the native gateway producers under accepted decision 0018.
 
 Production allocation measurements are recorded in docs/benchmarks.md. Race tests,
 vet, JSON fuzzing and both Lambda-target builds validate the claims foundation.

@@ -1,5 +1,6 @@
-// Package edge provides the foundation for adapting AWS API Gateway events to
-// net/http handlers. Public invocation is not yet implemented.
+// Package edge adapts AWS API Gateway Lambda proxy events to net/http handlers.
+// It supports raw JSON v2 and already typed AWS events with optional native
+// gateway identity. Buffered responses use one shared HTTP translation policy.
 package edge
 
 import (
@@ -11,7 +12,8 @@ import (
 
 // Adapter holds an HTTP handler and its API Gateway adaptation configuration.
 // Construct an Adapter with [New]; its zero value is not usable.
-// Configuration is fixed at construction. Invocation is not yet implemented.
+// Configuration is fixed at construction. Calls own separate request state;
+// a shared handler must be safe for concurrent use.
 type Adapter struct {
 	handler http.Handler
 	config  config
@@ -32,8 +34,7 @@ type Option func(*config)
 // The default is false. When enabled, the policy covers native IAM and
 // JWT/Cognito assertions; it does not configure authorization in AWS or enable
 // local token verification. Custom-authorizer contexts need an explicit mapper.
-// This option currently records policy; invocation and extraction are not yet
-// implemented.
+// Unsupported or conflicting assertions fail before running the HTTP handler.
 func WithGatewayIdentity(enabled bool) Option {
 	return func(c *config) {
 		c.gatewayIdentity = enabled
@@ -45,7 +46,7 @@ func WithGatewayIdentity(enabled bool) Option {
 // Each claim value costs 64 bytes plus name, string and exact-number text bytes.
 // Dedicated gateway scopes consume the same allowance. Raw claim JSON is also
 // limited to this byte length. This is a resource policy, not a heap cap or AWS
-// quota. It does not enable gateway identity. Extraction is not yet implemented.
+// quota. It does not enable gateway identity.
 func WithIdentityClaimsBudget(bytes int) Option {
 	return func(c *config) {
 		c.identityClaimsBudget = bytes
@@ -58,7 +59,7 @@ func WithIdentityClaimsBudget(bytes int) Option {
 // value length and 32 bytes; nil/empty slices cost their name length and 32.
 // Generated headers also consume the budget. This is a library resource policy,
 // not an AWS quota or a bound on total heap usage. It does not change the separate
-// buffered envelope or streaming metadata limits. Invocation is not yet wired.
+// buffered envelope or streaming metadata limits.
 func WithResponseHeaderBudget(bytes int) Option {
 	return func(c *config) {
 		c.responseHeaderBudget = bytes

@@ -204,3 +204,33 @@ samples; two collections before and after reduce pool retention. Small deltas
 are noisy (ordinary typed samples ranged from 2,696 to 8,016 bytes). No figure is
 peak memory, RSS, total invocation allocation, or a Lambda latency prediction.
 JWT normalized views and dedicated scopes are not implemented in these samples.
+
+## Public buffered invocation (2026-09-16)
+
+Go 1.27.1, darwin/arm64, Apple M2. These run the complete public adapter with
+gateway identity disabled and a body-echo handler. Fixtures are created outside
+the timed loop. Raw calls include event decoding and response JSON v2 encoding;
+typed calls deliberately exclude upstream/downstream envelope codecs. They are
+not an end-to-end SDK or Lambda performance comparison.
+
+```sh
+go test -run '^$' -bench '^BenchmarkAdapterPublic$' -benchmem -benchtime=100ms -count=3 .
+```
+
+Median allocated bytes per invocation (three samples, not peak/live memory):
+
+| Body fixture | Raw V1 B/op | Raw V2 B/op | Typed V1 B/op | Typed V2 B/op |
+| --- | ---: | ---: | ---: | ---: |
+| 128-byte text | 6,230 | 5,357 | 3,792 | 3,536 |
+| 64 KiB binary, base64 request/response | 777,999 | 776,900 | 322,514 | 322,258 |
+| 5 MiB text, near buffered envelope limit | 37,776,984 | 37,777,048 | 15,731,675 | 15,731,427 |
+
+The small case used 65/48/35/33 allocations per invocation respectively. Large
+raw envelopes incur substantial transient codec/copy costs despite bounded
+output buffers. The 6 MiB wire limit is not a heap limit. These are initial local
+baselines, without performance thresholds or Lambda latency claims. Short-run
+timings vary with GC and host load; comparisons should use longer repeated runs.
+
+Initial three-iteration measurements included noticeable cold codec setup costs;
+the table instead uses the repeated 100 ms runs above. Native identity costs are
+additional and depend on claim shape and source fidelity.

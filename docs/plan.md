@@ -26,7 +26,7 @@ port, source copy, or compatibility-preserving update of Beakley.
   accepts explicit credential selection and online STS-proof verification.
   Include an exported Go helper that generates the signed GetCallerIdentity
   proof, with consumer documentation and runnable client/server examples.
-  Detailed protocol and helper/verifier APIs remain a design-review step.
+  Decision 0017 accepts the detailed protocol and helper/verifier APIs.
 - Provide first-class consumer request-header processing for header-selected
   action dispatchers. Preserve custom incoming headers independently of response
   combination rules. [Decision 0011](decisions/0011-request-header-processing.md)
@@ -60,8 +60,9 @@ port, source copy, or compatibility-preserving update of Beakley.
 The user approved [decision 0001](decisions/0001-gateway-identity.md), superseding
 the review's initial gateway-default proposal: no gateway-derived identity by
 default; `WithGatewayIdentity(true)` opts in for both IAM and JWT/Cognito. Local
-verification is explicitly composed. Constructor details and precedence between
-multiple identity producers remain separate decisions.
+verification is explicitly composed. Constructor details and producer conflicts
+are settled in decisions 0012–0018; the common HTTP authentication-selector API
+remains a later review.
 
 ## Planned package boundaries
 
@@ -124,8 +125,8 @@ The accepted [2026-09-14 plan review](reviews/2026-09-14-plan-review.md) require
 response-contract refinements and completing a runnable adapter, including the
 minimum gateway identity foundation, before broader authentication work. These
 enhancements are incorporated into decision 0006. Decision 0010 settles concrete
-metadata/header policies; exported error categories and identity APIs remain
-separate reviews.
+metadata/header policies, with errors and identity subsequently settled in
+decisions 0012–0018.
 
 The user accepted the qualification to decision 0007: do not freeze arbitrary
 64 KiB/1,024-entry metadata limits or the initial ten-field list without stronger
@@ -207,10 +208,10 @@ presenting an entire frozen public API at once.
 - [x] Implement bounded envelope/body encoding and shared invocation cleanup.
 - [x] Extract shared invocation ownership and implement the private streaming
       bridge, with handoff, backpressure, cancellation, cleanup, and error tests.
-- [ ] Implement the minimum reviewed identity/context and native gateway producers
+- [x] Implement the minimum reviewed identity/context and native gateway producers
       needed to honor WithGatewayIdentity(true) before publishing invocation.
-- [ ] Implement raw invocation after the remaining transport contracts are reviewed.
-- [ ] Implement the accepted typed entry points after shared HTTP translation
+- [x] Implement raw invocation after the remaining transport contracts are reviewed.
+- [x] Implement the accepted typed entry points after shared HTTP translation
       review, documenting upstream codec ownership.
 - Implement the adapter from scratch using JSON v2 directly.
 - Test raw invocation through the actual pinned AWS Lambda Go SDK boundary.
@@ -227,8 +228,12 @@ presenting an entire frozen public API at once.
 
 CI configuration is present for Go 1.27.0/latest 1.27 patch tests, race detection,
 vet, and Lambda-target builds. It has not run on GitHub yet. Local Go 1.27.1 race
-tests, vet, formatting checks, and both target builds pass for the initial
-encoding/lifetime implementation.
+tests, vet, formatting checks, and both target builds pass for the public buffered
+adapter. SDK registration, gateway recognition/fidelity, owned claims, concurrent
+identity isolation, multipart cleanup, panic/cancellation and raw envelope limits
+are exercised. Runnable examples and initial public allocation benchmarks are
+present. HTTP 1.0 authentication coverage is explicitly qualified in
+[the fixture inventory](gateway-fixtures.md); no live deployment was exercised.
 
 Acceptance: the same application handler behaves as specified across all three
 event cases; no auth or codec behavior depends on accidental SDK dispatch.
@@ -237,8 +242,9 @@ event cases; no auth or codec behavior depends on accidental SDK dispatch.
 
 Design graph prepared on 2026-09-15 in [decision 0012](decisions/0012-shared-identity.md),
 with [public invocation errors in decision 0013](decisions/0013-public-invocation-errors.md).
-The user accepted both records as a starting point on 2026-09-15. The explicitly
-deferred claim API, resource limits, and producer coverage remain follow-up work.
+The user accepted both records as a starting point on 2026-09-15. The deferred
+claim API, resource limits and native-producer coverage were subsequently resolved
+in decisions 0014–0018.
 The accepted order is caller/context/error foundations, precise claim API and
 native-producer fixtures, then raw/typed buffered invocation. Broader local
 authentication and authorization follow that shared foundation.
@@ -250,7 +256,8 @@ The user approved its SDK numeric compatibility and gateway qualifications and
 authorized implementation. Claims constructors, immutable accessors, strict raw
 JSON and direct typed construction, byte/depth limits, and sanitized errors are
 implemented. The adapter budget option is validated and a private invocation-error
-translation boundary is tested; gateway extraction and invocation remain unwired.
+translation boundary is tested and now wired through gateway extraction and
+public invocation under decision 0018.
 Production allocation measurements supplement the original probe. Contract tests,
 SDK integration, race detection, vet, JSON fuzzing and Lambda-target builds pass.
 Caller/context construction, JWT normalization and dedicated-scope accounting
@@ -258,7 +265,9 @@ are now implemented after approval of [decision 0015](decisions/0015-iam-caller-
 and 0017. IAM literal path punctuation follows the user's approved refinement.
 The private invocation guard rejects inherited callers. Full race tests, vet,
 formatting and Linux arm64/amd64 builds pass. Native-producer fixture review
-remains separate from the foundation approval; see proposed decision 0018.
+was approved in decision 0018 on 2026-09-16. Native extraction and buffered public
+invocation wiring are now implemented and tested. Custom-authorizer mapping
+remains a later explicit design; it is not silently treated as native identity.
 
 - Review caller constructors, immutable/owned data, validation, anonymous state,
   and context-presence semantics.

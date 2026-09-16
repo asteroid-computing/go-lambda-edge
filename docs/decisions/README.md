@@ -26,4 +26,4 @@ Keep related decisions small enough to review and implement independently.
 | [0015: IAM caller forms](0015-iam-caller-forms.md) | Accepted | Which ARN forms represent an authenticated request caller in the initial IAM constructor? |
 | [0016: Mixed IAM/OAuth authentication](0016-mixed-iam-oauth-authentication.md) | Architecture and exported Go helper accepted; protocol/API pending | How can one route accept IAM credentials or OAuth tokens without built-in AWS_IAM authorization? |
 | [0017: IAM proof protocol](0017-iam-proof-protocol.md) | Accepted; isolated SDK probe passes | What helper/verifier API, wire format, destination binding, replay policy and STS boundary should the IAM path use? |
-| [0018: Gateway identity recognition](0018-gateway-identity-recognition.md) | Proposed | Which native field mappings, presence rules and fixture qualifications should precede public invocation wiring? |
+| [0018: Gateway identity recognition](0018-gateway-identity-recognition.md) | Accepted; extraction and buffered invocation implemented | Which native field mappings, presence rules and fixture qualifications should precede public invocation wiring? |

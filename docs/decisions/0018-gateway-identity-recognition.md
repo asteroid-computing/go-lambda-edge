@@ -1,7 +1,7 @@
 # 0018: Native gateway identity recognition and fixture coverage
 
-Status: proposed on 2026-09-16. The caller/context foundation is implemented;
-native gateway extraction and public invocation wiring await this review.
+Status: accepted on 2026-09-16. The user approved G1-G4 and authorized native
+gateway extraction and buffered invocation wiring. Both are implemented and tested.
 This is the producer-fixture follow-up explicitly reserved in 0012 and 0014.
 
 ## Evidence and existing boundary
@@ -143,5 +143,19 @@ default; a future separately authorized capture can improve the coverage matrix.
 
 ## Resolution
 
-Pending review of G1-G4. Existing identity constructors and invocation isolation
-are complete and tested; this record does not implement gateway extraction.
+The user approved G1-G4 on 2026-09-16 and authorized implementation. Existing
+identity constructors, native extraction and buffered public invocation are now
+implemented. Raw and typed paths share marker discovery and construction policy;
+typed events are never serialized to inspect them. Scope preflight prevents large
+temporary collections from bypassing the configured budget before NewJWT checks
+their combined charge with claims.
+
+The [fixture inventory](../gateway-fixtures.md) labels documented shapes, SDK
+schema evidence, synthetic/adversarial cases and unverified deployed coverage.
+Tests exercise all four IAM forms, optional effective-user IDs, source conflicts,
+raw numeric fidelity, flattened V2 text, owned inputs and discarded unknown SDK
+fields. Actual Lambda SDK wrappers cover raw object and both typed registrations,
+including V1 number preservation. Full race tests, vet and Lambda builds pass.
+The raw identity-boundary fuzz target completed 482,700 synthetic executions in
+an initial ten-second run without failures. Public raw/typed allocation baselines
+are recorded in docs/benchmarks.md, including binary and near-limit payloads.
