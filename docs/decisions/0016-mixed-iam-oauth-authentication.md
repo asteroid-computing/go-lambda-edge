@@ -107,3 +107,7 @@ The next design review will settle helper package placement and signatures,
 credential-provider dependencies, versioned wire format and HTTP transport,
 application binding, expiry/replay policy, endpoint/region policy, provenance and
 error behavior. Acceptance of the architecture does not freeze these details.
+
+[Decision 0017](0017-iam-proof-protocol.md) now proposes those details, supported
+by a standalone SDK reconstruction/size probe. It awaits user review; the probe
+is not a production helper or authentication implementation.

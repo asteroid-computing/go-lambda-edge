@@ -25,3 +25,4 @@ Keep related decisions small enough to review and implement independently.
 | [0014: Claims API](0014-claims-api.md) | Accepted; claims foundation implemented | Which checked claim reads, SDK numeric inputs, ownership rules, and measured resource limits should identity expose? |
 | [0015: IAM caller forms](0015-iam-caller-forms.md) | Proposed | Which ARN forms represent an authenticated request caller in the initial IAM constructor? |
 | [0016: Mixed IAM/OAuth authentication](0016-mixed-iam-oauth-authentication.md) | Architecture and exported Go helper accepted; protocol/API pending | How can one route accept IAM credentials or OAuth tokens without built-in AWS_IAM authorization? |
+| [0017: IAM proof protocol](0017-iam-proof-protocol.md) | Proposed; isolated SDK probe passes | What helper/verifier API, wire format, destination binding, replay policy and STS boundary should the IAM path use? |

@@ -81,6 +81,10 @@ does not need to precede a working adapter.
 The accepted IAM client helper belongs to the module's exported Go API. Its
 package placement and credential-provider dependency are part of the detailed
 0016 protocol review; do not assume a new package or root reexport prematurely.
+[Decision 0017](decisions/0017-iam-proof-protocol.md) proposes a focused `iamproof`
+package, compact versioned proof, signed audience, short freshness policy and
+bounded regional STS verification. Its isolated SDK probe passes; all production
+API and trust-boundary choices in that record remain pending review.
 
 ## Milestones and acceptance criteria
 
@@ -269,6 +273,10 @@ claims cannot be silently mixed; unavailable claim fidelity remains explicit.
 
 ### 4. Local authentication: Cognito/JWKS and IAM credentials
 
+- Review the concrete protocol/helper/verifier proposal in decision 0017,
+  including replay, size and STS quota tradeoffs, before dependent implementation.
+  The standalone probe uses latest stable SDK core v1.47.0 and STS v1.51.0 as
+  resolved on 2026-09-16; root production dependencies have not changed.
 - Implement the accepted client-helper/server-verifier direction in decision 0016
   after its detailed protocol review. Review a single authentication
   selector, online STS proof verification and its provenance, application binding,
