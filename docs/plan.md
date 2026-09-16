@@ -317,6 +317,12 @@ Linux arm64/amd64 builds on Go 1.27.1. Authorization-parser fuzzing completed
 Gateway fixtures verify challenges and IAM-helper composition with local STS
 fixtures. No live AWS or GitHub CI run was performed for these changes.
 
+- [Decision 0020](decisions/0020-cognito-verification.md) records the proposed
+  Cognito access-token verifier/JWKS design, reviewed against AWS documentation,
+  current identity/authn code and current stable Go JWT libraries on 2026-09-16.
+  It proposes direct JSON v2 plus stdlib RS256, per-client resource binding and
+  explicit unbound allowances for M2M/SDK flows, and bounded on-demand key caching.
+  This is a pending design review, not approved or implemented behavior.
 - Review a verifier requiring explicit issuer/client restrictions; accepting all
   pool clients must be a deliberate policy.
 - Keep access-token `client_id`, ID-token audience, and access-token resource
