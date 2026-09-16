@@ -1,14 +1,16 @@
 # 0017: IAM proof protocol and Go helper
 
 Status: accepted on 2026-09-16. The user approved P1-P5 and the four caller forms
-in decision 0015. The shared caller foundation and an isolated SDK probe are
-implemented; there is no production IAM proof generation or authentication yet.
+in decision 0015. The production iamproof generator and verifier are implemented
+after the shared caller and buffered-adapter foundations, with local validation.
+Common HTTP authentication selection and live AWS interoperability remain pending.
 
 ## Evidence
 
 AWS documentation was checked through public AWS MCP. SDK public API definitions
-were checked with the Go documentation skill at the versions below. The existing
-identity package implements claims, not Caller or an authentication producer.
+were checked with the Go documentation skill at the versions below. At initial
+proposal time, identity implemented claims; caller construction, native gateway
+production and the IAM proof producer have since been implemented.
 
 - [GetCallerIdentity](https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html)
   returns Account, Arn and UserId for the signing credentials, without requiring
@@ -43,9 +45,9 @@ identity package implements claims, not Caller or an authentication producer.
 
 Latest stable modules resolved on 2026-09-16: AWS SDK core v1.47.0, STS v1.51.0,
 and config v1.33.5. Lambda Go remains v1.55.0. The [standalone probe](../probes/iamproof/README.md)
-uses the first two; the root dependency list is unchanged. Recheck stable versions
-when adding production dependencies. Explicit module versions provide repeatable
-builds, not a permanent freeze on an old SDK.
+uses the first two. They were rechecked as latest stable when added to production
+go.mod on 2026-09-16. Explicit module versions provide repeatable builds, not a
+permanent freeze on an old SDK.
 
 ## P1. Public package and credential ownership
 
@@ -277,10 +279,11 @@ flowchart LR
    examples plus authz examples. Keep action extraction separate from proof
    parsing and require authorization for each selected action.
 
-The probe passes local SDK reconstruction and audience-change checks with race
-detection. It does not prove real STS acceptance, deploy API Gateway, implement
-the security validation above, or settle HTTP middleware APIs. A separately
-authorized integration check can later validate deployed interoperability.
+The original probe passes local SDK reconstruction and audience-change checks
+with race detection. The production package now implements the security
+validation above. Neither establishes real STS acceptance, deploys API Gateway
+or settles HTTP middleware APIs. A separately authorized integration check can
+later validate deployed interoperability.
 
 ## Resolution
 
@@ -288,3 +291,36 @@ The user approved this proposal and decision 0015 on 2026-09-16 and authorized
 implementation in the recorded order. Complete the shared caller/context and
 buffered adapter foundation before the IAM helper/verifier and authn middleware.
 The isolated probe remains the only implemented IAM-proof artifact at approval.
+
+## Implementation evidence, 2026-09-16
+
+The production `iamproof` package implements P1-P5 with direct JSON v2, the SDK
+signer, bounded XML verification, caller construction, sanitized errors and
+runnable local client/configuration examples. The [consumer guide](../iamproof.md)
+records operational constraints and the still-pending common HTTP selector.
+
+The SDK V2 endpoint result does not expose a partition ID. The implementation
+uses the public legacy STS resolver for that metadata and requires agreement
+with V2 on endpoint and signing region. This preserves the accepted SDK-metadata
+boundary without private imports or a copied partition table. SDK disagreement
+fails construction. Fixtures cover all eight partitions present in this release;
+they do not assert service availability or account eligibility.
+
+Two additional rejection codes were checked through AWS MCP before inclusion:
+[SignatureDoesNotMatch for GetCallerIdentity](https://docs.aws.amazon.com/eks/latest/userguide/security-iam-troubleshoot.html)
+and [ExpiredToken for expired temporary credentials](https://repost.aws/knowledge-center/iam-credentials-token).
+Synthetic error fixtures exercise both. Other unrecognized errors remain
+unavailable; no status-only invalid-credential classification was introduced.
+
+Local validation covers official-signer request reconstruction, all four caller
+forms, opaque session tokens, wrong audience/scope, tampering, canonical encoding,
+malformed/duplicate/null JSON, credential expiry, future/expiry boundaries,
+expiry during verification, namespaces/duplicate or contradictory XML identity,
+bounded reads and body closure, local TLS/redirect/cookie behavior, caller and
+internal deadlines, sanitized failures, provider retrieval and concurrent use.
+Initial ten-second fuzz runs completed 464,009 proof-parser and 172,753 XML-parser
+executions without failures. These are synthetic/local results, not live STS
+acceptance evidence. No automatic retry, result cache or HTTP selector was added.
+Full module race tests, vet, formatting checks and Linux arm64/amd64 builds pass
+on Go 1.27.1. The existing CI workflow includes this package automatically; no
+GitHub CI run has been performed for these changes yet.

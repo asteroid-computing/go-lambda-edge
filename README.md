@@ -34,11 +34,13 @@ authenticate credentials or authorize application actions.
 
 The accepted authentication direction supports IAM credentials or an OAuth
 bearer token on the same route without built-in `AWS_IAM` authorization. IAM
-clients will use an exported Go helper to generate a signed STS GetCallerIdentity
-proof; the server verifier submits that client-signed request to AWS and uses the
-verified identity for application authorization. The helper, verifier and their
-client/server examples are planned. The detailed protocol/API is accepted in
-[decision 0017](docs/decisions/0017-iam-proof-protocol.md), but not implemented.
+clients use `iamproof.NewGenerator` to generate a signed STS GetCallerIdentity
+proof; `iamproof.NewVerifier` submits that client-signed request to AWS and returns
+a verified IAM caller. Both are implemented using the latest stable SDK core
+v1.47.0 and STS v1.51.0, checked on 2026-09-16. See the
+[IAM proof guide](docs/iamproof.md) and [runnable examples](iamproof/example_test.go).
+The common HTTP credential selector, OAuth verification and application
+authorization remain planned. No live STS interoperability test has run.
 
 The accepted streaming design now has a private bridge with incremental delivery,
 backpressure, cancellation, cleanup, and terminal-error handling. Its lifecycle

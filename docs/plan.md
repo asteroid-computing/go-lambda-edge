@@ -84,9 +84,10 @@ The accepted IAM client helper belongs to the module's exported Go API.
 [Decision 0017](decisions/0017-iam-proof-protocol.md), accepted on 2026-09-16,
 specifies a focused `iamproof`
 package, compact versioned proof, signed audience, short freshness policy and
-bounded regional STS verification. Its isolated SDK probe passes. The user also
+bounded regional STS verification. The production generator/verifier and local
+contract tests are now implemented. The user also
 approved the IAM caller forms in decision 0015. The shared caller/context
-foundation is now implemented; gateway producers precede local authentication.
+foundation, gateway producers and callable buffered adapter are implemented.
 
 ## Milestones and acceptance criteria
 
@@ -285,10 +286,11 @@ claims cannot be silently mixed; unavailable claim fidelity remains explicit.
 
 ### 4. Local authentication: Cognito/JWKS and IAM credentials
 
-- Implement the accepted protocol/helper/verifier contract in decision 0017
-  after the shared foundation and callable buffered adapter.
-  The standalone probe uses latest stable SDK core v1.47.0 and STS v1.51.0 as
-  resolved on 2026-09-16; root production dependencies have not changed.
+- [x] Implement the accepted protocol/helper/verifier contract in decision 0017
+  after the shared foundation and callable buffered adapter. Production iamproof
+  uses SDK core v1.47.0 and STS v1.51.0, rechecked as latest stable on 2026-09-16.
+  [The consumer guide](iamproof.md) covers credential ownership, endpoints,
+  replay/limits, error handling and the remaining integration qualifications.
 - Implement the accepted client-helper/server-verifier direction in decisions
   0016/0017. Review the common HTTP authentication selector API and challenges;
   preserve the accepted proof, provenance, binding, replay, endpoint and error rules.
