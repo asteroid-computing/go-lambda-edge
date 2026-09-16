@@ -5,10 +5,12 @@ chooses exactly one configured Bearer or EdgeIAM verifier, checks the returned
 caller and, when used as middleware, installs it in the request context. It works
 with ordinary Go HTTP servers and the root edge adapter's raw/typed entry points.
 
-It does not implement JWT verification or grant application permissions. The
-first-party Cognito/JWT/JWKS verifier and the authz package remain future work.
-Supply your own fully verifying Bearer function today, use IAM proofs alone,
-or configure both. Default gateway identity remains disabled.
+`authn.NewCognitoVerifier` implements local RS256 Cognito access-token verification
+with direct JSON v2 and bounded JWKS caching. Supply its Verify method, another
+fully verifying Bearer function, IAM proofs alone, or both mechanisms. See the
+[Cognito guide](cognito.md) for issuer/client/audience restrictions and cache
+ownership. The authz package remains future work; applications must authorize
+actions. Default gateway identity remains disabled.
 
 ## Configure both mechanisms
 
@@ -25,7 +27,7 @@ verifyIAM := func(ctx context.Context, token string) (identity.Caller, error) {
     return caller, err
 }
 authenticator, err := authn.New(authn.Config{
-    Bearer:   verifyBearer, // Your actual verification function.
+    Bearer:   verifyBearer, // For Cognito: cognitoVerifier.Verify.
     IAMProof: verifyIAM,
     Realm:    "orders",
 })
@@ -144,6 +146,7 @@ scheme headers do not themselves establish trust.
 
 Local tests cover native in-memory HTTP, raw REST/HTTP API payloads and typed
 V1/V2 methods, including challenge combination and actual IAM helper/verifier
-composition against synthetic STS responses. No live AWS service or deployment
+composition against synthetic STS responses, plus actual RS256 verification
+against local JWKS fixtures. No live AWS service or deployment
 was used. [Decision 0019](decisions/0019-http-authentication-selector.md) records
 the accepted contract and its official documentation sources.

@@ -62,8 +62,8 @@ the review's initial gateway-default proposal: no gateway-derived identity by
 default; `WithGatewayIdentity(true)` opts in for both IAM and JWT/Cognito. Local
 verification is explicitly composed. Constructor details and producer conflicts
 are settled in decisions 0012–0018; decision 0019 accepts the now-implemented
-common HTTP authentication selector. First-party JWT verification and authz
-remain separate reviews.
+common HTTP authentication selector. Decision 0020 accepts the now-implemented
+Cognito access-token verifier and JWKS cache. Authz remains a separate review.
 
 ## Planned package boundaries
 
@@ -308,8 +308,9 @@ The IAM proof package remains independently usable.
 - Provide exported Go proof generation and consumer documentation with runnable
   examples showing IAM and OAuth clients calling the same protected route.
   IAM generation, selector/dispatcher examples and local mixed-identity contract
-  tests now exist; the example Bearer verifier is explicitly synthetic. Real
-  first-party Cognito/OAuth verification and deployed interoperability remain.
+  tests now exist. The original selector example still labels its synthetic
+  Bearer function; Cognito configuration examples and actual RS256 verification
+  now accompany it. Deployed interoperability remains unverified.
 
 The authn milestone passes full module race tests, vet, formatting checks and
 Linux arm64/amd64 builds on Go 1.27.1. Authorization-parser fuzzing completed
@@ -317,24 +318,31 @@ Linux arm64/amd64 builds on Go 1.27.1. Authorization-parser fuzzing completed
 Gateway fixtures verify challenges and IAM-helper composition with local STS
 fixtures. No live AWS or GitHub CI run was performed for these changes.
 
-- [Decision 0020](decisions/0020-cognito-verification.md) records the proposed
+- [x] [Decision 0020](decisions/0020-cognito-verification.md) records the accepted
   Cognito access-token verifier/JWKS design, reviewed against AWS documentation,
   current identity/authn code and current stable Go JWT libraries on 2026-09-16.
-  It proposes direct JSON v2 plus stdlib RS256, per-client resource binding and
+  It specifies direct JSON v2 plus stdlib RS256, per-client resource binding and
   explicit unbound allowances for M2M/SDK flows, and bounded on-demand key caching.
-  This is a pending design review, not approved or implemented behavior.
-- Review a verifier requiring explicit issuer/client restrictions; accepting all
-  pool clients must be a deliberate policy.
-- Keep access-token `client_id`, ID-token audience, and access-token resource
+  The user approved C1-C7 on 2026-09-16; the verifier/cache are implemented.
+- [x] Require explicit issuer/client restrictions; there is no implicit all-client
+  policy. Constructors perform no I/O and own their client configuration.
+- [x] Keep access-token `client_id`, ID-token audience, and access-token resource
   audience validation separate. Preserve access-token-only defaults unless
   deliberately widened.
-- Review algorithm/key selection, expiry/not-before/issued-at behavior, leeway,
-  malformed claims, and the chosen JWT dependency's JSON behavior.
-- Separate cache freshness, unknown-key refresh, and failure backoff.
-- Bound network duration and JWKS response size. Define stale-key behavior,
+- [x] Implement reviewed algorithm/key selection, expiry/not-before/issued-at
+  behavior, leeway and malformed claims. Own JSON v2 parsing and use stdlib RSA.
+- [x] Separate cache freshness, unknown-key refresh, and failure backoff.
+- [x] Bound network duration and JWKS response size. Define stale-key behavior,
   rotation, concurrency, waiter cancellation, and HTTP client ownership.
-- Use deterministic cache/rotation/outage tests; consider Go 1.27 test networking
-  and `testing/synctest` where useful.
+- [x] Use deterministic cache/rotation/outage tests with testing/synctest and
+  native in-memory HTTP integration, plus an independent RFC RS256 vector.
+
+The Cognito milestone passes full race tests, vet, formatting and Linux
+arm64/amd64 builds on Go 1.27.1. Final fixed-fixture fuzz runs completed 136,129
+token cases and 280,903 JWKS cases without failures. Production authn remains
+stdlib/identity-only. [The Cognito guide](cognito.md) documents configuration,
+resource binding, cache ownership and offline-verification limitations. There
+was no live AWS or GitHub CI run.
 
 Acceptance: malformed credentials fail closed, failures do not create fetch
 storms, and dependency outages remain distinguishable from invalid credentials.

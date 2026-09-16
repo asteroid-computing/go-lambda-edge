@@ -1,6 +1,6 @@
 # 0020: Cognito access-token verification and JWKS ownership
 
-Status: proposed; design review only, no dependent implementation approved.
+Status: accepted; verifier, key cache, examples and local validation implemented.
 Reviewed against local code and official sources on 2026-09-16, with Go 1.27.1.
 
 ## Evidence and scope
@@ -371,11 +371,45 @@ with an independently asserted gateway identity.
    HTTP and synctest where appropriate. No live AWS resources or tokens required.
 
 Claims about deployed interoperability remain qualified until separately tested.
-No source files, module dependencies or runtime behavior changed in this review.
+The initial design review changed no runtime behavior. Implementation evidence
+following approval is recorded below; module dependencies remain unchanged.
 
 ## Resolution
 
-Awaiting review of C1-C7. In particular: approve the narrow stdlib/JSON v2 RS256
+The user approved C1-C7 on 2026-09-16, including the narrow stdlib/JSON v2 RS256
 implementation, explicit per-client unbound allowance, strict profile limits,
 15-minute cache with no expired-key fallback, and shared fetch cancellation
-ownership before dependent implementation.
+ownership. Implement and validate within these boundaries.
+
+## Implementation evidence
+
+authn now implements C1-C7 through NewCognitoVerifier, Verify and Warm, using
+stdlib cryptography and direct JSON v2 with no new module dependency. Config is
+validated without I/O and client policies are copied. Verification preserves
+exact claim numbers, requires the reviewed token profile and returns only a
+locally verified caller. Token time and the selected snapshot's key expiry are
+checked before returning identity, including after signature/identity work.
+
+The cache owns one bounded shared fetch, atomic complete snapshots, successful
+refresh cooldown and cold/expired failure backoff. Cancellation remains private
+to each waiter. A transport that ignores cancellation cannot cause replacement
+fetch accumulation or publish late success. Completion versus context-cleanup
+signals prefer the already published result, avoiding spurious unavailability.
+
+Tests include the independent RFC 7515 A.2 RSA vector, signed synthetic claims,
+client/audience combinations, malformed/ambiguous JSON and keys, exact header,
+nesting, response and key-count bounds, integer dates, signature tampering,
+removal/rotation/outages, 64 simultaneous cold waiters, exponential backoff,
+known-key availability during refresh, independent/all-waiter cancellation,
+body deadlines and a deliberately noncompliant late transport. Actual local
+TLS transport is covered. Native in-memory HTTP plus all raw/typed Gateway
+integration fixtures now use genuine RS256 verification against local JWKS,
+alongside the existing IAM helper/local STS path.
+
+Full module race tests, vet, formatting checks and Linux arm64/amd64 builds pass
+on Go 1.27.1. Final fixed-fixture fuzz runs completed 136,129 compact-token cases
+and 280,903 JWKS cases without failures. The synthetic public-key/token fixture
+contains no private key and gives every fuzz worker identical input. The
+[consumer guide](../cognito.md) and runnable configuration example document
+binding, limits, cache/cancellation ownership, revocation and deployment scope.
+No live Cognito, STS, AWS deployment or GitHub CI run was performed.

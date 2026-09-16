@@ -65,25 +65,14 @@ func mapProofErrors(v *iamproof.Verifier) authn.VerifyFunc {
 
 func TestAuthenticationAcrossTransports(t *testing.T) {
 	proofVerifier, proof, requests := localProofVerifier(t)
-	jwt := jwtCaller(t, identity.SourceLocallyVerifiedToken)
-	a := authenticator(t, authn.Config{
-		Bearer: func(_ context.Context, token string) (identity.Caller, error) {
-			switch token {
-			case "synthetic-jwt":
-				return jwt, nil
-			case "unavailable":
-				return identity.Caller{}, authn.ErrUnavailable
-			default:
-				return identity.Caller{}, authn.ErrInvalidCredentials
-			}
-		},
-		IAMProof: mapProofErrors(proofVerifier),
-	})
+	key := signingKey(t)
+	jwt := signedToken(t, key, "integration", accessClaims())
+	keys := keySet(t, publicJWK(key, "integration"))
 	selector, err := edge.NewActionHeader("Action")
 	if err != nil {
 		t.Fatal(err)
 	}
-	h := handler(t, a, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	dispatcher := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		action, err := selector.Parse(r.Header)
 		if err != nil {
 			http.Error(w, "invalid action", 400)
@@ -96,7 +85,7 @@ func TestAuthenticationAcrossTransports(t *testing.T) {
 		}
 		if jwt, ok := caller.JWT(); ok {
 			sub, _ := jwt.Subject()
-			allowed = jwt.Issuer() == "https://issuer.example" && sub == "alice"
+			allowed = jwt.Issuer() == cognitoIssuer && sub == "alice"
 		}
 		// Deny by default and authorize this exact action before executing it.
 		if !allowed || action != "orders.read" {
@@ -107,7 +96,7 @@ func TestAuthenticationAcrossTransports(t *testing.T) {
 			t.Error("middleware lost extra consumer header")
 		}
 		w.WriteHeader(204)
-	}))
+	})
 	for _, tc := range []struct {
 		name       string
 		values     []string
@@ -116,7 +105,7 @@ func TestAuthenticationAcrossTransports(t *testing.T) {
 		challenges []string
 	}{
 		{name: "missing", status: 401, challenges: []string{`Bearer realm="edge"`, `EdgeIAM realm="edge"`}},
-		{name: "bearer_success", values: []string{"Bearer synthetic-jwt"}, status: 204},
+		{name: "bearer_success", values: []string{"Bearer " + jwt}, status: 204},
 		{name: "iam_success", values: []string{"EdgeIAM " + proof.Value()}, status: 204},
 		{name: "bearer_rejected", values: []string{"Bearer invalid"}, status: 401, challenges: []string{`Bearer realm="edge", error="invalid_token"`}},
 		{name: "iam_rejected", values: []string{"EdgeIAM v2.invalid"}, status: 401, challenges: []string{`EdgeIAM realm="edge"`}},
@@ -125,12 +114,20 @@ func TestAuthenticationAcrossTransports(t *testing.T) {
 		{name: "combined", values: []string{"Bearer synthetic-jwt,EdgeIAM invalid"}, status: 400, challenges: []string{`Bearer realm="edge"`, `EdgeIAM realm="edge"`}},
 		{name: "malformed", values: []string{"Bearer a=b"}, status: 400, challenges: []string{`Bearer realm="edge", error="invalid_request"`, `EdgeIAM realm="edge"`}},
 		{name: "unsupported", values: []string{"Basic abc"}, status: 401, challenges: []string{`Bearer realm="edge"`, `EdgeIAM realm="edge"`}},
-		{name: "dependency", values: []string{"Bearer unavailable"}, status: 503},
-		{name: "authz_denial", values: []string{"Bearer synthetic-jwt"}, action: "orders.delete", status: 403},
+		{name: "dependency", values: []string{"Bearer " + jwt}, status: 503},
+		{name: "authz_denial", values: []string{"Bearer " + jwt}, action: "orders.delete", status: 403},
 		{name: "iam_authz_denial", values: []string{"EdgeIAM " + proof.Value()}, action: "orders.delete", status: 403},
 		{name: "field_size", values: []string{"Bearer " + strings.Repeat("A", 16384)}, status: 431},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			verifier := cognitoVerifier(t, cognitoConfig(transportFunc(func(*http.Request) (*http.Response, error) {
+				if tc.name == "dependency" {
+					return nil, errors.New("synthetic JWKS outage")
+				}
+				return jwksResponse(keys), nil
+			})))
+			a := authenticator(t, authn.Config{Bearer: verifier.Verify, IAMProof: mapProofErrors(proofVerifier)})
+			h := handler(t, a, dispatcher)
 			for _, format := range []string{"native", "typed_v1", "typed_v2", "raw_rest", "raw_http_v1", "raw_http_v2"} {
 				t.Run(format, func(t *testing.T) {
 					action := tc.action

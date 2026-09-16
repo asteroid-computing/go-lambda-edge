@@ -42,9 +42,12 @@ v1.47.0 and STS v1.51.0, checked on 2026-09-16. See the
 The shared `authn` selector and required-authentication middleware are implemented.
 Configure Bearer and/or IAM-proof verifier functions; the
 [authentication guide](docs/authn.md) shows the required IAM error mapping and
-the custom dispatcher/HTTP response boundaries. The first-party Cognito/JWT/JWKS
-verifier and authz package remain planned. Applications must supply actual Bearer
-verification and authorize each action. No live STS interoperability test has run.
+the custom dispatcher/HTTP response boundaries. `authn.NewCognitoVerifier` now
+provides RS256 access-token verification with direct JSON v2, explicit issuer/
+client/resource restrictions and bounded JWKS caching; see the
+[Cognito guide](docs/cognito.md). Wire its Verify method as the Bearer verifier.
+The authz package remains planned; applications must authorize each action.
+No live Cognito/STS interoperability test has run.
 
 The accepted streaming design now has a private bridge with incremental delivery,
 backpressure, cancellation, cleanup, and terminal-error handling. Its lifecycle
