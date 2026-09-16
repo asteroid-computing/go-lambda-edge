@@ -42,3 +42,18 @@ func TestNewDoesNotInvokeHandler(t *testing.T) {
 		t.Errorf("New(handler, option) = (%v, %v), want (non-nil, nil)", adapter, err)
 	}
 }
+
+func TestIdentityClaimsBudgetConfiguration(t *testing.T) {
+	for _, budget := range []int{-1, 0, 6*1024*1024 + 1} {
+		adapter, err := edge.New(http.NewServeMux(), edge.WithIdentityClaimsBudget(budget))
+		if err == nil || adapter != nil {
+			t.Errorf("New(identity budget=%d) = %v, %v; want nil, error", budget, adapter, err)
+		}
+	}
+	for _, budget := range []int{1, 256 * 1024, 6 * 1024 * 1024} {
+		adapter, err := edge.New(http.NewServeMux(), edge.WithIdentityClaimsBudget(0), edge.WithIdentityClaimsBudget(budget))
+		if err != nil || adapter == nil {
+			t.Errorf("New(identity budget=%d last) = %v, %v; want adapter, nil", budget, adapter, err)
+		}
+	}
+}

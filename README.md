@@ -22,8 +22,9 @@ public categories support `errors.Is`, and `errors.AsType[*edge.InvocationError]
 exposes sanitized operation and resource-limit diagnostics. HTTP error responses
 remain successful transport outcomes; operation, cleanup, cancellation, and late
 stream failures retain their accepted ownership and precedence. The shared
-identity design is accepted, with precise claim accessors and resource limits
-still awaiting their follow-up design review.
+claims API and resource limits are implemented in `identity`. Caller/context
+construction, JWT normalization and gateway producers remain pending; the initial
+IAM caller forms are recorded separately for review.
 
 The accepted streaming design now has a private bridge with incremental delivery,
 backpressure, cancellation, cleanup, and terminal-error handling. Its lifecycle
@@ -62,6 +63,27 @@ complete buffered-envelope limit and the 16,000-byte streaming metadata prefix
 (including its delimiter). It is neither an AWS quota nor a total heap bound.
 The option validates configuration now, and the private buffered writer applies
 it at commitment. Public invocation and the streaming HTTP writer remain pending.
+
+## Owned claims
+
+`identity.ParseClaims`, `identity.NewClaims`, and `identity.NewTextClaims` accept
+raw JSON, decoded Go values, and gateway string maps respectively. Claims are
+immutable snapshots with checked accessors. Exact numeric text remains available
+where the input preserves it; a decoded float64 is never advertised as an exact
+original JSON number, and gateway text is never reparsed as an embedded array.
+
+Processing uses `encoding/json/jsontext` directly. The only production
+`encoding/json` import recognizes its `Number` data type, supporting typed SDK
+handlers configured with `lambda.WithUseNumber(true)`; no v1 codec is called.
+See the [runnable examples](identity/claims_example_test.go).
+
+The default claim allowance is 256 KiB, configurable with
+`identity.WithClaimsBudget(bytes)` up to 6 MiB. Each value costs 64 bytes plus
+object-name, string and exact-number text bytes. Raw JSON also has a wire-length
+limit of the same size. Nesting is limited to 64 containers. These are resource
+policies, not heap caps; [measurements](docs/benchmarks.md) include allocation and
+retained-memory costs. `edge.WithIdentityClaimsBudget(bytes)` records the matching
+gateway configuration, whose producer wiring remains pending.
 
 - [Implementation plan](docs/plan.md)
 - [Design decisions](docs/decisions/README.md)

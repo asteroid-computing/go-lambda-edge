@@ -1,7 +1,8 @@
 # 0014: Owned claims, numeric fidelity, and resource limits
 
-Status: proposed on 2026-09-16; awaiting review. Production identity APIs are
-unchanged. This completes the claims follow-up explicitly left open by 0012.
+Status: accepted on 2026-09-16; claims constructors/accessors and error foundation
+implemented. JWT normalization and dedicated-scope accounting await caller
+construction. This completes the claims design follow-up left open by 0012.
 
 ## Evidence and scope
 
@@ -31,7 +32,7 @@ Sources:
 
 ## C1. Small concrete API with checked reads
 
-Recommend these declarations; they illustrate the proposal, not existing APIs:
+The accepted declarations below are now implemented:
 
 ```go
 func ParseClaims(data jsontext.Value, opts ...ClaimsOption) (Claims, error)
@@ -227,5 +228,30 @@ tradeoffs. After approval:
 4. Follow with local verification/authz and streaming HTTP writer work in the
    accepted order. Do not pick a JWT library or issuer profile in this claims step.
 
-No new production APIs, claim normalization behavior, or resource options have
-been implemented by this proposal. No live AWS resources were invoked.
+At proposal time no production APIs or behavior had changed. Implementation
+status is recorded below; no live AWS resources were invoked.
+
+## Resolution
+
+The user approved C1–C5 on 2026-09-16 and authorized implementation, including
+the narrow json.Number data-type compatibility and gateway qualifications.
+The native-producer fixture review remains a separate step before gateway wiring.
+
+## Implementation status
+
+Implemented in identity: all three claims constructors, checked immutable views,
+exact numeric text and explicit approximate conversion, the closed input-type
+set including json.Number, strict JSON processing through jsontext, typed/raw
+preflight, byte/depth limits, sanitized errors and diagnostic formatting.
+Inputs and returned containers have contract tests for ownership; raw numeric
+and typed SDK number-preserving paths are tested through the actual SDK wrapper.
+
+The root adapter records and validates WithIdentityClaimsBudget. A private error
+translation boundary classifies claim failures and reports identity_claims byte
+limits without misreporting depth as bytes. Neither is wired to invocation yet.
+
+Production allocation measurements are recorded in docs/benchmarks.md. Race tests,
+vet, JSON fuzzing and both Lambda-target builds validate the claims foundation.
+Caller construction, dedicated scope accounting and JWT normalization are still
+pending. Decision 0015 surfaces the explicitly deferred IAM caller-form review
+before publishing the complete caller union; no placeholder constructor exists.

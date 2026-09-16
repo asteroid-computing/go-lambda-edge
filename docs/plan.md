@@ -227,11 +227,20 @@ The accepted order is caller/context/error foundations, precise claim API and
 native-producer fixtures, then raw/typed buffered invocation. Broader local
 authentication and authorization follow that shared foundation.
 
-[Decision 0014](decisions/0014-claims-api.md), proposed on 2026-09-16, specifies the
+[Decision 0014](decisions/0014-claims-api.md), accepted on 2026-09-16, specifies the
 claims constructor/accessor surface, SDK number-preserving input compatibility,
 ownership and weighted resource limits, and gateway normalization qualifications.
-An isolated storage/SDK probe is implemented and measured; production identity
-APIs remain unchanged while these recommendations await review.
+The user approved its SDK numeric compatibility and gateway qualifications and
+authorized implementation. Claims constructors, immutable accessors, strict raw
+JSON and direct typed construction, byte/depth limits, and sanitized errors are
+implemented. The adapter budget option is validated and a private invocation-error
+translation boundary is tested; gateway extraction and invocation remain unwired.
+Production allocation measurements supplement the original probe. Contract tests,
+SDK integration, race detection, vet, JSON fuzzing and Lambda-target builds pass.
+Caller/context construction and JWT normalization remain pending; proposed
+[decision 0015](decisions/0015-iam-caller-forms.md) resolves the supported IAM forms
+explicitly deferred by 0012 before publishing the complete caller union.
+Native-producer fixture review remains separate from the claims approval.
 
 - Review caller constructors, immutable/owned data, validation, anonymous state,
   and context-presence semantics.

@@ -166,3 +166,41 @@ float64 9007199254740992; WithUseNumber(true) yields json.Number with the origin
 digits. This is evidence for data-type compatibility in
 [decision 0014](decisions/0014-claims-api.md), not a proposal to use the v1 codec
 inside edge. No live Lambda or API Gateway request was made.
+
+## Implemented claims constructors (2026-09-16)
+
+The same Go 1.27.1 / darwin-arm64 Apple M2 environment, three samples per case:
+
+```sh
+go test ./identity -run '^TestClaimsRetainedMemory$' -v -count=3
+go test ./identity -run '^$' -bench '^BenchmarkClaims$' -benchmem -benchtime=100ms -count=3
+```
+
+Median bytes per operation and independently sampled retained heap in bytes:
+
+| Fixture | Typed B/op | Raw B/op | Typed retained | Raw retained |
+| --- | ---: | ---: | ---: | ---: |
+| Ordinary claims | 2,690 | 4,968 | 2,696 | 2,776 |
+| Distinct names, 256 KiB budget | 750,396 | 2,691,610 | 750,400 | 689,360 |
+| Distinct names, 6 MiB budget | 12,238,708 | 53,483,244 | 12,238,688 | 12,937,712 |
+| Singleton objects, 256 KiB budget | 1,661,221 | 1,922,539 | 1,661,184 | 1,669,376 |
+| Large string, 256 KiB budget | 262,912 | 1,311,952 | 262,912 | 262,912 |
+
+Ordinary typed construction took a median 1.24 µs and 30 allocations; ordinary
+raw construction took 3.02 µs and 81 allocations. Raw construction includes strict
+lexical validation and preflight, then owned-tree construction, while typed input
+has no JSON round trip. Raw numbers retain their literal, while input float64
+values retain only the available floating-point value. Both paths clone strings.
+
+The largest opt-in raw case has substantial transient allocation (about 51 MiB
+cumulative versus 12.3 MiB retained). Two parser passes, duplicate-name tracking,
+string conversion/copying, and map growth contribute. These measurements do not
+justify equating the 6 MiB weighted budget with memory use, or making it the
+default. Future storage optimizations can retain the approved accounting policy.
+
+The raw and typed retained totals can differ because map construction capacity,
+array growth and exact numeric storage differ. Inputs remain alive during memory
+samples; two collections before and after reduce pool retention. Small deltas
+are noisy (ordinary typed samples ranged from 2,696 to 8,016 bytes). No figure is
+peak memory, RSS, total invocation allocation, or a Lambda latency prediction.
+JWT normalized views and dedicated scopes are not implemented in these samples.

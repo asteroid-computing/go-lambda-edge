@@ -1,6 +1,10 @@
 package edge
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/asteroid-computing/go-lambda-edge/identity"
+)
 
 // Invocation failure categories support errors.Is through wrapping and joined
 // errors. Application HTTP responses, including 4xx and 5xx, are not invocation
@@ -72,8 +76,9 @@ func (e *InvocationError) Operation() string {
 
 // Limit reports the resource name and its effective maximum in bytes for a
 // limit failure. Names are response_headers, buffered_body, buffered_envelope,
-// and stream_metadata. A response header budget measures the documented charge,
-// not wire bytes or heap use. buffered_body also covers base64 expansion and
+// stream_metadata, and identity_claims. A response header or identity claims
+// budget measures the documented charge; raw claims also have a wire-length
+// limit. Neither budget measures heap use. buffered_body covers base64 expansion and
 // the representable HEAD byte count. Other failures return "", 0, false.
 func (e *InvocationError) Limit() (name string, maximum int64, ok bool) {
 	if e == nil || e.limit == nil {
@@ -98,4 +103,17 @@ func limitError(operation, name string, maximum int64, reason error) *Invocation
 	err := invocationError(operation, ErrLimitExceeded, "resource limit exceeded", reason)
 	err.limit = &invocationLimit{name: name, maximum: maximum}
 	return err
+}
+
+// claimsError translates only package-owned claim failures. It deliberately
+// rebuilds a safe error tree instead of wrapping the supplied error or its text.
+// Gateway preparation will use this boundary when its producers are implemented.
+func claimsError(err error) *InvocationError {
+	if limit, ok := errors.AsType[*identity.ClaimsLimitError](err); ok {
+		return limitError("identity", "identity_claims", limit.Maximum(), errors.Join(ErrIdentity, identity.ErrClaimsLimit))
+	}
+	if errors.Is(err, identity.ErrInvalidClaims) {
+		return invocationError("identity", ErrIdentity, "invalid claims", identity.ErrInvalidClaims)
+	}
+	return invocationError("identity", ErrIdentity, "claims construction failed")
 }

@@ -19,6 +19,7 @@ type Adapter struct {
 
 type config struct {
 	gatewayIdentity      bool
+	identityClaimsBudget int
 	responseHeaderBudget int
 }
 
@@ -36,6 +37,18 @@ type Option func(*config)
 func WithGatewayIdentity(enabled bool) Option {
 	return func(c *config) {
 		c.gatewayIdentity = enabled
+	}
+}
+
+// WithIdentityClaimsBudget sets the gateway identity claims allowance in bytes.
+// The default is 256 KiB; New rejects a final setting outside 1..6 MiB.
+// Each claim value costs 64 bytes plus name, string and exact-number text bytes.
+// Dedicated gateway scopes consume the same allowance. Raw claim JSON is also
+// limited to this byte length. This is a resource policy, not a heap cap or AWS
+// quota. It does not enable gateway identity. Extraction is not yet implemented.
+func WithIdentityClaimsBudget(bytes int) Option {
+	return func(c *config) {
+		c.identityClaimsBudget = bytes
 	}
 }
 
@@ -72,7 +85,7 @@ func New(handler http.Handler, opts ...Option) (*Adapter, error) {
 		}
 	}
 
-	cfg := config{responseHeaderBudget: defaultResponseHeaderBudget}
+	cfg := config{identityClaimsBudget: 256 * 1024, responseHeaderBudget: defaultResponseHeaderBudget}
 	for i, opt := range opts {
 		if opt == nil {
 			return nil, fmt.Errorf("edge: nil option at index %d", i)
@@ -81,6 +94,9 @@ func New(handler http.Handler, opts ...Option) (*Adapter, error) {
 	}
 	if cfg.responseHeaderBudget <= 0 || cfg.responseHeaderBudget > maxResponseBytes {
 		return nil, errors.New("edge: response header budget must be between 1 and 6291456 bytes")
+	}
+	if cfg.identityClaimsBudget <= 0 || cfg.identityClaimsBudget > maxResponseBytes {
+		return nil, errors.New("edge: identity claims budget must be between 1 and 6291456 bytes")
 	}
 	return &Adapter{handler: handler, config: cfg}, nil
 }

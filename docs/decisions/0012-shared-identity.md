@@ -1,6 +1,7 @@
 # 0012: Shared identity, provenance, and producer composition
 
-Status: accepted as the starting contract on 2026-09-15; implementation pending.
+Status: accepted as the starting contract on 2026-09-15; claims foundation
+implemented under 0014, caller/context and gateway producers pending.
 
 This walks the dependencies needed for the first callable buffered adapter.
 Decision 0013 covers the public errors used at those boundaries. Approval of the
@@ -355,4 +356,7 @@ The user agreed with all recommendations as a starting point on 2026-09-15.
 This accepts I1-I8 and the implementation order. The explicitly deferred claim
 accessor inventory, claim resource limits, producer fixture coverage, and later
 authn/custom-mapper policies still require their recorded follow-up review.
-None of the shared identity API is implemented yet.
+The claims constructors, immutable views and resource/error foundation are now
+implemented under accepted decision 0014. Caller/context construction and native
+gateway producers remain pending. Decision 0015 presents the supported IAM caller
+forms left open by I5 for review before the complete caller union is published.
