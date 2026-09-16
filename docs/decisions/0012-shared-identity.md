@@ -360,3 +360,10 @@ The claims constructors, immutable views and resource/error foundation are now
 implemented under accepted decision 0014. Caller/context construction and native
 gateway producers remain pending. Decision 0015 presents the supported IAM caller
 forms left open by I5 for review before the complete caller union is published.
+
+Accepted follow-up 0016 adds an online STS-verified IAM proof producer alongside
+the gateway/custom producers described in I2. Its provenance representation will
+be settled in the protocol/API review. For I8, one explicitly configured selector
+may choose IAM proof or OAuth verification per request on the same route. It
+still installs only one caller and never retries another credential mechanism
+after authentication failure or merges identities.

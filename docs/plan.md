@@ -20,6 +20,13 @@ port, source copy, or compatibility-preserving update of Beakley.
   handling. Do not route our codec through `encoding/json`'s compatibility API.
   Check third-party parser behavior separately during dependency selection.
 - Keep ordinary `http.Handler` as the application boundary.
+- Support the user's same-route goal: clients may authenticate using IAM
+  credentials or an OAuth bearer token without requiring built-in AWS_IAM
+  authorization. [Decision 0016](decisions/0016-mixed-iam-oauth-authentication.md)
+  accepts explicit credential selection and online STS-proof verification.
+  Include an exported Go helper that generates the signed GetCallerIdentity
+  proof, with consumer documentation and runnable client/server examples.
+  Detailed protocol and helper/verifier APIs remain a design-review step.
 - Provide first-class consumer request-header processing for header-selected
   action dispatchers. Preserve custom incoming headers independently of response
   combination rules. [Decision 0011](decisions/0011-request-header-processing.md)
@@ -62,7 +69,7 @@ multiple identity producers remain separate decisions.
 | --- | --- |
 | `edge` (root) | Invocation adapter, payload decoding, HTTP translation, gateway metadata, optional gateway identity extraction |
 | `identity` | Validated callers, claim representation, context transport; standard library only |
-| `authn` | Bearer authentication, explicitly named Cognito verification, JWKS caching |
+| `authn` | Explicit IAM-proof/OAuth selection, online STS verification, Cognito verification and JWKS caching |
 | `authz` | Decisions, rules, combinators, middleware, application-principal resolution |
 | `edgetest` | Consumer identity fixtures and gateway event helpers |
 
@@ -70,6 +77,10 @@ Avoid a broad root-package facade that reexports every companion type. Keep AWS
 event types out of transport-independent packages. Reassess any additional
 exported package against a concrete consumer need; version-reporting machinery
 does not need to precede a working adapter.
+
+The accepted IAM client helper belongs to the module's exported Go API. Its
+package placement and credential-provider dependency are part of the detailed
+0016 protocol review; do not assume a new package or root reexport prematurely.
 
 ## Milestones and acceptance criteria
 
@@ -256,7 +267,15 @@ Native-producer fixture review remains separate from the claims approval.
 Acceptance: invalid/ambiguous identities cannot authorize; gateway and token
 claims cannot be silently mixed; unavailable claim fidelity remains explicit.
 
-### 4. Cognito verification and JWKS resilience
+### 4. Local authentication: Cognito/JWKS and IAM credentials
+
+- Implement the accepted client-helper/server-verifier direction in decision 0016
+  after its detailed protocol review. Review a single authentication
+  selector, online STS proof verification and its provenance, application binding,
+  freshness/replay rules, endpoint constraints and dependency-error semantics.
+  Do not promise offline IAM verification or ordinary SigV4-client compatibility.
+- Provide exported Go proof generation and consumer documentation with runnable
+  examples showing IAM and OAuth clients calling the same protected route.
 
 - Review a verifier requiring explicit issuer/client restrictions; accepting all
   pool clients must be a deliberate policy.

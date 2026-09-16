@@ -26,6 +26,13 @@ claims API and resource limits are implemented in `identity`. Caller/context
 construction, JWT normalization and gateway producers remain pending; the initial
 IAM caller forms are recorded separately for review.
 
+The accepted authentication direction supports IAM credentials or an OAuth
+bearer token on the same route without built-in `AWS_IAM` authorization. IAM
+clients will use an exported Go helper to generate a signed STS GetCallerIdentity
+proof; the server verifier submits that client-signed request to AWS and uses the
+verified identity for application authorization. The helper, verifier and their
+client/server examples are planned; the detailed protocol/API is not implemented.
+
 The accepted streaming design now has a private bridge with incremental delivery,
 backpressure, cancellation, cleanup, and terminal-error handling. Its lifecycle
 is covered by race-enabled synthetic concurrency tests. Bounded JSON v2 metadata

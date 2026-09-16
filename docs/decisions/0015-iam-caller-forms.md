@@ -54,3 +54,49 @@ form only when a documented producer needs it, with an explicit fixture.
 
 This review gates the IAM constructor and complete caller union; it does not gate
 the approved claims API, resource limits, or numerical fidelity implementation.
+
+## Clarification: validation versus authentication
+
+The user asked what IAM validation can actually establish and whether authn can
+authenticate an IAM token. Constructor validation means structural validity and
+internal consistency only: ARN components, a supported principal resource form,
+required names/session components, and agreement with an independently supplied
+caller account. It cannot establish existence, possession of credentials, session
+validity, permissions, or that the supplied event came from API Gateway. An ARN
+and a self-declared source are identifiers/annotations, not authentication proofs.
+
+The [IAM identifiers reference](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_identifiers.html)
+documents ARN components, blank regions for these IAM/STS forms, and exact
+session representations. The initial supported-form restriction is our caller
+model policy, not a test proving a principal is real.
+
+[Gateway IAM authorization](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-access-control-iam.html)
+requires signed requests and checks execute-api permission before invoking a
+route. Recommend that path for IAM clients of edge's API Gateway integration:
+AWS authenticates the request; edge validates and owns the resulting assertion.
+This uses built-in AWS_IAM authorization, not a Lambda/JWT authorizer. Trust still
+depends on the intended integration and permissions controlling Lambda invocation.
+
+An STS SessionToken alone is not a standalone bearer authentication protocol.
+[Temporary credentials](https://aws.amazon.com/blogs/security/understanding-the-api-options-for-securely-delegating-access-to-your-aws-account/)
+include an access key, secret key and session token; the keys sign requests and
+the session token accompanies them. Calling
+[GetCallerIdentity](https://docs.aws.amazon.com/STS/latest/APIReference/API_GetCallerIdentity.html)
+with the Lambda's credentials identifies the Lambda's role, not the HTTP caller.
+
+IAM-backed bearer authentication is possible with a specifically designed proof
+protocol. [EKS documents](https://docs.aws.amazon.com/eks/latest/best-practices/identity-and-access-management.html)
+a token containing a presigned STS request that its authenticator submits to AWS
+for verification. A future edge authn component could use this general approach,
+but would need its own explicit protocol, application binding, freshness/replay
+policy, restricted STS endpoints and dependency-error handling. An arbitrary
+execute-api signature is not interchangeable with an STS-signed proof.
+
+Recommend keeping that optional online authentication producer separate from
+NewIAM and the gateway assertion adapter. It would also require a reviewed source
+designation; the current source contract must not mislabel AWS verification as
+locally verified JWT authentication. No such producer is approved or implemented.
+
+The user's subsequent same-route IAM/OAuth clarification is recorded in 0016.
+For that goal, the proposed path is explicit mixed-credential middleware with an
+online IAM proof verifier. Built-in AWS_IAM alone does not satisfy the goal.

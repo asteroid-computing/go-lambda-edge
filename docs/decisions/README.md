@@ -24,3 +24,4 @@ Keep related decisions small enough to review and implement independently.
 | [0013: Invocation errors](0013-public-invocation-errors.md) | Accepted | How should callers inspect sanitized failures across raw, typed, and streaming boundaries? |
 | [0014: Claims API](0014-claims-api.md) | Accepted; claims foundation implemented | Which checked claim reads, SDK numeric inputs, ownership rules, and measured resource limits should identity expose? |
 | [0015: IAM caller forms](0015-iam-caller-forms.md) | Proposed | Which ARN forms represent an authenticated request caller in the initial IAM constructor? |
+| [0016: Mixed IAM/OAuth authentication](0016-mixed-iam-oauth-authentication.md) | Architecture and exported Go helper accepted; protocol/API pending | How can one route accept IAM credentials or OAuth tokens without built-in AWS_IAM authorization? |
