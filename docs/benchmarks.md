@@ -111,3 +111,58 @@ and projections; it is not peak memory or RSS. Median snapshot timings were
 approximately 1.36 µs, 1.27 ms and 52.17 ms respectively, with substantial timing
 variation in the largest case. These are exploratory samples, not CI thresholds
 or Lambda latency claims. They do not warrant changing the approved default.
+
+## Candidate claims storage (2026-09-16)
+
+The isolated `internal/claimprobe` test package measures a candidate owned tree,
+not an implemented identity API. Go 1.27.1, darwin/arm64, Apple M2; three samples:
+
+```sh
+go test ./internal/claimprobe -run '^TestSnapshotMemory$' -v -count=3
+go test ./internal/claimprobe -run '^$' -bench 'Benchmark(Snapshot|JSONScan)$' -benchmem -benchtime=100ms -count=3
+```
+
+Median snapshot results, with retained heap measured separately:
+
+| Fixture | Weighted charge (bytes) | Time | Cumulative B/op | Allocs/op | Retained heap (bytes) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Ordinary claims | 1,185 | 1.25 µs | 2,691 | 29 | 2,696 |
+| Distinct names, 256 KiB allowance | 262,144 | 266 µs | 750,387 | 3,658 | 750,384 |
+| Distinct names, 1 MiB allowance | 1,048,528 | 1.19 ms | 3,001,434 | 14,628 | 3,001,424 |
+| Distinct names, 6 MiB allowance | 6,291,424 | 8.63 ms | 12,238,702 | 87,638 | 12,238,688 |
+| Array of nulls | 262,085 | 56.1 µs | 262,902 | 4 | 262,912 |
+| Array of singleton objects | 262,132 | 599 µs | 1,661,213 | 6,097 | 1,661,184 |
+| Large string | 262,144 | 23.3 µs | 262,902 | 4 | 262,912 |
+| 64 nested objects | 4,417 | 16.5 µs | 48,388 | 193 | 48,400 |
+
+Depth 65, a cyclic map, an exponentially expanded shared subtree and an oversized
+array all reject before snapshot allocation: 0 B/op and 0 allocs/op in these
+samples. This excludes any eventual public error construction. Shared subtrees
+are charged per occurrence, not per distinct pointer. Rejection of that fixture
+took about 20.6 µs; the container-length fast rejection took about 46 ns.
+
+The separate lexical JSON scan used direct jsontext, including strict duplicate
+name validation, a wire-length check, an object root and a depth bound. Median
+cumulative allocations were 1,200 bytes for ordinary claims, 692,717 for distinct
+names, 524,696 for a large string and 12,904 for depth 64. These are lexical scan
+costs only: no full raw-JSON-to-owned-tree implementation exists yet. Do not add
+the timings to predict production latency or call lexical allocation a heap cap.
+
+The tree copies map keys, strings, maps and slices. Inputs remain live across
+memory samples. Two garbage collections before and after each snapshot reduce
+pool retention; small deltas remain noisy. Retained heap excludes input storage,
+transient allocation, normalized JWT views, event decoding, and process RSS. The
+singleton-object case shows why a 256 KiB accounting limit can retain 1.58 MiB.
+No sample establishes the worst possible amplification across all shapes.
+
+The prototype covers a subset of the proposed typed inputs, using float64 for
+decoded numbers. It does not implement exact numeric nodes, provenance, the
+public getters, JWT validation, error translation, or dedicated scope accounting.
+Those require production measurements and contract tests after approval.
+
+The SDK probe invokes a real local lambda.NewHandlerWithOptions around a typed
+APIGatewayProxyRequest. For the literal 9007199254740993, default decoding yields
+float64 9007199254740992; WithUseNumber(true) yields json.Number with the original
+digits. This is evidence for data-type compatibility in
+[decision 0014](decisions/0014-claims-api.md), not a proposal to use the v1 codec
+inside edge. No live Lambda or API Gateway request was made.

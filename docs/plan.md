@@ -227,6 +227,12 @@ The accepted order is caller/context/error foundations, precise claim API and
 native-producer fixtures, then raw/typed buffered invocation. Broader local
 authentication and authorization follow that shared foundation.
 
+[Decision 0014](decisions/0014-claims-api.md), proposed on 2026-09-16, specifies the
+claims constructor/accessor surface, SDK number-preserving input compatibility,
+ownership and weighted resource limits, and gateway normalization qualifications.
+An isolated storage/SDK probe is implemented and measured; production identity
+APIs remain unchanged while these recommendations await review.
+
 - Review caller constructors, immutable/owned data, validation, anonymous state,
   and context-presence semantics.
 - Preserve issuer plus subject for JWT application identity; do not treat a
