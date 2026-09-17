@@ -1,6 +1,7 @@
 # 0021: Application authorization rules and dispatcher integration
 
-Status: proposed; no dependent implementation approved.
+Status: accepted; rules, examples and local validation implemented.
+The user approved Z1–Z7 on 2026-09-17.
 Reviewed on 2026-09-16 against the implemented identity/authn/edge boundaries.
 
 ## Evidence and scope
@@ -316,7 +317,32 @@ JSON v2 for JSON examples. An error response does not execute an action. Finish
 authorization before any response commitment or streaming flush. This proposal
 does not add mid-stream reauthorization or a framework-owned audit stream.
 
-## Implementation after approval
+## Implementation and validation
+
+Implemented on 2026-09-17 in `authz`: explicit request facts, immutable Check,
+All/Any, all seven predicate constructors, sanitized errors and policy tree
+bounds. Production imports only the standard library and identity. IAM policy
+configuration reuses identity.NewIAM's grammar; the role-family constructor
+validates a sample session and never exposes or fabricates an IAM role ARN.
+
+Contract tests cover the criteria below, including concurrent reuse, copied
+configuration, expanded shared-tree bounds, literal IAM paths/scopes, unavailable
+gateway collections, identity-source and issuer boundaries, callback error
+sanitization and cancellation. Application fixtures verify grant lookup counts,
+403 versus 503, safe JSON v2 envelopes and Bearer challenges, CORS preservation,
+and authorization/execution of the same action/resource despite header mutation.
+Cognito signature verification and IAM-proof processing run before policy in
+native HTTP plus five raw/typed Gateway paths, using synthetic JWKS/STS responses.
+Cancellation during policy evaluation is also checked across those paths.
+
+Full race tests, vet, formatting and Linux arm64/amd64 builds pass on Go 1.27.1.
+A 20-second policy fuzz run completed 45,257 cases without failure. The
+[consumer guide](../authz.md) and [runnable examples](../../authz/example_test.go)
+document HTTP ownership, resource consistency and grant resolution. No live AWS
+calls, deployment or GitHub CI run occurred. Public streaming and generic
+principal/grant models remain deferred as described in this decision.
+
+Completed acceptance criteria:
 
 1. Implement core immutable rules, constructor validation and sanitized outcomes.
 2. Add exact JWT/IAM/source predicates and ordered All/Any with bounded trees.
@@ -334,7 +360,8 @@ does not add mid-stream reauthorization or a framework-owned audit stream.
 
 ## Resolution
 
-Awaiting review of Z1-Z7. The main choices are explicit action/resource inputs,
+The user approved Z1–Z7 on 2026-09-17. The accepted choices are explicit action/resource inputs,
 exact issuer-qualified predicates, a deliberately named role-session-family
 check, ordered error-stopping combinators, and consumer-owned grant resolution
-and HTTP dispatch for the initial release. No production behavior changes here.
+and HTTP dispatch for the initial release. These contracts are now implemented
+and locally validated without expanding the approved public API.

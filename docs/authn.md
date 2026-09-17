@@ -9,8 +9,9 @@ with ordinary Go HTTP servers and the root edge adapter's raw/typed entry points
 with direct JSON v2 and bounded JWKS caching. Supply its Verify method, another
 fully verifying Bearer function, IAM proofs alone, or both mechanisms. See the
 [Cognito guide](cognito.md) for issuer/client/audience restrictions and cache
-ownership. The authz package remains future work; applications must authorize
-actions. Default gateway identity remains disabled.
+ownership. The implemented [authz rules](authz.md) authorize explicit caller,
+action and resource facts; applications own their dispatch and grant resolution.
+Default gateway identity remains disabled.
 
 ## Configure both mechanisms
 
@@ -134,6 +135,10 @@ Select an action once using edge.ActionHeader or your own header processor.
 Authorize that caller for that exact selection, then execute it. Both IAM and
 JWT callers can reach the same dispatcher. Successful IAM authentication does
 not permit every AWS identity to execute your actions; deny by default.
+
+The [authorization dispatcher example](../authz/example_test.go) pairs each rule
+with its handler, keeps the selected resource consistent and maps 403 versus 503
+without exposing policy diagnostics. It configures production verifier types.
 
 Complete authentication and authorization before writing or flushing a response.
 The caller is a snapshot and is not automatically refreshed during a stream.

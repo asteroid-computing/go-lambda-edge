@@ -63,7 +63,8 @@ default; `WithGatewayIdentity(true)` opts in for both IAM and JWT/Cognito. Local
 verification is explicitly composed. Constructor details and producer conflicts
 are settled in decisions 0012–0018; decision 0019 accepts the now-implemented
 common HTTP authentication selector. Decision 0020 accepts the now-implemented
-Cognito access-token verifier and JWKS cache. Authz remains a separate review.
+Cognito access-token verifier and JWKS cache. Decision 0021 accepts authorization
+rules and the consumer-owned resolution/dispatch boundary.
 
 ## Planned package boundaries
 
@@ -73,7 +74,7 @@ Cognito access-token verifier and JWKS cache. Authz remains a separate review.
 | `identity` | Validated callers, claim representation, context transport; standard library only |
 | `authn` | Explicit IAM-proof/OAuth selection, Cognito verification and JWKS caching |
 | `iamproof` | Exported client proof generator and bounded online STS verifier |
-| `authz` | Decisions, rules, combinators, middleware, application-principal resolution |
+| `authz` | Exact identity predicates, ordered rules and context-aware application checks; consumers own grant resolution and HTTP dispatch |
 | `edgetest` | Consumer identity fixtures and gateway event helpers |
 
 Avoid a broad root-package facade that reexports every companion type. Keep AWS
@@ -349,23 +350,32 @@ storms, and dependency outages remain distinguishable from invalid credentials.
 
 ### 5. Authorization and consumer ergonomics
 
-[Decision 0021](decisions/0021-authorization-rules.md) records the proposed initial
-authz API and design graph. It recommends immutable rules over explicit caller,
+[Decision 0021](decisions/0021-authorization-rules.md), approved on 2026-09-17,
+accepts the initial authz API and design graph: immutable rules over explicit caller,
 action and resource facts, exact predicates and ordered combinators. Application
 principal/grant resolution and HTTP dispatch initially remain consumer-owned
-through context-aware custom checks and runnable examples. That narrowing and
-the public/error contracts await user review; no authz code is implemented yet.
+through context-aware custom checks and runnable examples. Z1–Z7 are implemented
+and locally validated. Production authz uses only the standard library and identity.
 
-- Implement reviewed rules/combinators, scope/group/grant separation, principal
-  resolution, and explicit authentication precedence.
-- Review missing/invalid credential responses (ordinarily 401), authenticated
-  denial (403), and dependency unavailability (503), including bearer challenges
-  and behavior on public routes.
-- Define ARN matching precisely, including separators, partitions, account
-  boundaries, and STS role sessions. Do not approximate IAM policy evaluation.
-- Validate nil/empty authorizers and invalid identities consistently.
-- Provide consumer fixtures, runnable examples, and limited structured logging
-  that excludes raw credentials and unnecessary profile claims.
+- [x] Implement immutable checks, ordered All/Any, explicit action/resource
+      requests, exact JWT/source/IAM predicates and bounded policy trees.
+- [x] Preserve scope/group/grant separation and consumer-owned principal
+      resolution through context-aware custom checks.
+- [x] Document/test 401, 403 and 503 boundaries, safe Bearer challenges and
+      cancellation. Public routes bypass protected-route authorization explicitly.
+- [x] Match exact caller ARNs and explicit role-session families, including
+      partition/account/path boundaries and role-name recreation limitations.
+- [x] Reject zero/empty/nil rules and anonymous callers; sanitize callback errors.
+- [x] Provide consumer fixtures, runnable examples and the
+      [authorization guide](authz.md). Logging hooks and a generic exported
+      principal/grant resolver remain deferred under decision 0021.
+
+Full race tests, vet, formatting and Linux arm64/amd64 builds pass on Go 1.27.1.
+Policy fuzzing completed 45,257 cases without failure. Native HTTP and five
+raw/typed Gateway paths exercise authorization after Cognito signature and IAM
+proof verification using local synthetic provider responses. Tests cover grant
+denials/outages, provider call counts, immutable action/resource selection, safe
+responses and cancellation. No live AWS or GitHub CI run occurred.
 
 Acceptance: examples work both in Lambda and ordinary HTTP applications, while
 authorization decisions remain inspectable and deny by default.

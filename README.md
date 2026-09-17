@@ -46,7 +46,10 @@ the custom dispatcher/HTTP response boundaries. `authn.NewCognitoVerifier` now
 provides RS256 access-token verification with direct JSON v2, explicit issuer/
 client/resource restrictions and bounded JWKS caching; see the
 [Cognito guide](docs/cognito.md). Wire its Verify method as the Bearer verifier.
-The authz package remains planned; applications must authorize each action.
+The `authz` package now provides exact IAM/JWT predicates, ordered All/Any rules
+and context-aware application grant checks. Consumers own their action registry,
+resource selection and HTTP responses; see the [authorization guide](docs/authz.md)
+and [runnable dispatcher examples](authz/example_test.go).
 No live Cognito/STS interoperability test has run.
 
 The accepted streaming design now has a private bridge with incremental delivery,

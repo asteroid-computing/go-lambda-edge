@@ -2,6 +2,7 @@ package authn_test
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json/v2"
 	"errors"
 	"io"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/asteroid-computing/go-lambda-edge"
 	"github.com/asteroid-computing/go-lambda-edge/authn"
+	"github.com/asteroid-computing/go-lambda-edge/authz"
 	"github.com/asteroid-computing/go-lambda-edge/iamproof"
 	"github.com/asteroid-computing/go-lambda-edge/identity"
 )
@@ -72,23 +74,27 @@ func TestAuthenticationAcrossTransports(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	jwtRule, err := authz.JWTSubject(cognitoIssuer, "alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	iamRule, err := authz.IAMPrincipal("arn:aws:iam::123456789012:user/Alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	permission, err := authz.Any(jwtRule, iamRule)
+	if err != nil {
+		t.Fatal(err)
+	}
 	dispatcher := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		action, err := selector.Parse(r.Header)
 		if err != nil {
 			http.Error(w, "invalid action", 400)
 			return
 		}
-		caller := identity.FromContext(r.Context())
-		allowed := false
-		if iam, ok := caller.IAM(); ok {
-			allowed = iam.PrincipalARN() == "arn:aws:iam::123456789012:user/Alice"
-		}
-		if jwt, ok := caller.JWT(); ok {
-			sub, _ := jwt.Subject()
-			allowed = jwt.Issuer() == cognitoIssuer && sub == "alice"
-		}
 		// Deny by default and authorize this exact action before executing it.
-		if !allowed || action != "orders.read" {
+		if action != "orders.read" || permission.Authorize(r.Context(), authz.Request{Caller: identity.FromContext(r.Context()), Action: action}) != nil {
+			w.Header().Set("WWW-Authenticate", `Bearer realm="edge"`)
 			http.Error(w, "forbidden", 403)
 			return
 		}
@@ -115,8 +121,8 @@ func TestAuthenticationAcrossTransports(t *testing.T) {
 		{name: "malformed", values: []string{"Bearer a=b"}, status: 400, challenges: []string{`Bearer realm="edge", error="invalid_request"`, `EdgeIAM realm="edge"`}},
 		{name: "unsupported", values: []string{"Basic abc"}, status: 401, challenges: []string{`Bearer realm="edge"`, `EdgeIAM realm="edge"`}},
 		{name: "dependency", values: []string{"Bearer " + jwt}, status: 503},
-		{name: "authz_denial", values: []string{"Bearer " + jwt}, action: "orders.delete", status: 403},
-		{name: "iam_authz_denial", values: []string{"EdgeIAM " + proof.Value()}, action: "orders.delete", status: 403},
+		{name: "authz_denial", values: []string{"Bearer " + jwt}, action: "orders.delete", status: 403, challenges: []string{`Bearer realm="edge"`}},
+		{name: "iam_authz_denial", values: []string{"EdgeIAM " + proof.Value()}, action: "orders.delete", status: 403, challenges: []string{`Bearer realm="edge"`}},
 		{name: "field_size", values: []string{"Bearer " + strings.Repeat("A", 16384)}, status: 431},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -153,6 +159,12 @@ func TestAuthenticationAcrossTransports(t *testing.T) {
 
 func serveFormat(t *testing.T, h http.Handler, format string, values []string, action string) (int, http.Header) {
 	t.Helper()
+	status, headers, _ := serveFormatBody(t, h, format, values, action)
+	return status, headers
+}
+
+func serveFormatBody(t *testing.T, h http.Handler, format string, values []string, action string) (int, http.Header, []byte) {
+	t.Helper()
 	if format == "native" {
 		server := httptest.NewTestServer(t, h)
 		req, err := http.NewRequestWithContext(t.Context(), "GET", "http://example.com/", nil)
@@ -165,10 +177,11 @@ func serveFormat(t *testing.T, h http.Handler, format string, values []string, a
 			t.Fatal(err)
 		}
 		defer resp.Body.Close()
-		if _, err := io.Copy(io.Discard, resp.Body); err != nil {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
 			t.Fatal(err)
 		}
-		return resp.StatusCode, resp.Header
+		return resp.StatusCode, resp.Header, body
 	}
 	adapter, err := edge.New(h)
 	if err != nil {
@@ -220,9 +233,21 @@ func serveFormat(t *testing.T, h http.Handler, format string, values []string, a
 		for name, value := range resp2.Headers {
 			headers.Set(name, value)
 		}
-		return resp2.StatusCode, headers
+		return resp2.StatusCode, headers, responseBody(t, resp2.Body, resp2.IsBase64Encoded)
 	}
-	return resp1.StatusCode, http.Header(resp1.MultiValueHeaders)
+	return resp1.StatusCode, http.Header(resp1.MultiValueHeaders), responseBody(t, resp1.Body, resp1.IsBase64Encoded)
+}
+
+func responseBody(t *testing.T, body string, base64Encoded bool) []byte {
+	t.Helper()
+	if !base64Encoded {
+		return []byte(body)
+	}
+	out, err := base64.StdEncoding.DecodeString(body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return out
 }
 
 func TestIAMErrorMappingIsExplicit(t *testing.T) {
