@@ -183,6 +183,12 @@ Runnable SSE, direct JSON v2 NDJSON, binary and gzip examples accompany the
 cover both streaming entry points. Full module race tests, vet, formatting and
 Linux arm64/amd64 builds pass locally on Go 1.27.1.
 
+The [SDK documentation follow-up](reviews/2026-09-17-sdk-streaming-follow-up.md)
+reconfirmed latest stable versions and reproduced the transport observations with
+the SDK's own REST streaming response type. Ten local SDK probe cases now pass.
+It records the evidence and questions prepared for the user's AWS outreach;
+the deployment qualification remains open.
+
 Implemented under decision 0006: bounded direct JSON v2 envelope encoding,
 text/base64 body selection, and a shared invocation scope that preserves primary
 errors, cleans up on failures/panics, and checks parent cancellation. The HTTP

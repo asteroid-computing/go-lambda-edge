@@ -251,3 +251,14 @@ SSE, direct JSON v2 NDJSON, binary and gzip examples are runnable. Full module
 race tests, vet, formatting, and Linux arm64/amd64 builds pass on Go 1.27.1.
 See the [consumer guide](../streaming.md). No AWS deployment or account API was
 used, and no SDK workaround was introduced.
+
+## Documentation and SDK follow-up
+
+The user's requested [2026-09-17 follow-up](../reviews/2026-09-17-sdk-streaming-follow-up.md)
+rechecks current AWS docs, version-specific SDK Go docs and upstream discussions.
+All direct AWS dependencies remain latest stable. A tenth probe case now returns
+the SDK's APIGatewayProxyStreamingResponse directly and reproduces the missing
+mode header and connection reuse without edge's adapter or encoder. The SDK's
+explicit REST streaming documentation strengthens the intended-support evidence,
+but the transport discrepancy remains unresolved. The follow-up includes a draft
+of six precise questions for the user to send to AWS. No production policy changes.

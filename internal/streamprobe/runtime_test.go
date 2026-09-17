@@ -113,6 +113,20 @@ func TestRuntimeStreamingProbeProcess(t *testing.T) {
 		runEdgeStream(t, mode)
 		return
 	}
+	if mode == "sdk_gateway" {
+		// Exercise the SDK's documented REST response type directly, without
+		// edge's adapter or prefix encoder, to isolate Runtime API behavior.
+		lambda.Start(func(ctx context.Context) (*events.APIGatewayProxyStreamingResponse, error) {
+			url := "http://" + os.Getenv("AWS_LAMBDA_RUNTIME_API")
+			body := io.MultiReader(strings.NewReader("first\n"), &gatedTail{ctx: ctx, url: url, tail: bytes.NewReader([]byte("last\n"))})
+			return &events.APIGatewayProxyStreamingResponse{
+				StatusCode: 200,
+				Headers:    map[string]string{"Content-Type": "text/plain"},
+				Body:       &probeStream{body: body, url: url},
+			}, nil
+		})
+		return
+	}
 	makeStream := func(ctx context.Context) (io.ReadCloser, error) {
 		prefix, err := json.Marshal(struct {
 			StatusCode int                 `json:"statusCode"`
@@ -210,7 +224,7 @@ func runEdgeStream(t *testing.T, mode string) {
 }
 
 func TestSDKStreamsThroughRuntimeAPI(t *testing.T) {
-	for _, mode := range []string{"raw", "typed", "late_error", "data_and_error", "guarded_data_and_error", "edge_raw", "edge_typed", "edge_late_error", "edge_late_panic"} {
+	for _, mode := range []string{"raw", "typed", "late_error", "data_and_error", "guarded_data_and_error", "edge_raw", "edge_typed", "edge_late_error", "edge_late_panic", "sdk_gateway"} {
 		t.Run(mode, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(t.Context(), 15*time.Second)
 			defer cancel()
