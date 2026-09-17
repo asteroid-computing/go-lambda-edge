@@ -15,7 +15,7 @@ import (
 )
 
 func TestAuthorizationCancellationAcrossTransports(t *testing.T) {
-	for _, format := range []string{"native", "typed_v1", "typed_v2", "raw_rest", "raw_http_v1", "raw_http_v2"} {
+	for _, format := range []string{"native", "typed_v1", "typed_v2", "raw_rest", "raw_http_v1", "raw_http_v2", "stream_raw", "stream_typed"} {
 		t.Run(format, func(t *testing.T) {
 			ctx, cancel := context.WithCancelCause(t.Context())
 			defer cancel(nil)
@@ -51,6 +51,30 @@ func TestAuthorizationCancellationAcrossTransports(t *testing.T) {
 			v1 := events.APIGatewayProxyRequest{HTTPMethod: "GET", Path: "/", RequestContext: events.APIGatewayProxyRequestContext{APIID: "example"}}
 			v2 := events.APIGatewayV2HTTPRequest{Version: "2.0", RawPath: "/", RequestContext: events.APIGatewayV2HTTPRequestContext{APIID: "example", HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{Method: "GET"}}}
 			switch format {
+			case "stream_raw", "stream_typed":
+				streaming, configErr := edge.NewStreaming(h)
+				if configErr != nil {
+					t.Fatal(configErr)
+				}
+				if format == "stream_raw" {
+					wire, marshalErr := json.Marshal(v1)
+					if marshalErr != nil {
+						t.Fatal(marshalErr)
+					}
+					stream, invokeErr := streaming.Handle(ctx, wire)
+					err = invokeErr
+					if stream != nil {
+						_ = stream.Close()
+						t.Error("canceled authorization returned stream")
+					}
+				} else {
+					stream, invokeErr := streaming.HandleV1(ctx, v1)
+					err = invokeErr
+					if stream != nil {
+						_ = stream.Close()
+						t.Error("canceled authorization returned stream")
+					}
+				}
 			case "typed_v1":
 				response, invokeErr := adapter.HandleV1(ctx, v1)
 				err = invokeErr

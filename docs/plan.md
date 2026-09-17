@@ -45,7 +45,8 @@ port, source copy, or compatibility-preserving update of Beakley.
   types, sharing translation and identity policy with raw invocation.
 - Support REST API proxy events, HTTP API payload 1.0, and HTTP API payload 2.0.
   API product and payload version are distinct concepts.
-- Start with buffered responses. Streaming is a separate future capability.
+- Provide separate buffered and REST streaming adapters over shared request and
+  identity foundations. Both are implemented; deployed streaming remains unverified.
 - Keep payload dispatch and the response writer private initially.
 - Preserve separate IAM/JWT caller representations and an anonymous zero value;
   enforce invariants rather than relying on comments about a union.
@@ -140,7 +141,7 @@ allocation probe revised the resource policy to a 256 KiB default with
 an explicit positive override up to 6 MiB; the user approved it on 2026-09-15.
 The shared snapshot, suppression/accounting logic, V1/V2 projections, option
 validation and bounded streaming metadata prefix are implemented. The buffered
-writer now uses the shared header layer; streaming HTTP writer wiring remains.
+and streaming writers now use the shared header layer.
 Streaming is specified in
 [decision 0008](decisions/0008-streaming-architecture.md): explicit REST response
 streaming alongside the buffered adapter, sharing HTTP/identity foundations.
@@ -149,8 +150,8 @@ accepts concrete APIs and an ownership/state graph. The private bridge and share
 invocation ownership primitives are implemented. A local SDK Runtime API
 probe demonstrates incremental delivery, raw/typed capture, closure, and error
 trailers; it also exposes a bytes-plus-error reader issue and a missing header
-relative to AWS's documented streaming contract. No production streaming API is
-implemented, and deployed API Gateway behavior is not verified.
+relative to AWS's documented streaming contract. The production streaming API
+is now implemented; deployed API Gateway behavior is not verified.
 
 The private bridge publishes an owned prefix through an explicit handoff before
 body writes can block, uses an unbuffered pipe, and transfers cleanup to one
@@ -160,17 +161,27 @@ panics become sanitized terminal errors, and reader results defer errors that
 accompany bytes. Synthetic concurrency tests cover these boundaries and reporter
 failures. Full race tests (including the existing SDK probe), vet, formatting,
 and Linux arm64/amd64 builds pass on Go 1.27.1. HTTP streaming commitment,
-sniffing, framing validation, and public entry points remain to be implemented.
+sniffing, framing validation, and public entry points are now implemented under
+the subsequent writer review.
 
 The [2026-09-17 streaming writer review](decisions/0022-streaming-writer-review.md)
 confirms the approved state/ownership graph against completed authn/authz and the
-current AWS/Go documentation. S1 proposes no automatic streaming Content-Length;
-S2 proposes shared sniffing behavior for empty Content-Encoding. These await
-user approval. SDK v1.55.0 remains latest stable. Local probes reconfirm incremental
+current AWS/Go documentation. The user approved S1 (no automatic streaming
+Content-Length) and S2 (shared sniffing behavior for empty Content-Encoding) on
+2026-09-17 and authorized implementation. SDK v1.55.0 remains latest stable.
+Local probes reconfirm incremental
 delivery and the missing streaming-mode header, and additionally observe Runtime
 API connection reuse, another difference from the custom-runtime guide. Retain
 the existing deployment release gate for both observations; no live AWS test has
-run. The streaming writer and public entry points remain pending.
+run. The streaming writer, NewStreaming, Handle, HandleV1 and
+WithStreamErrorReporter are implemented. Shared request preparation preserves
+buffered behavior, identity policy and request cleanup. The SDK probe now drives
+the production adapter in raw/typed and late-error/panic cases, observes body
+delivery before producer completion and checks reader closure before reuse.
+Runnable SSE, direct JSON v2 NDJSON, binary and gzip examples accompany the
+[consumer guide](streaming.md). Authentication/authorization integration tests
+cover both streaming entry points. Full module race tests, vet, formatting and
+Linux arm64/amd64 builds pass locally on Go 1.27.1.
 
 Implemented under decision 0006: bounded direct JSON v2 envelope encoding,
 text/base64 body selection, and a shared invocation scope that preserves primary
@@ -179,8 +190,8 @@ writer now uses the shared header implementation from
 [decision 0010](decisions/0010-response-header-design.md), enforces commitment and
 body/length/status rules, and returns typed AWS response projections without
 JSON work. Tests compare ordinary behavior with net/http and exercise request
-conversion, mux/range/gzip handling and invocation cleanup. Public wiring still awaits
-the minimum identity contracts. [Initial codec benchmarks](benchmarks.md) record
+conversion, mux/range/gzip handling and invocation cleanup. Public buffered wiring
+subsequently completed with the identity contracts. [Initial codec benchmarks](benchmarks.md) record
 allocation baselines; they do not establish a peak-memory bound.
 
 Research and present a contract covering:
@@ -221,6 +232,10 @@ presenting an entire frozen public API at once.
 - [x] Implement bounded envelope/body encoding and shared invocation cleanup.
 - [x] Extract shared invocation ownership and implement the private streaming
       bridge, with handoff, backpressure, cancellation, cleanup, and error tests.
+- [x] Implement the streaming HTTP writer, raw/typed REST entry points, reporter,
+      examples and authentication/authorization integration tests under 0022.
+- [ ] Resolve the streaming SDK deployment qualification through authoritative
+      clarification, a suitable stable SDK fix or a separately approved live test.
 - [x] Implement the minimum reviewed identity/context and native gateway producers
       needed to honor WithGatewayIdentity(true) before publishing invocation.
 - [x] Implement raw invocation after the remaining transport contracts are reviewed.
@@ -241,8 +256,8 @@ presenting an entire frozen public API at once.
 
 CI configuration is present for Go 1.27.0/latest 1.27 patch tests, race detection,
 vet, and Lambda-target builds. It has not run on GitHub yet. Local Go 1.27.1 race
-tests, vet, formatting checks, and both target builds pass for the public buffered
-adapter. SDK registration, gateway recognition/fidelity, owned claims, concurrent
+tests, vet, formatting checks, and both target builds pass for both public
+adapters. SDK registration, gateway recognition/fidelity, owned claims, concurrent
 identity isolation, multipart cleanup, panic/cancellation and raw envelope limits
 are exercised. Runnable examples and initial public allocation benchmarks are
 present. HTTP 1.0 authentication coverage is explicitly qualified in

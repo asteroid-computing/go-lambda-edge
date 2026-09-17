@@ -100,6 +100,16 @@ func (a *Adapter) valid() error {
 }
 
 func (a *Adapter) buffered(ctx context.Context, inv *invocation, event decodedEvent, raw bool) (*bufferedResponse, error) {
+	request, err := prepareRequest(ctx, inv, event, raw, a.config)
+	if err != nil {
+		return nil, err
+	}
+	return serveBuffered(a.handler, request, a.config.responseHeaderBudget)
+}
+
+// prepareRequest owns the transport body before identity production can fail.
+// Both invocation modes serve the same prepared request and cleanup owner.
+func prepareRequest(ctx context.Context, inv *invocation, event decodedEvent, raw bool, cfg config) (*http.Request, error) {
 	var request *http.Request
 	var err error
 	if event.v1 != nil {
@@ -111,12 +121,12 @@ func (a *Adapter) buffered(ctx context.Context, inv *invocation, event decodedEv
 		return nil, err
 	}
 	inv.ownRequest(request)
-	if a.config.gatewayIdentity {
+	if cfg.gatewayIdentity {
 		var caller identity.Caller
 		if raw {
-			caller, err = rawGatewayCaller(event, a.config.identityClaimsBudget)
+			caller, err = rawGatewayCaller(event, cfg.identityClaimsBudget)
 		} else {
-			caller, err = typedGatewayCaller(event, a.config.identityClaimsBudget)
+			caller, err = typedGatewayCaller(event, cfg.identityClaimsBudget)
 		}
 		if err != nil {
 			return nil, err
@@ -130,5 +140,5 @@ func (a *Adapter) buffered(ctx context.Context, inv *invocation, event decodedEv
 		// original transport body separately even if the handler replaces it.
 		inv.request = request
 	}
-	return serveBuffered(a.handler, request, a.config.responseHeaderBudget)
+	return request, nil
 }

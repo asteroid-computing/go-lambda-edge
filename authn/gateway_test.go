@@ -1,6 +1,7 @@
 package authn_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json/v2"
@@ -134,7 +135,7 @@ func TestAuthenticationAcrossTransports(t *testing.T) {
 			})))
 			a := authenticator(t, authn.Config{Bearer: verifier.Verify, IAMProof: mapProofErrors(proofVerifier)})
 			h := handler(t, a, dispatcher)
-			for _, format := range []string{"native", "typed_v1", "typed_v2", "raw_rest", "raw_http_v1", "raw_http_v2"} {
+			for _, format := range []string{"native", "typed_v1", "typed_v2", "raw_rest", "raw_http_v1", "raw_http_v2", "stream_raw", "stream_typed"} {
 				t.Run(format, func(t *testing.T) {
 					action := tc.action
 					if action == "" {
@@ -152,8 +153,8 @@ func TestAuthenticationAcrossTransports(t *testing.T) {
 			}
 		})
 	}
-	if requests.Load() != 12 {
-		t.Fatalf("STS requests=%d; want 12 for the two valid-proof cases across six transports", requests.Load())
+	if requests.Load() != 16 {
+		t.Fatalf("STS requests=%d; want 16 for the two valid-proof cases across eight transports", requests.Load())
 	}
 }
 
@@ -183,10 +184,6 @@ func serveFormatBody(t *testing.T, h http.Handler, format string, values []strin
 		}
 		return resp.StatusCode, resp.Header, body
 	}
-	adapter, err := edge.New(h)
-	if err != nil {
-		t.Fatal(err)
-	}
 	v1 := events.APIGatewayProxyRequest{HTTPMethod: "GET", Path: "/", RequestContext: events.APIGatewayProxyRequestContext{APIID: "example"},
 		Headers: map[string]string{"action": action, "custom-trace": "keep"}}
 	v2 := events.APIGatewayV2HTTPRequest{Version: "2.0", RawPath: "/", RequestContext: events.APIGatewayV2HTTPRequestContext{APIID: "example", HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{Method: "GET"}},
@@ -195,6 +192,46 @@ func serveFormatBody(t *testing.T, h http.Handler, format string, values []strin
 		v1.Headers["authorization"] = values[0]
 		v1.MultiValueHeaders = map[string][]string{"Authorization": values}
 		v2.Headers["authorization"] = strings.Join(values, ",")
+	}
+	if format == "stream_raw" || format == "stream_typed" {
+		adapter, err := edge.NewStreaming(h)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var stream io.ReadCloser
+		if format == "stream_raw" {
+			wire, marshalErr := json.Marshal(v1)
+			if marshalErr != nil {
+				t.Fatal(marshalErr)
+			}
+			stream, err = adapter.Handle(t.Context(), wire)
+		} else {
+			stream, err = adapter.HandleV1(t.Context(), v1)
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer stream.Close()
+		wire, err := io.ReadAll(stream)
+		if err != nil {
+			t.Fatal(err)
+		}
+		prefix, body, ok := bytes.Cut(wire, make([]byte, 8))
+		if !ok {
+			t.Fatal("missing stream delimiter")
+		}
+		var metadata struct {
+			Status  int         `json:"statusCode"`
+			Headers http.Header `json:"multiValueHeaders"`
+		}
+		if err := json.Unmarshal(prefix, &metadata); err != nil {
+			t.Fatal(err)
+		}
+		return metadata.Status, metadata.Headers, body
+	}
+	adapter, err := edge.New(h)
+	if err != nil {
+		t.Fatal(err)
 	}
 	var resp1 events.APIGatewayProxyResponse
 	var resp2 events.APIGatewayV2HTTPResponse

@@ -1,9 +1,11 @@
 // Package edge adapts AWS API Gateway Lambda proxy events to net/http handlers.
 // It supports raw JSON v2 and already typed AWS events with optional native
-// gateway identity. Buffered responses use one shared HTTP translation policy.
+// gateway identity. Buffered and REST streaming responses share request and
+// identity policies; each has its own response and invocation boundary.
 package edge
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -23,9 +25,11 @@ type config struct {
 	gatewayIdentity      bool
 	identityClaimsBudget int
 	responseHeaderBudget int
+	streamReporter       func(context.Context, error)
+	streamReporterSet    bool
 }
 
-// Option configures an [Adapter] during construction.
+// Option configures an [Adapter] or [StreamingAdapter] during construction.
 // Use the option functions provided by this package. A nil Option is invalid.
 // Options apply in argument order; the last assignment to a scalar setting wins.
 type Option func(*config)
@@ -42,7 +46,7 @@ func WithGatewayIdentity(enabled bool) Option {
 }
 
 // WithIdentityClaimsBudget sets the gateway identity claims allowance in bytes.
-// The default is 256 KiB; New rejects a final setting outside 1..6 MiB.
+// The default is 256 KiB; New and NewStreaming reject settings outside 1..6 MiB.
 // Each claim value costs 64 bytes plus name, string and exact-number text bytes.
 // Dedicated gateway scopes consume the same allowance. Raw claim JSON is also
 // limited to this byte length. This is a resource policy, not a heap cap or AWS
@@ -54,7 +58,7 @@ func WithIdentityClaimsBudget(bytes int) Option {
 }
 
 // WithResponseHeaderBudget sets the response header resource budget in bytes.
-// The default is 256 KiB. New rejects a final configured value outside 1..6 MiB;
+// The default is 256 KiB. Both constructors reject settings outside 1..6 MiB;
 // zero does not disable the bound. Each original value costs its name length,
 // value length and 32 bytes; nil/empty slices cost their name length and 32.
 // Generated headers also consume the budget. This is a library resource policy,
@@ -73,8 +77,19 @@ func WithResponseHeaderBudget(bytes int) Option {
 // The caller retains ownership of handler and is responsible for its concurrency
 // safety when sharing it. New does not use [http.DefaultServeMux].
 func New(handler http.Handler, opts ...Option) (*Adapter, error) {
+	cfg, err := configureAdapter(handler, opts)
+	if err != nil {
+		return nil, err
+	}
+	if cfg.streamReporterSet {
+		return nil, errors.New("edge: stream error reporter requires NewStreaming")
+	}
+	return &Adapter{handler: handler, config: cfg}, nil
+}
+
+func configureAdapter(handler http.Handler, opts []Option) (config, error) {
 	if handler == nil {
-		return nil, errors.New("edge: nil HTTP handler")
+		return config{}, errors.New("edge: nil HTTP handler")
 	}
 	// An interface containing a typed nil is non-nil. Check nil-capable kinds
 	// before accepting a handler that would defer a startup fault to invocation.
@@ -82,22 +97,22 @@ func New(handler http.Handler, opts ...Option) (*Adapter, error) {
 	switch v.Kind() {
 	case reflect.Chan, reflect.Func, reflect.Map, reflect.Pointer, reflect.Slice:
 		if v.IsNil() {
-			return nil, errors.New("edge: nil HTTP handler")
+			return config{}, errors.New("edge: nil HTTP handler")
 		}
 	}
 
 	cfg := config{identityClaimsBudget: 256 * 1024, responseHeaderBudget: defaultResponseHeaderBudget}
 	for i, opt := range opts {
 		if opt == nil {
-			return nil, fmt.Errorf("edge: nil option at index %d", i)
+			return config{}, fmt.Errorf("edge: nil option at index %d", i)
 		}
 		opt(&cfg)
 	}
 	if cfg.responseHeaderBudget <= 0 || cfg.responseHeaderBudget > maxResponseBytes {
-		return nil, errors.New("edge: response header budget must be between 1 and 6291456 bytes")
+		return config{}, errors.New("edge: response header budget must be between 1 and 6291456 bytes")
 	}
 	if cfg.identityClaimsBudget <= 0 || cfg.identityClaimsBudget > maxResponseBytes {
-		return nil, errors.New("edge: identity claims budget must be between 1 and 6291456 bytes")
+		return config{}, errors.New("edge: identity claims budget must be between 1 and 6291456 bytes")
 	}
-	return &Adapter{handler: handler, config: cfg}, nil
+	return cfg, nil
 }

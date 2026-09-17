@@ -78,7 +78,7 @@ func TestAuthorizationAcrossTransports(t *testing.T) {
 			if tc.scheme == "EdgeIAM" {
 				token = proof.Value()
 			}
-			for _, format := range []string{"native", "typed_v1", "typed_v2", "raw_rest", "raw_http_v1", "raw_http_v2"} {
+			for _, format := range []string{"native", "typed_v1", "typed_v2", "raw_rest", "raw_http_v1", "raw_http_v2", "stream_raw", "stream_typed"} {
 				t.Run(format, func(t *testing.T) {
 					var lookups, executions atomic.Int64
 					grant, err := authz.Check(func(ctx context.Context, req authz.Request) (bool, error) {

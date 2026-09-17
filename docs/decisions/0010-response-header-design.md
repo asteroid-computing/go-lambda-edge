@@ -2,8 +2,9 @@
 
 Status: accepted by the user on 2026-09-15, including the measured 256 KiB
 default and explicit override up to 6 MiB. Shared snapshots, projections and
-streaming-prefix encoding are implemented and connected to the private buffered
-HTTP writer. Streaming HTTP writer wiring follows.
+streaming-prefix encoding are implemented and connected to both HTTP writers.
+Decision 0022 records the approved shared sniffing refinement and streaming
+Content-Length policy.
 
 Terminology: V1/V2 in this record mean API Gateway payload formats 1.0/2.0,
 not versions of this Go module. The field-combination table concerns outgoing
@@ -293,12 +294,11 @@ arm64/amd64 builds pass. The default's measured retained snapshot matches the
 probe at approximately 0.48 MiB for the high-cardinality fixture. Projection
 allocations are reported separately; no new resource policy is needed.
 
-The buffered writer now uses these primitives for status/method rules, sniffing,
+Both writers now use these primitives for status/method rules, sniffing,
 length enforcement, commitment timing and late unsupported-trailer detection.
-The streaming HTTP writer remains to be implemented. Constructor options and
-private primitives do
-not make the unfinished adapter usable as a Lambda handler yet.
+The streaming HTTP writer and public entry points were completed on 2026-09-17
+under decision 0022, including the shared empty-encoding sniffing refinement.
 
-Public invocation/identity work and the SDK Runtime API header compatibility
-question remain separate. No account APIs or live AWS deployments were used for
+The SDK Runtime API header/connection compatibility question remains a separate
+deployment qualification. No account APIs or live AWS deployments were used for
 this proposal.

@@ -1,8 +1,8 @@
 # 0022: Streaming writer completion and SDK compatibility review
 
-Status: design review completed on 2026-09-17. S1 and S2 are proposed refinements
-awaiting user approval. S3 records fresh evidence for the existing release gate.
-No production streaming writer or public streaming entry point was added.
+Status: S1 and S2 approved by the user on 2026-09-17; implemented and locally validated.
+S3 retains the existing deployment release gate. The user authorized completing
+the streaming writer and approved public entry points under these refinements.
 
 ## Current boundaries and official evidence
 
@@ -14,8 +14,9 @@ sanitized error categories; decision 0021 now supplies application authorization
 Implemented foundations are `stream.go`, `stream_encoding.go`,
 `response_headers.go`, `adapter_invoke.go` and `invocation.go`. They provide the
 bridge, framing, header ownership, request conversion, identity and cleanup.
-The remaining work is the HTTP writer and approved public wiring. No new event
-types, authentication APIs or framework-owned dispatcher are needed.
+The HTTP writer and approved public wiring are now implemented in
+`streaming_writer.go` and `streaming_adapter.go`. No new event types,
+authentication APIs or framework-owned dispatcher were needed.
 
 Official documentation was checked through `aws-proxy-public` on 2026-09-17:
 
@@ -112,7 +113,7 @@ The following apply the accepted design rather than reopen it:
     prove REST deployment configuration. Preserve that qualification and the SDK
     capture-versus-edge JSON v2 distinction in registration examples.
 
-## S1. Proposed: never infer streaming Content-Length
+## S1. Accepted: never infer streaming Content-Length
 
 Earlier approvals prohibit whole-body buffering and inference after handoff,
 but do not settle whether a tiny response completing before handoff should gain
@@ -137,9 +138,9 @@ native HTTP would infer. Applications needing a representation length supply
 one explicitly. Buffered behavior is unchanged. This is edge policy, not an AWS
 prohibition on inferred lengths.
 
-## S2. Proposed: share a nonblank Content-Encoding sniffing test
+## S2. Accepted: share a nonblank Content-Encoding sniffing test
 
-`bufferedWriter.finish` currently suppresses sniffing whenever Content-Encoding
+Before this refinement, `bufferedWriter.finish` suppressed sniffing when Content-Encoding
 has any values, including a single empty string. Go 1.27.1 checks for a nonblank
 encoding. The local HTTP probe confirms an empty Content-Encoding permits HTML
 content detection, while an actual encoding suppresses it.
@@ -162,7 +163,7 @@ A universal encoding parser would be unnecessary additional scope.
 **Consequence:** buffered responses with absent Content-Type and explicitly empty
 Content-Encoding may now gain a detected type. Actual encodings, explicit type
 suppression and header representation remain unchanged. This compatibility
-correction needs approval before changing production behavior.
+correction was approved on 2026-09-17.
 
 ## S3. SDK issue: retain the existing deployment release gate
 
@@ -201,7 +202,7 @@ deployments or upstream posts. Deployment support remains unverified.
 
 ## Implementation sequence and validation
 
-1. Record S1/S2 resolution. If S2 is accepted, add the shared predicate and focused
+1. Record S1/S2 resolution, then add the shared predicate and focused
    buffered regressions before implementing streaming sniffing.
 2. Implement the private writer over the existing bridge, testing split sniffing,
    suppression, empty writes/flushes, publication, lengths, bodyless responses,
@@ -216,9 +217,37 @@ deployments or upstream posts. Deployment support remains unverified.
 6. Run race tests, vet, formatting and both Lambda builds. Report local completion
    separately from deployment compatibility.
 
-This review changes only documentation and local observation probes. The Go
+The initial review changed only documentation and local observation probes. The Go
 1.27.1 HTTP reference probe passes for nil/empty/actual Content-Encoding,
 Content-Type suppression and empty Flush. The latter publishes without a type
 or inferred length. Both reference and SDK probes pass with race detection.
-Public streaming implementation and the proposed policy corrections remain
-pending; existing accepted contracts stay in force.
+The user subsequently approved S1/S2 and authorized implementation on 2026-09-17.
+Existing accepted contracts and the deployment qualification stay in force.
+
+## Implementation completed on 2026-09-17
+
+The writer, constructor, raw/typed REST methods and terminal reporter are now
+implemented. Shared preparation reuses buffered request validation, body ownership
+and opt-in native identity. Both writers use the approved sniffing predicate;
+streaming consistently omits inferred lengths. The writer retains at most 512
+sniff bytes and uses the existing bridge for handoff and backpressure.
+
+Contract tests cover split sniffing, header ownership, empty writes/flushes,
+explicit/suppressed type, encoding, lengths, HEAD/bodyless statuses, sticky faults,
+prefix/header bounds, partial writes, trailers, early/late panics, cancellation,
+Close, reporter faults, multipart cleanup and concurrent identity isolation.
+An 8 MiB body test proves the streaming path does not apply the buffered envelope
+limit. Existing Cognito/IAM authentication, authorization and cancellation matrices
+now include both streaming entry points.
+
+The SDK subprocess suite has nine cases, including the production raw/typed
+adapter and its late length error/panic paths. The local Runtime API server reads
+the first body segment before releasing the producer, testing delivery beyond
+metadata. It checks reader closure before the next invocation. The mode-header
+and connection-reuse observations remain; successful mock delivery does not
+resolve S3.
+
+SSE, direct JSON v2 NDJSON, binary and gzip examples are runnable. Full module
+race tests, vet, formatting, and Linux arm64/amd64 builds pass on Go 1.27.1.
+See the [consumer guide](../streaming.md). No AWS deployment or account API was
+used, and no SDK workaround was introduced.

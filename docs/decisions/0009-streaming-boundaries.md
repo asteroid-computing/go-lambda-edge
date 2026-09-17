@@ -1,11 +1,12 @@
 # 0009: Streaming entry points, ownership, and failure boundaries
 
-Status: accepted by the user on 2026-09-14; implementation in progress.
+Status: accepted by the user on 2026-09-14; implemented with local validation.
+Deployed SDK/API Gateway compatibility remains unverified.
 
 The [2026-09-17 writer review](0022-streaming-writer-review.md) applies this
-accepted contract to the completed shared foundations. Two additional policies
-await review there: inferred streaming lengths and empty Content-Encoding
-sniffing. Its fresh local SDK probe also observes response-connection reuse,
+accepted contract to the completed shared foundations. Its refinements were
+approved on 2026-09-17 and implemented: no inferred streaming lengths and shared
+empty Content-Encoding sniffing. Its local SDK probe observes connection reuse,
 extending the existing runtime compatibility question below. Decision 0010
 already resolved the conservative metadata-prefix implementation limit.
 
@@ -249,6 +250,8 @@ reporter panic isolation, and bytes-plus-error normalization. Go 1.27 synctest
 bubbles also require their goroutines to exit. Full race tests, the existing SDK
 probe, vet, formatting, and Linux arm64/amd64 builds pass on Go 1.27.1.
 
-This is the ownership/transport foundation. It does not yet implement the HTTP
-streaming writer, prefix codec/limit, constructor/options, or public entry points,
-and it does not resolve the documented AWS Runtime API header mismatch.
+That initial milestone supplied the ownership/transport foundation. Decision
+0010 subsequently implemented the prefix codec/limit, and decision 0022 completed
+the HTTP writer, constructor/options and raw/typed public entry points on
+2026-09-17. The SDK probe now exercises that production path. The documented
+Runtime API header/connection mismatch remains an open deployment qualification.

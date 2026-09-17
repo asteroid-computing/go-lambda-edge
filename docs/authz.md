@@ -183,9 +183,10 @@ authorize and execute that same entry/target. Unknown actions have no unprotecte
 fallback. Do not reread mutable headers for policy or execution. Resource version
 and transaction consistency remain the application's responsibility.
 
-The same handler works through ordinary net/http or `edge.New(handler)`. Complete
-authorization before response commitment or streaming flush. This milestone does
-not introduce public streaming entry points or ongoing stream reauthorization.
+The same handler works through ordinary net/http, `edge.New(handler)` or
+`edge.NewStreaming(handler)`. Complete authentication, target resolution and
+authorization before response commitment or streaming flush. Ongoing stream
+reauthorization remains application-owned; see the [streaming guide](streaming.md).
 
 See [decision 0021](decisions/0021-authorization-rules.md) for the approved design,
 alternatives and official AWS/IETF evidence.

@@ -1,8 +1,9 @@
 // Package streamprobe tests the pinned SDK transport against a local Runtime API.
-// It is a design probe, not an implementation of edge's streaming API.
+// It covers SDK behavior and the actual edge streaming writer without live AWS.
 package streamprobe
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json/jsontext"
@@ -23,6 +24,8 @@ import (
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+
+	"github.com/asteroid-computing/go-lambda-edge"
 )
 
 const eventJSON = `{"httpMethod":"GET","path":"/","requestContext":{"apiId":"example"},"number":9007199254740993,"duplicate":1,"duplicate":2}`
@@ -57,11 +60,15 @@ func (s *probeStream) MarshalJSON() ([]byte, error) {
 	return nil, errors.New("stream is not a JSON response")
 }
 func (s *probeStream) Close() error {
+	var closeErr error
+	if body, ok := s.body.(io.Closer); ok {
+		closeErr = body.Close()
+	}
 	response, err := (&http.Client{Timeout: 3 * time.Second}).Get(s.url + "/closed")
 	if err != nil {
-		return err
+		return errors.Join(closeErr, err)
 	}
-	return response.Body.Close()
+	return errors.Join(closeErr, response.Body.Close())
 }
 
 type gatedTail struct {
@@ -102,6 +109,10 @@ func TestRuntimeStreamingProbeProcess(t *testing.T) {
 	if mode == "" {
 		return
 	}
+	if strings.HasPrefix(mode, "edge_") {
+		runEdgeStream(t, mode)
+		return
+	}
 	makeStream := func(ctx context.Context) (io.ReadCloser, error) {
 		prefix, err := json.Marshal(struct {
 			StatusCode int                 `json:"statusCode"`
@@ -140,8 +151,66 @@ func TestRuntimeStreamingProbeProcess(t *testing.T) {
 	})
 }
 
+func runEdgeStream(t *testing.T, mode string) {
+	t.Helper()
+	url := "http://" + os.Getenv("AWS_LAMBDA_RUNTIME_API")
+	a, err := edge.NewStreaming(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		if mode == "edge_late_error" {
+			w.Header().Set("Content-Length", "99")
+		}
+		if _, err := io.WriteString(w, "first\n"); err != nil {
+			return
+		}
+		if err := http.NewResponseController(w).Flush(); err != nil {
+			return
+		}
+		request, err := http.NewRequestWithContext(r.Context(), http.MethodGet, url+"/continue", nil)
+		if err != nil {
+			panic(err)
+		}
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			panic(err)
+		}
+		_ = response.Body.Close()
+		if mode == "edge_late_error" {
+			return
+		}
+		if mode == "edge_late_panic" {
+			panic("synthetic private panic")
+		}
+		_, _ = io.WriteString(w, "last\n")
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	observe := func(s io.ReadCloser, err error) (io.ReadCloser, error) {
+		if err != nil {
+			return nil, err
+		}
+		content, ok := s.(interface{ ContentType() string })
+		if !ok || content.ContentType() != integrationContentType {
+			_ = s.Close()
+			return nil, errors.New("edge stream lost integration content type")
+		}
+		// Forward the production reader unchanged; the wrapper only records that
+		// SDK Close joined edge cleanup before the next invocation is requested.
+		return &probeStream{body: s, url: url}, nil
+	}
+	if mode == "edge_typed" {
+		lambda.Start(func(ctx context.Context, event events.APIGatewayProxyRequest) (io.ReadCloser, error) {
+			return observe(a.HandleV1(ctx, event))
+		})
+		return
+	}
+	lambda.Start(func(ctx context.Context, event jsontext.Value) (io.ReadCloser, error) {
+		return observe(a.Handle(ctx, event))
+	})
+}
+
 func TestSDKStreamsThroughRuntimeAPI(t *testing.T) {
-	for _, mode := range []string{"raw", "typed", "late_error", "data_and_error", "guarded_data_and_error"} {
+	for _, mode := range []string{"raw", "typed", "late_error", "data_and_error", "guarded_data_and_error", "edge_raw", "edge_typed", "edge_late_error", "edge_late_panic"} {
 		t.Run(mode, func(t *testing.T) {
 			ctx, cancel := context.WithTimeout(t.Context(), 15*time.Second)
 			defer cancel()
@@ -161,6 +230,7 @@ func TestSDKStreamsThroughRuntimeAPI(t *testing.T) {
 			results := make(chan result, 1)
 			var invokes atomic.Int32
 			var nextConnection atomic.Value
+			var streamClosed atomic.Bool
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				switch r.URL.Path {
 				case "/continue":
@@ -170,10 +240,14 @@ func TestSDKStreamsThroughRuntimeAPI(t *testing.T) {
 					case <-r.Context().Done():
 					}
 				case "/closed":
+					streamClosed.Store(true)
 					closed <- struct{}{}
 					w.WriteHeader(http.StatusNoContent)
 				case "/2018-06-01/runtime/invocation/next":
 					if invokes.Add(1) > 1 {
+						if !streamClosed.Load() {
+							t.Error("next invocation requested before stream Close completed")
+						}
 						nextConnection.Store(r.RemoteAddr)
 						next <- struct{}{}
 						<-r.Context().Done()
@@ -181,21 +255,39 @@ func TestSDKStreamsThroughRuntimeAPI(t *testing.T) {
 					}
 					w.Header().Set("Lambda-Runtime-Aws-Request-Id", "probe")
 					w.Header().Set("Lambda-Runtime-Deadline-Ms", strconv.FormatInt(time.Now().Add(time.Minute).UnixMilli(), 10))
-					if _, err := io.WriteString(w, eventJSON); err != nil {
+					input := eventJSON
+					if strings.HasPrefix(mode, "edge_") {
+						input = strings.Replace(input, `,"duplicate":1,"duplicate":2`, "", 1)
+					}
+					if _, err := io.WriteString(w, input); err != nil {
 						t.Error(err)
 					}
 				case "/2018-06-01/runtime/invocation/probe/response":
-					// Read only one byte before releasing the second part of the
-					// stream. A fully buffered implementation cannot pass this.
-					one := make([]byte, 1)
-					_, err := io.ReadFull(r.Body, one)
+					// Require the first application body segment, not just metadata,
+					// before releasing the producer's second segment.
+					reader := bufio.NewReader(r.Body)
+					var initial []byte
+					var err error
+					for len(initial) < 16000 && !bytes.HasSuffix(initial, make([]byte, 8)) {
+						var b byte
+						b, err = reader.ReadByte()
+						if err != nil {
+							break
+						}
+						initial = append(initial, b)
+					}
+					if err == nil {
+						first := make([]byte, len("first\n"))
+						_, err = io.ReadFull(reader, first)
+						initial = append(initial, first...)
+					}
 					if err != nil {
 						results <- result{err: err}
 						return
 					}
 					firstRead <- struct{}{}
-					rest, err := io.ReadAll(r.Body)
-					results <- result{body: append(one, rest...), header: r.Header.Clone(), trailer: r.Trailer.Clone(), chunked: slices.Contains(r.TransferEncoding, "chunked"), closeConnection: r.Close, connection: r.RemoteAddr, err: err}
+					rest, err := io.ReadAll(reader)
+					results <- result{body: append(initial, rest...), header: r.Header.Clone(), trailer: r.Trailer.Clone(), chunked: slices.Contains(r.TransferEncoding, "chunked"), closeConnection: r.Close, connection: r.RemoteAddr, err: err}
 					w.WriteHeader(http.StatusAccepted)
 				default:
 					data, err := io.ReadAll(r.Body)
@@ -256,8 +348,8 @@ func TestSDKStreamsThroughRuntimeAPI(t *testing.T) {
 				t.Fatalf("invalid integration framing: %q", got.body)
 			}
 			wantBody := "first\nlast\n"
-			wantError := mode == "late_error" || mode == "data_and_error" || mode == "guarded_data_and_error"
-			if mode == "late_error" || mode == "data_and_error" {
+			wantError := mode == "late_error" || mode == "data_and_error" || mode == "guarded_data_and_error" || mode == "edge_late_error" || mode == "edge_late_panic"
+			if mode == "late_error" || mode == "data_and_error" || mode == "edge_late_error" || mode == "edge_late_panic" {
 				wantBody = "first\n"
 			}
 			if string(body) != wantBody || (got.trailer.Get("Lambda-Runtime-Function-Error-Type") != "") != wantError {

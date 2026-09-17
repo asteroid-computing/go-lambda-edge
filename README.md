@@ -52,12 +52,16 @@ resource selection and HTTP responses; see the [authorization guide](docs/authz.
 and [runnable dispatcher examples](authz/example_test.go).
 No live Cognito/STS interoperability test has run.
 
-The accepted streaming design now has a private bridge with incremental delivery,
-backpressure, cancellation, cleanup, and terminal-error handling. Its lifecycle
-is covered by race-enabled synthetic concurrency tests. Bounded JSON v2 metadata
-prefix encoding is implemented. HTTP streaming commitment and public streaming
-entry points remain under construction; deployed API Gateway
-streaming has not been verified.
+REST response streaming is implemented through `edge.NewStreaming(handler)` and
+`lambda.Start(adapter.Handle)` or `lambda.Start(adapter.HandleV1)`. It provides
+bounded sniffing, Flush/FlushError, raw body delivery, backpressure, cancellation,
+cleanup and sanitized terminal errors. Streaming never infers Content-Length.
+See the [streaming guide](docs/streaming.md) and
+[SSE, NDJSON, binary and gzip examples](streaming_example_test.go).
+Local SDK tests pass, but deployment support remains unverified: SDK v1.55.0's
+Runtime API mode header and connection handling differ from current AWS guidance.
+The [deployment qualification](docs/decisions/0022-streaming-writer-review.md#s3-sdk-issue-retain-the-existing-deployment-release-gate)
+remains open; no live API Gateway streaming test has run.
 
 ## Header-selected actions
 
@@ -86,9 +90,10 @@ value costs `len(name) + len(value) + 32`; nil/empty slices still cost a name pl
 32, and generated headers consume remaining budget. This is separate from the
 complete buffered-envelope limit and the 16,000-byte streaming metadata prefix
 (including its delimiter). It is neither an AWS quota nor a total heap bound.
-The buffered writer applies the allowance at commitment. Raw invocation also
+Both writers apply the allowance at commitment. Raw buffered invocation also
 checks the complete serialized response against 6 MiB; typed callers own their
-final envelope serialization and size. The streaming HTTP writer remains pending.
+final envelope serialization and size. Streaming checks the complete metadata
+prefix before handing off the reader; its body does not use the buffered limit.
 
 ## Owned claims
 
@@ -125,7 +130,8 @@ allowance to gateway claims and dedicated scopes.
 Handlers receive an owned request body and canceled context after invocation.
 Multipart files parsed on the served request are removed on success, error or
 panic. Middleware that parses multipart on a separate request copy owns cleanup
-of files attached only to that copy. Handler panics propagate after cleanup.
+of files attached only to that copy. Buffered and pre-handoff streaming panics
+propagate after cleanup; post-handoff streaming panics become terminal errors.
 
 - [Implementation plan](docs/plan.md)
 - [Design decisions](docs/decisions/README.md)

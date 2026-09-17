@@ -30,6 +30,30 @@ type responseHeaders struct {
 	noContentLength bool
 }
 
+// canSniffType uses the committed, trimmed fields. A later nonblank encoding
+// value still suppresses detection if an earlier repeated value was empty.
+func (h *responseHeaders) canSniffType() bool {
+	if _, present := h.fields["Content-Type"]; present || h.noContentType {
+		return false
+	}
+	for _, encoding := range h.fields["Content-Encoding"] {
+		if encoding != "" {
+			return false
+		}
+	}
+	return true
+}
+
+func responseTrailers(fields http.Header) error {
+	for name, values := range fields {
+		declared := len(name) == len("Trailer") && strings.EqualFold(name, "Trailer") && len(values) != 0
+		if strings.HasPrefix(name, http.TrailerPrefix) || declared {
+			return errResponseTrailers
+		}
+	}
+	return nil
+}
+
 // chargeResponseHeaders bounds work and copying before sorting or allocation.
 // Empty slices count as one entry so suppression markers also have a cost.
 func chargeResponseHeaders(fields http.Header, remaining int) (int, error) {

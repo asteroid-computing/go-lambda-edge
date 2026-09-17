@@ -4,7 +4,6 @@ import (
 	"math"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
 )
@@ -56,7 +55,7 @@ func (w *bufferedWriter) WriteHeader(status int) {
 	if w.err != nil {
 		return
 	}
-	if !bufferedBodyAllowed(status) {
+	if !responseBodyAllowed(status) {
 		w.headers.remove("Content-Length")
 		if status == http.StatusNotModified {
 			w.headers.remove("Content-Type")
@@ -75,7 +74,7 @@ func (w *bufferedWriter) Write(p []byte) (int, error) {
 	if len(p) == 0 {
 		return 0, nil
 	}
-	if !bufferedBodyAllowed(w.status) {
+	if !responseBodyAllowed(w.status) {
 		return 0, http.ErrBodyNotAllowed
 	}
 	if w.hasLength && int64(len(p)) > w.declaredLength-w.written {
@@ -98,7 +97,7 @@ func (w *bufferedWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func bufferedBodyAllowed(status int) bool {
+func responseBodyAllowed(status int) bool {
 	return status != http.StatusNoContent && status != http.StatusResetContent && status != http.StatusNotModified
 }
 
@@ -113,17 +112,14 @@ func (w *bufferedWriter) finish() (*bufferedResponse, error) {
 	if w.err != nil {
 		return nil, w.err
 	}
-	for name, values := range w.header {
-		declared := len(name) == len("Trailer") && strings.EqualFold(name, "Trailer") && len(values) != 0
-		if strings.HasPrefix(name, http.TrailerPrefix) || declared {
-			return nil, errResponseTrailers
-		}
+	if err := responseTrailers(w.header); err != nil {
+		return nil, err
 	}
 	if w.method != http.MethodHead && w.hasLength && w.written != w.declaredLength {
 		return nil, invocationError("response", ErrResponse, "response body length mismatch", http.ErrContentLength)
 	}
-	if bufferedBodyAllowed(w.status) {
-		if len(w.body.data) > 0 && len(w.headers.fields["Content-Encoding"]) == 0 {
+	if responseBodyAllowed(w.status) {
+		if len(w.body.data) > 0 && w.headers.canSniffType() {
 			kind := http.DetectContentType(w.body.data[:min(len(w.body.data), 512)])
 			if err := w.headers.automatic("Content-Type", kind); err != nil {
 				return nil, err
