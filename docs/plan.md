@@ -162,6 +162,16 @@ failures. Full race tests (including the existing SDK probe), vet, formatting,
 and Linux arm64/amd64 builds pass on Go 1.27.1. HTTP streaming commitment,
 sniffing, framing validation, and public entry points remain to be implemented.
 
+The [2026-09-17 streaming writer review](decisions/0022-streaming-writer-review.md)
+confirms the approved state/ownership graph against completed authn/authz and the
+current AWS/Go documentation. S1 proposes no automatic streaming Content-Length;
+S2 proposes shared sniffing behavior for empty Content-Encoding. These await
+user approval. SDK v1.55.0 remains latest stable. Local probes reconfirm incremental
+delivery and the missing streaming-mode header, and additionally observe Runtime
+API connection reuse, another difference from the custom-runtime guide. Retain
+the existing deployment release gate for both observations; no live AWS test has
+run. The streaming writer and public entry points remain pending.
+
 Implemented under decision 0006: bounded direct JSON v2 envelope encoding,
 text/base64 body selection, and a shared invocation scope that preserves primary
 errors, cleans up on failures/panics, and checks parent cancellation. The HTTP

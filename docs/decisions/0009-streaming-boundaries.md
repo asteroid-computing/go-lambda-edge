@@ -2,6 +2,13 @@
 
 Status: accepted by the user on 2026-09-14; implementation in progress.
 
+The [2026-09-17 writer review](0022-streaming-writer-review.md) applies this
+accepted contract to the completed shared foundations. Two additional policies
+await review there: inferred streaming lengths and empty Content-Encoding
+sniffing. Its fresh local SDK probe also observes response-connection reuse,
+extending the existing runtime compatibility question below. Decision 0010
+already resolved the conservative metadata-prefix implementation limit.
+
 ## Recommended public boundary
 
 Keep a distinct adapter in the root edge package. Accepted signatures:

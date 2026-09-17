@@ -150,14 +150,17 @@ func TestSDKStreamsThroughRuntimeAPI(t *testing.T) {
 			closed := make(chan struct{}, 1)
 			next := make(chan struct{}, 1)
 			type result struct {
-				body    []byte
-				header  http.Header
-				trailer http.Header
-				chunked bool
-				err     error
+				body            []byte
+				header          http.Header
+				trailer         http.Header
+				chunked         bool
+				closeConnection bool
+				connection      string
+				err             error
 			}
 			results := make(chan result, 1)
 			var invokes atomic.Int32
+			var nextConnection atomic.Value
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				switch r.URL.Path {
 				case "/continue":
@@ -171,6 +174,7 @@ func TestSDKStreamsThroughRuntimeAPI(t *testing.T) {
 					w.WriteHeader(http.StatusNoContent)
 				case "/2018-06-01/runtime/invocation/next":
 					if invokes.Add(1) > 1 {
+						nextConnection.Store(r.RemoteAddr)
 						next <- struct{}{}
 						<-r.Context().Done()
 						return
@@ -191,7 +195,7 @@ func TestSDKStreamsThroughRuntimeAPI(t *testing.T) {
 					}
 					firstRead <- struct{}{}
 					rest, err := io.ReadAll(r.Body)
-					results <- result{body: append(one, rest...), header: r.Header.Clone(), trailer: r.Trailer.Clone(), chunked: slices.Contains(r.TransferEncoding, "chunked"), err: err}
+					results <- result{body: append(one, rest...), header: r.Header.Clone(), trailer: r.Trailer.Clone(), chunked: slices.Contains(r.TransferEncoding, "chunked"), closeConnection: r.Close, connection: r.RemoteAddr, err: err}
 					w.WriteHeader(http.StatusAccepted)
 				default:
 					data, err := io.ReadAll(r.Body)
@@ -267,6 +271,9 @@ func TestSDKStreamsThroughRuntimeAPI(t *testing.T) {
 					t.Fatal("runtime did not close stream before requesting next invocation")
 				}
 			}
+			// Observe compatibility details without asserting that a future SDK
+			// must retain today's omissions or connection reuse behavior.
+			t.Logf("runtime-request-close=%v response-connection-reused-for-next=%v", got.closeConnection, nextConnection.Load() == got.connection)
 		})
 	}
 }
