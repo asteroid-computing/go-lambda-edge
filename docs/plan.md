@@ -411,6 +411,31 @@ responses and cancellation. No live AWS or GitHub CI run occurred.
 Acceptance: examples work both in Lambda and ordinary HTTP applications, while
 authorization decisions remain inspectable and deny by default.
 
+### 6. Consumer readiness and release preparation — proposed
+
+The user authorized a consumer-readiness design review on 2026-09-20.
+[Decision 0023](decisions/0023-consumer-readiness.md) records the code/documentation
+evidence, the Beakley failure-case coverage matrix and recommendations R1–R6.
+The recommendations await approval; the earlier `edgetest` package direction is
+not silently replaced by the proposed deferral.
+
+- [x] Review public composition, existing examples, fixture provenance, deferred
+      features, package dependencies and CI/release readiness.
+- [ ] Review R1–R6: complete reference application; defer edgetest exports until
+      concrete use; consumer outcome tests; precise support matrix; v0 release
+      preparation; owner-selected distribution/license policy.
+- [ ] After approval, implement the reference application and consumer-testing
+      guide using the existing public APIs, with local provider fixtures.
+- [ ] After approval, reconcile support/status documentation, update the indirect
+      Smithy patch in isolation, and record incremental streaming baselines.
+- [ ] Obtain actual GitHub CI evidence and resolve publication prerequisites
+      before a release. No push, tag, publication or deployment was authorized by
+      this review. Streaming deployment and live identity interoperability remain
+      separate qualifications.
+
+The review's fresh local race tests, vet, module verification and Linux
+arm64/amd64 builds pass on Go 1.27.1. No runtime behavior changed.
+
 ## Findings carried forward from the Beakley review
 
 These are requirements to test independently, not instructions to preserve old
