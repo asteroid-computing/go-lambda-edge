@@ -445,6 +445,11 @@ and Linux arm64/amd64 builds pass on Go 1.27.1 (2026-09-21). GitHub has no runs 
 this branch; its actual CI evidence, the license and deployment qualifications
 remain open. No push, publication or AWS deployment occurred.
 
+Release automation follow-up (2026-09-21): the user selected Release Please and
+its GitHub Action, plus checks on PRs against main. [Decision 0024](decisions/0024-release-automation.md)
+records the accepted trigger change and proposed credential/versioning choices.
+Those choices require review before the dependent release workflow is wired.
+
 ## Findings carried forward from the Beakley review
 
 These are requirements to test independently, not instructions to preserve old
