@@ -1,8 +1,8 @@
 # 0024: Release Please and pull-request validation
 
-Status: Release Please plus its GitHub Action, and checks for PRs against main,
-are user-directed on 2026-09-21. Credential and versioning recommendations below
-await review. PR trigger changes are implemented independently.
+Status: accepted and locally implemented on 2026-09-21. The user approved
+GitHub App authentication and initial v0.1.0 following the recommended v0 policy.
+Release Please, its GitHub Action and PR checks against main are user-directed.
 
 ## Evidence
 
@@ -38,9 +38,9 @@ Use pull_request against main, including opened, synchronize, reopened and
 ready_for_review. Retain the existing validation matrix, read-only default token
 and checkout without persisted credentials. Cancel superseded runs for the same
 PR. Do not use path filters that could omit required checks on release-only PRs.
-Keep current push-to-main validation until the release workflow is integrated.
+Main validation moves to the reusable job called by the release workflow.
 
-## Recommendation A: Release workflow and credential
+## Accepted A: Release workflow and credential
 
 Use a dedicated push-to-main release workflow that first calls the Go workflow
 as a reusable validation job, then runs Release Please only after success. The Go
@@ -67,7 +67,7 @@ needs an owner settings change. Do not silently fall back between token types.
 No app, credential, remote PR or release is created during local wiring. App
 installation/credential provisioning is an explicit setup prerequisite.
 
-## Recommendation B: Initial version and v0 evolution
+## Accepted B: Initial version and v0 evolution
 
 Recommend one root Go module with ordinary v-prefixed tags, starting at v0.1.0.
 Use manifest mode, release-type go, include-component-in-tag false, an empty
@@ -93,8 +93,24 @@ The existing license and AWS interoperability qualifications remain release-revi
 items. Configuring release automation does not claim they are resolved, and does
 not authorize publishing a release now.
 
-## Validation
+## Implementation and validation
 
-The main-targeted PR workflow passes local actionlint v1.7.12 and diff whitespace
-checks. No Go source changed in this step; the existing Go test/build commands
-remain in place. No workflow was dispatched or repository setting changed.
+The release workflow calls the existing Go jobs before minting a scoped App token
+and invoking Release Please. Go retains direct main-targeted PR events and uses
+workflow_call for main validation, with no duplicate push trigger. Both release
+and App-token actions use the verified stable commit SHAs. Missing configuration
+fails explicitly without printing credentials or falling back to GITHUB_TOKEN.
+
+Root Go manifest configuration selects initial-version 0.1.0, an empty bootstrap
+manifest, unprefixed v-tags and the accepted pre-major bump flags. The first
+release PR creates CHANGELOG.md. [The release guide](../releases.md) documents
+App setup, permissions, checks, human publication review and remaining limits.
+
+Both workflows pass local actionlint v1.7.12 and diff whitespace checks. JSON
+configuration validates against the bundled release-please 17.6.0 schema. Local
+structure checks confirm PR triggers, reusable validation, release's dependency
+on validation, scoped credential use, and unchanged Go test/build jobs. No Go
+source changed, so runtime suites were not rerun for this workflow-only change.
+No App was installed, credentials provisioned, workflow dispatched, repository
+settings changed, or release published. Remote activation still needs App setup
+and a successful GitHub run.

@@ -11,13 +11,23 @@ commitment. This checklist records preparation, not authorization to publish:
 - Reproducible SDK versions and an isolated Smithy patch update.
 - Race tests, vet, module verification, formatting and Linux arm64/amd64 builds.
 
+Release Please and GitHub App authentication are now configured for an initial
+v0.1.0 under decision 0024. [The release guide](releases.md) documents the workflow
+and required App setup. Merging a generated release PR is the publication decision;
+automation does not resolve the remaining readiness items below.
+
 ## Outstanding evidence and owner choices
 
 GitHub returned no runs for `work/edge-foundation` during this milestone. The
 workflow covers Go 1.27.0/latest 1.27, race tests, vet, module verification,
-external consumer checks and both Linux architectures. Obtain a passing run for
+external consumer checks and both Linux architectures. It runs directly for PRs
+against main and is reused by the release workflow on main pushes. Obtain a passing run for
 the actual release commit after an authorized push. Local tests do not establish
 the Go 1.27.0 matrix result.
+
+Install/configure the release App and provide RELEASE_PLEASE_CLIENT_ID and
+RELEASE_PLEASE_PRIVATE_KEY before activating releases. No App credentials or
+repository policies were changed during local implementation.
 
 The owner's license and copyright holder remain undecided. No license, repository
 visibility change, push, tag or publication has been performed in this milestone.

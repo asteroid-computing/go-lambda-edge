@@ -142,4 +142,5 @@ propagate after cleanup; post-handoff streaming panics become terminal errors.
 - [Implementation plan](docs/plan.md)
 - [Design decisions](docs/decisions/README.md)
 - [Repository working agreement](AGENTS.md)
+- [Release workflow and GitHub App setup](docs/releases.md)
 - [Initial codec benchmarks](docs/benchmarks.md)

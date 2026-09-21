@@ -447,8 +447,12 @@ remain open. No push, publication or AWS deployment occurred.
 
 Release automation follow-up (2026-09-21): the user selected Release Please and
 its GitHub Action, plus checks on PRs against main. [Decision 0024](decisions/0024-release-automation.md)
-records the accepted trigger change and proposed credential/versioning choices.
-Those choices require review before the dependent release workflow is wired.
+records the approved GitHub App credential and initial v0.1.0, with pre-major
+versioning. Release Please will run after reusable main validation; PRs continue
+to use the same Go checks. Local wiring and validation are complete: both workflows
+pass actionlint, release JSON passes the bundled schema, and existing Go jobs are
+unchanged. See the [release guide](releases.md). App installation/credential setup
+and actual GitHub execution remain pending; nothing was pushed or published.
 
 ## Findings carried forward from the Beakley review
 
