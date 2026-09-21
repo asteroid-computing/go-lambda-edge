@@ -451,8 +451,18 @@ records the approved GitHub App credential and initial v0.1.0, with pre-major
 versioning. Release Please will run after reusable main validation; PRs continue
 to use the same Go checks. Local wiring and validation are complete: both workflows
 pass actionlint, release JSON passes the bundled schema, and existing Go jobs are
-unchanged. See the [release guide](releases.md). App installation/credential setup
-and actual GitHub execution remain pending; nothing was pushed or published.
+unchanged. See the [release guide](releases.md).
+
+Subsequent authorized setup and publication of the working branch are complete:
+the App client ID variable and private-key secret are configured, and
+[PR #1](https://github.com/asteroid-computing/go-lambda-edge/pull/1) is open.
+[The first PR run](https://github.com/asteroid-computing/go-lambda-edge/actions/runs/35619179518)
+passed both Go test jobs and both Linux build jobs at commit 6eb3167. The action
+review verified all four latest stable releases and pinned checkout/setup-go to
+their release commits; those aliases already selected the same versions. App
+installation, permissions and the main-branch release path still need execution
+evidence. No release was published, and the license and deployment qualifications
+remain open.
 
 ## Findings carried forward from the Beakley review
 

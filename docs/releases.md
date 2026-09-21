@@ -80,10 +80,21 @@ in this automation, and a passing CI run does not close deployment qualification
 
 ## Maintenance
 
-Release Please Action v5.0.0 and Create GitHub App Token v3.2.0 are pinned to
-reviewed commit SHAs with version comments. Review upstream changes when updating
-them. The config schema is pinned to release-please 17.6.0, bundled by this action.
-No runtime version API or generated version.go file is required.
+All published actions are pinned to reviewed commit SHAs with version comments.
+The latest stable upstream releases were verified on 2026-09-21:
+
+| Action | Stable release |
+| --- | --- |
+| actions/checkout | [v7.0.1](https://github.com/actions/checkout/releases/tag/v7.0.1) |
+| actions/setup-go | [v7.0.0](https://github.com/actions/setup-go/releases/tag/v7.0.0) |
+| actions/create-github-app-token | [v3.2.0](https://github.com/actions/create-github-app-token/releases/tag/v3.2.0) |
+| googleapis/release-please-action | [v5.0.0](https://github.com/googleapis/release-please-action/releases/tag/v5.0.0) |
+
+The previous checkout/setup-go v7 aliases resolved to these same commits when
+checked; pinning makes that selection reproducible. Review upstream release notes
+and resolve each release tag to its commit when updating the SHA and version
+comment together. The config schema is pinned to release-please 17.6.0, bundled
+by the release action. No runtime version API or generated version.go is required.
 
 Validate workflow edits locally with `actionlint`; validate config edits against
 the referenced JSON schema. A real GitHub run is still needed to verify App
