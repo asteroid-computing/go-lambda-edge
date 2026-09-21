@@ -1,7 +1,8 @@
-# IAM proof design probe
+# Historical IAM proof design probe
 
-This standalone Go 1.27 module is research for proposed decision 0017, not a
-production helper/verifier. It uses synthetic credentials and makes no AWS calls.
+This standalone Go 1.27 module preserves research before decision 0017's
+acceptance and implementation. Current production code/tests live in the root
+module's `iamproof` package. This probe uses synthetic credentials, with no AWS calls.
 Its SDK requirements do not change the parent module's dependencies. Root
 `go test ./...` and current CI do not traverse this nested module.
 

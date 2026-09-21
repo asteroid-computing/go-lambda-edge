@@ -1,0 +1,82 @@
+package consumer_test
+
+import (
+	"context"
+	"net/http"
+	"testing"
+
+	"github.com/aws/aws-lambda-go/lambda"
+
+	"github.com/asteroid-computing/go-lambda-edge"
+	"github.com/asteroid-computing/go-lambda-edge/authn"
+	"github.com/asteroid-computing/go-lambda-edge/authz"
+	"github.com/asteroid-computing/go-lambda-edge/iamproof"
+	"github.com/asteroid-computing/go-lambda-edge/identity"
+)
+
+func TestPublicComposition(t *testing.T) {
+	// Explicit verifier stub: constructing this caller does not verify a token.
+	claims, err := identity.NewClaims(map[string]any{"iss": "https://issuer.example/pool", "sub": "alice"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	caller, err := identity.NewJWT(claims, identity.SourceLocallyVerifiedToken)
+	if err != nil {
+		t.Fatal(err)
+	}
+	authentication, err := authn.New(authn.Config{Bearer: func(context.Context, string) (identity.Caller, error) {
+		return caller, nil
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	policy, err := authz.JWTSubject("https://issuer.example/pool", "alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	selector, err := edge.NewActionHeader("Action")
+	if err != nil {
+		t.Fatal(err)
+	}
+	h, err := authentication.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		action, err := selector.Parse(r.Header)
+		if err != nil {
+			http.Error(w, "bad action", 400)
+			return
+		}
+		if action != "read" {
+			http.NotFound(w, r)
+			return
+		}
+		err = policy.Authorize(r.Context(), authz.Request{Caller: identity.FromContext(r.Context()), Action: action})
+		if err != nil {
+			http.Error(w, "forbidden", 403)
+			return
+		}
+		w.WriteHeader(204)
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	adapter, err := edge.New(h)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var registered lambda.Handler = adapter
+	_, err = registered.Invoke(t.Context(), []byte(`{"httpMethod":"GET","path":"/","headers":{"authorization":"Bearer fixture","action":"read"},"requestContext":{"apiId":"synthetic"}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = lambda.NewHandler(adapter.HandleV1)
+	_ = lambda.NewHandler(adapter.HandleV2)
+	stream, err := edge.NewStreaming(h)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = lambda.NewHandler(stream.Handle)
+	_ = lambda.NewHandler(stream.HandleV1)
+	// Construction performs no STS call or server-credential lookup.
+	if _, err := iamproof.NewVerifier("eu-west-2", "consumer.test"); err != nil {
+		t.Fatal(err)
+	}
+}

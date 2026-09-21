@@ -234,3 +234,37 @@ timings vary with GC and host load; comparisons should use longer repeated runs.
 Initial three-iteration measurements included noticeable cold codec setup costs;
 the table instead uses the repeated 100 ms runs above. Native identity costs are
 additional and depend on claim shape and source fidelity.
+
+## Public incremental streaming (2026-09-21)
+
+Go 1.27.1, darwin/arm64, Apple M2, default GOMAXPROCS=8. Three 100 ms samples per
+case exercise the public REST adapter, including stream completion and Close.
+The application reuses a chunk of at most 4 KiB, flushing after each write. The
+consumer reuses an 8 KiB buffer and reads incrementally; it never collects the
+body. Adapter/event construction, raw fixture encoding and reusable buffers are
+outside the timed loop. Gateway identity and local authentication are disabled.
+
+```sh
+go test -run '^$' -bench '^BenchmarkStreamingPublic$' -benchmem -benchtime=100ms -count=3 .
+```
+
+Medians across the three samples:
+
+| Response body | Raw REST B/op | Raw allocs/op | Typed V1 B/op | Typed allocs/op |
+| --- | ---: | ---: | ---: | ---: |
+| 128 bytes | 7,876 | 80 | 6,116 | 56 |
+| 64 KiB | 7,905 | 80 | 6,117 | 56 |
+| 5 MiB | 7,877 | 80 | 6,124 | 56 |
+
+Raw calls include input decoding; typed calls exclude upstream input decoding.
+Both include metadata serialization, the producer/reader bridge and cleanup.
+The roughly constant allocated bytes in this fixture are evidence that the
+adapter does not accumulate its response body. They do not establish a universal
+heap bound: retained application data, metadata, request bodies, authentication
+and concurrency add costs. One 5 MiB raw sample measured 8,170 B/op and 81
+allocations, illustrating short-run scheduling/allocation noise.
+
+These are cumulative allocations, not peak memory or RSS, and not an SDK Runtime
+API or deployed Lambda benchmark. The buffered body-echo fixtures above also
+carry large request bodies; do not treat these as a controlled timing comparison
+between modes. No performance thresholds or AWS bandwidth claims are inferred.

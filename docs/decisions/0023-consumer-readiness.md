@@ -1,7 +1,8 @@
 # 0023: Consumer readiness and the next implementation milestone
 
-Status: proposed on 2026-09-20. The user authorized this design review, not the
-dependent public API or release-policy changes below. R1–R6 await review.
+Status: R1–R5 accepted on 2026-09-20; local implementation and validation completed
+on 2026-09-21. External release prerequisites remain open. R6 remains an owner
+choice; no license, publication, push, tag or deployment is authorized.
 
 ## Outcome and scope
 
@@ -10,7 +11,7 @@ authorization pipeline. This review found no missing root facade or dispatcher
 interface needed to demonstrate that composition. The next useful deliverable
 is one complete consumer application with tests and a clear support matrix.
 
-The significant proposed refinement is to defer exporting `edgetest`. It is in
+The accepted refinement is to defer exporting `edgetest`. It was in
 the original package plan, but no concrete helper API was previously accepted.
 Existing identity constructors, standard httptest tools, explicit SDK event
 literals and local provider transports already cover the basic test boundaries.
@@ -110,7 +111,7 @@ types and configuration are not new module-wide public contracts.
 
 **Recommendation:** the next milestone adds no exported edgetest API. Start with
 private fixture helpers in the example's tests and a consumer-testing guide.
-This is a proposed change to the original sequencing, requiring user approval.
+The user approved this change to the original sequencing on 2026-09-20.
 
 The smallest test vocabulary currently needed is already available:
 
@@ -264,15 +265,50 @@ license from dependencies or Beakley, and do not change repository visibility.
 default. **Consequence:** it does not block the example or local validation.
 The exact license remains an open owner question, even if R1–R5 are approved.
 
-## Validation and next execution order
+## Original review validation and accepted execution order
 
 On Go 1.27.1 darwin/arm64, the current implementation passes `go test -race ./...`,
 `go vet ./...`, `go mod verify` and CGO-disabled Linux arm64/amd64 builds.
-This review changes documentation only. It does not implement a new package,
-update dependencies, publish a release or contact AWS.
+The original review changed documentation only. It did not implement a new
+package, update dependencies, publish a release or contact AWS.
 
 After approval: build/test the reference application and consumer-testing guide;
 reconcile support/status documentation; make the isolated Smithy patch update;
 record streaming baselines and prepare CI/release evidence. Resolve any new
 public API or trust-boundary decision before implementing it. The existing AWS
 questions can proceed independently through the user's outreach.
+
+
+## Implementation and validation (2026-09-21)
+
+R1–R5's local work is complete. The [reference application](../../examples/dispatcher/README.md)
+provides shared internal orders code and native/buffered/REST-streaming mains.
+It composes production verifiers, explicit IAM error mapping, one caller/action/
+resource, application enrollment and consistent JSON failures. No library public
+API was added. The finite stream uses Go's documented http.ErrAbortHandler for
+post-commit producer failures, which edge converts through its existing ErrStream
+contract; it does not expose dependency diagnostics or invent replacement status.
+
+The example tests both credentials across eight transport entry paths, checking
+repeated headers, separate V2 cookies, grant failures, cancellation and no execution
+on denial. Local RSA/JWKS and synthetic STS transports cannot fall through to the
+network. Separate synctest cases prove delivery before completion, slow-reader
+backpressure, early Close and late failure. The actual demo enrollment policy is
+also tested: exact issuer/subject or full IAM ARN, action and target all matter.
+
+The [consumer-testing guide](../consumer-testing.md), [support matrix](../support.md)
+and [release checklist](../release-readiness.md) distinguish these local contracts
+from deployment evidence. Exported edgetest remains deferred. The external-module
+check uses only public imports and local replace; CI now runs it and module
+verification. Historical nested IAM research is explicitly labeled as such.
+
+The approved Smithy v1.28.2 patch changes only its module requirement/checksums.
+Production IAM-proof tests pass with that graph. [Streaming allocation baselines](../benchmarks.md#public-incremental-streaming-2026-09-21)
+cover incremental raw/typed reads with setup excluded and no performance threshold.
+
+Full race tests, vet, module verification, formatting and CGO-disabled Linux
+arm64/amd64 builds pass on Go 1.27.1; the external-module check also passes.
+GitHub returned no workflow runs for this branch. A passing release-commit CI run,
+the owner's license choice and existing AWS interoperability qualifications remain
+open. Nothing was pushed, published or deployed. The user's AWS outreach can
+proceed independently.

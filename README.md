@@ -9,6 +9,12 @@ HTTP API payload 1.0 and HTTP API payload 2.0. It uses AWS Lambda Go v1.55.0 typ
 and direct encoding/json/v2 processing. Raw and already typed entry points share
 HTTP conversion, response capture, identity policy, cancellation and cleanup.
 
+Start with the [complete orders dispatcher](examples/dispatcher/README.md) for
+verifier wiring, application grants, JSON errors and three transport entry points.
+The [support matrix](docs/support.md) distinguishes implemented behavior, deferred
+scope and deployment qualifications; the [testing guide](docs/consumer-testing.md)
+shows how to test each consumer boundary.
+
 Create an adapter with `edge.New(handler, options...)`, handle the constructor
 error, then register it with `lambda.Start(adapter)`. Pass the object, not
 `adapter.Invoke`, to retain the raw JSON v2 boundary. For a fixed payload family,

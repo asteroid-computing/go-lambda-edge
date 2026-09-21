@@ -71,12 +71,12 @@ rules and the consumer-owned resolution/dispatch boundary.
 
 | Package | Responsibility |
 | --- | --- |
-| `edge` (root) | Invocation adapter, payload decoding, HTTP translation, gateway metadata, optional gateway identity extraction |
+| `edge` (root) | Invocation adapter, payload decoding, HTTP translation and optional gateway identity; metadata accessors deferred |
 | `identity` | Validated callers, claim representation, context transport; standard library only |
 | `authn` | Explicit IAM-proof/OAuth selection, Cognito verification and JWKS caching |
 | `iamproof` | Exported client proof generator and bounded online STS verifier |
 | `authz` | Exact identity predicates, ordered rules and context-aware application checks; consumers own grant resolution and HTTP dispatch |
-| `edgetest` | Consumer identity fixtures and gateway event helpers |
+| `edgetest` (deferred) | Revisit exported fixtures after concrete consumer needs; decision 0023 |
 
 Avoid a broad root-package facade that reexports every companion type. Keep AWS
 event types out of transport-independent packages. Reassess any additional
@@ -411,30 +411,39 @@ responses and cancellation. No live AWS or GitHub CI run occurred.
 Acceptance: examples work both in Lambda and ordinary HTTP applications, while
 authorization decisions remain inspectable and deny by default.
 
-### 6. Consumer readiness and release preparation — proposed
+### 6. Consumer readiness and release preparation — local work complete
 
 The user authorized a consumer-readiness design review on 2026-09-20.
 [Decision 0023](decisions/0023-consumer-readiness.md) records the code/documentation
 evidence, the Beakley failure-case coverage matrix and recommendations R1–R6.
-The recommendations await approval; the earlier `edgetest` package direction is
-not silently replaced by the proposed deferral.
+The user approved R1–R5 on 2026-09-20, including deferring exported `edgetest`
+helpers. The license/copyright choice remains open and does not block local work.
 
 - [x] Review public composition, existing examples, fixture provenance, deferred
       features, package dependencies and CI/release readiness.
-- [ ] Review R1–R6: complete reference application; defer edgetest exports until
-      concrete use; consumer outcome tests; precise support matrix; v0 release
-      preparation; owner-selected distribution/license policy.
-- [ ] After approval, implement the reference application and consumer-testing
+- [x] Approve R1–R5: complete reference application, deferred edgetest exports,
+      consumer outcomes, precise support matrix and v0 preparation. The license
+      choice remains open.
+- [x] Implement the reference application and consumer-testing
       guide using the existing public APIs, with local provider fixtures.
-- [ ] After approval, reconcile support/status documentation, update the indirect
+- [x] Reconcile support/status documentation, update the indirect
       Smithy patch in isolation, and record incremental streaming baselines.
 - [ ] Obtain actual GitHub CI evidence and resolve publication prerequisites
       before a release. No push, tag, publication or deployment was authorized by
       this review. Streaming deployment and live identity interoperability remain
       separate qualifications.
 
-The review's fresh local race tests, vet, module verification and Linux
-arm64/amd64 builds pass on Go 1.27.1. No runtime behavior changed.
+The [complete dispatcher](../examples/dispatcher/README.md), [testing guide](consumer-testing.md),
+[support matrix](support.md) and [release checklist](release-readiness.md) are
+implemented. Local RSA/JWKS and synthetic STS fixtures exercise both credentials;
+streaming lifecycle tests consume incrementally. The external-module check and
+CI wiring are present. Smithy is updated to v1.28.2, and streaming allocation
+baselines are recorded. No library API or transport policy changed.
+
+Full local race tests, vet, module verification, formatting, external consumption
+and Linux arm64/amd64 builds pass on Go 1.27.1 (2026-09-21). GitHub has no runs for
+this branch; its actual CI evidence, the license and deployment qualifications
+remain open. No push, publication or AWS deployment occurred.
 
 ## Findings carried forward from the Beakley review
 
