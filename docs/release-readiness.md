@@ -16,21 +16,30 @@ v0.1.0 under decision 0024. [The release guide](releases.md) documents the workf
 and required App setup. Merging a generated release PR is the publication decision;
 automation does not resolve the remaining readiness items below.
 
+## Verified readiness (2026-09-27)
+
+[PR #1](https://github.com/asteroid-computing/go-lambda-edge/pull/1) is open on
+`work/edge-foundation`. All four jobs in
+[the run for f6a2624](https://github.com/asteroid-computing/go-lambda-edge/actions/runs/35619720590)
+passed: test (1.27.0), test (1.27.x), lambda-build (arm64) and lambda-build (amd64).
+This provides GitHub evidence for formatting, race tests, vet, module
+verification, external consumer checks and both Linux builds. Later commits
+require their own passing checks. The same workflow validates main pushes before
+Release Please runs.
+
+The repository variable RELEASE_PLEASE_CLIENT_ID and encrypted Actions secret
+RELEASE_PLEASE_PRIVATE_KEY are provisioned; their names were verified on
+2026-09-27 without reading the private key. No branch protection was configured.
+
 ## Outstanding evidence and owner choices
 
-GitHub returned no runs for `work/edge-foundation` during this milestone. The
-workflow covers Go 1.27.0/latest 1.27, race tests, vet, module verification,
-external consumer checks and both Linux architectures. It runs directly for PRs
-against main and is reused by the release workflow on main pushes. Obtain a passing run for
-the actual release commit after an authorized push. Local tests do not establish
-the Go 1.27.0 matrix result.
-
-Install/configure the release App and provide RELEASE_PLEASE_CLIENT_ID and
-RELEASE_PLEASE_PRIVATE_KEY before activating releases. No App credentials or
-repository policies were changed during local implementation.
+After the foundation PR merges, verify main validation, App token creation and
+the generated v0.1.0 release PR and its checks. Credential provisioning does not
+establish App installation, granted permissions or successful release execution.
+Obtain passing validation for the actual release commit before publication.
 
 The owner's license and copyright holder remain undecided. No license, repository
-visibility change, push, tag or publication has been performed in this milestone.
+visibility change, release tag or release publication has been performed.
 Resolve the license before external publication.
 
 REST streaming's SDK deployment qualification remains open: local probes cannot

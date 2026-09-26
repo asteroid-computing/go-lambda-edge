@@ -111,6 +111,12 @@ configuration validates against the bundled release-please 17.6.0 schema. Local
 structure checks confirm PR triggers, reusable validation, release's dependency
 on validation, scoped credential use, and unchanged Go test/build jobs. No Go
 source changed, so runtime suites were not rerun for this workflow-only change.
-No App was installed, credentials provisioned, workflow dispatched, repository
-settings changed, or release published. Remote activation still needs App setup
-and a successful GitHub run.
+That local implementation did not install an App, provision credentials, dispatch
+a workflow, change repository settings or publish a release.
+
+Subsequent authorized setup, verified on 2026-09-27: the repository variable
+RELEASE_PLEASE_CLIENT_ID and encrypted Actions secret RELEASE_PLEASE_PRIVATE_KEY
+are provisioned. The working branch was pushed and PR #1 opened.
+[All four PR checks at f6a2624 passed](https://github.com/asteroid-computing/go-lambda-edge/actions/runs/35619720590).
+App installation/permissions and the main-branch release path still need execution
+evidence after merge. No release has been published.

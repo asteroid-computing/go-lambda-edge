@@ -428,10 +428,11 @@ helpers. The license/copyright choice remains open and does not block local work
       guide using the existing public APIs, with local provider fixtures.
 - [x] Reconcile support/status documentation, update the indirect
       Smithy patch in isolation, and record incremental streaming baselines.
-- [ ] Obtain actual GitHub CI evidence and resolve publication prerequisites
-      before a release. No push, tag, publication or deployment was authorized by
-      this review. Streaming deployment and live identity interoperability remain
-      separate qualifications.
+- [x] Obtain actual GitHub CI evidence for the foundation PR; all four jobs
+      passed at f6a2624. Later commits require their own passing checks.
+- [ ] Verify the main release workflow and resolve publication prerequisites
+      before a release. Streaming deployment and live identity interoperability
+      remain separate qualifications.
 
 The [complete dispatcher](../examples/dispatcher/README.md), [testing guide](consumer-testing.md),
 [support matrix](support.md) and [release checklist](release-readiness.md) are
@@ -441,9 +442,9 @@ CI wiring are present. Smithy is updated to v1.28.2, and streaming allocation
 baselines are recorded. No library API or transport policy changed.
 
 Full local race tests, vet, module verification, formatting, external consumption
-and Linux arm64/amd64 builds pass on Go 1.27.1 (2026-09-21). GitHub has no runs for
-this branch; its actual CI evidence, the license and deployment qualifications
-remain open. No push, publication or AWS deployment occurred.
+and Linux arm64/amd64 builds pass on Go 1.27.1 (2026-09-21). The subsequent
+authorized push and passing PR CI are recorded below. The license and deployment
+qualifications remain open; no release publication or AWS deployment occurred.
 
 Release automation follow-up (2026-09-21): the user selected Release Please and
 its GitHub Action, plus checks on PRs against main. [Decision 0024](decisions/0024-release-automation.md)
@@ -456,8 +457,8 @@ unchanged. See the [release guide](releases.md).
 Subsequent authorized setup and publication of the working branch are complete:
 the App client ID variable and private-key secret are configured, and
 [PR #1](https://github.com/asteroid-computing/go-lambda-edge/pull/1) is open.
-[The first PR run](https://github.com/asteroid-computing/go-lambda-edge/actions/runs/35619179518)
-passed both Go test jobs and both Linux build jobs at commit 6eb3167. The action
+[The PR run at f6a2624](https://github.com/asteroid-computing/go-lambda-edge/actions/runs/35619720590)
+passed both Go test jobs and both Linux build jobs, verified on 2026-09-27. The action
 review verified all four latest stable releases and pinned checkout/setup-go to
 their release commits; those aliases already selected the same versions. App
 installation, permissions and the main-branch release path still need execution
