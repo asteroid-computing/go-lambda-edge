@@ -10,7 +10,7 @@ The dispatcher's internal application and commands are examples.
 | Buffered HTTP API 1.0 | Raw version 1.0; typed HandleV1 | Shared SDK type cannot identify API product |
 | Buffered HTTP API 2.0 | Raw version 2.0; typed HandleV2 | Combined headers/query values cannot be recovered; separate cookies |
 | REST streaming | NewStreaming, raw Handle, typed HandleV1 | Local reader/SDK tests pass; AWS deployment qualification open |
-| Custom headers/actions | Ordinary HTTP middleware, ActionHeader | Strict selection tested across transports |
+| Custom headers/actions | Ordinary HTTP middleware, actionheader.Selector | Strict selection tested across transports |
 | Gateway identity | Opt-in native IAM/JWT/Cognito mapping | Synthetic recognition/fidelity tests; no credential re-verification |
 | Local OAuth | Cognito RS256 access-token verifier | Local signatures, independent vector, cache/rotation/outage tests; no live Cognito run |
 | Local IAM | Signed GetCallerIdentity proof generator and verifier | Local protocol/HTTP contracts; no live STS run; not raw execute-api SigV4 validation |

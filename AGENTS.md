@@ -13,7 +13,9 @@ Keep accepted direction, proposed API contracts and implemented behavior clearly
 
 ## Repository map
 
-- Root Go files: raw/typed Lambda adapters, Gateway event decoding, HTTP request translation, buffered/streaming responses, gateway identity and action headers.
+- Root Go files: raw/typed Lambda adapters, Gateway event decoding, HTTP request translation, buffered/streaming responses and gateway identity.
+- `actionheader/`: strict single-value action selection from a request header;
+  standard library only.
 - `identity/`: immutable callers, owned claims and context transport;
   standard library only, with no AWS dependencies.
 - `authn/`: credential selection, HTTP authentication middleware, Cognito token verification and JWKS caching.

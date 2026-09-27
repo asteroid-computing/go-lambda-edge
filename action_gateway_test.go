@@ -8,10 +8,12 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/asteroid-computing/go-lambda-edge/actionheader"
 )
 
-func TestActionHeaderAcrossRequestFormats(t *testing.T) {
-	selector, err := NewActionHeader("Action")
+func TestActionSelectorAcrossRequestFormats(t *testing.T) {
+	selector, err := actionheader.NewSelector("Action")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,12 +37,12 @@ func TestActionHeaderAcrossRequestFormats(t *testing.T) {
 	}{
 		{name: "single", values: []string{"Orders.Create"}, want: "Orders.Create"},
 		{name: "outer_whitespace", values: []string{" \tOrders.Create\t "}, want: "Orders.Create"},
-		{name: "missing", wantErr: ErrActionMissing},
-		{name: "empty", values: []string{""}, wantErr: ErrActionInvalid},
-		{name: "invalid", values: []string{"orders/create"}, wantErr: ErrActionInvalid},
-		{name: "duplicates", values: []string{"read", "delete"}, wantErr: ErrActionAmbiguous},
-		{name: "identical_duplicates", values: []string{"read", "read"}, wantErr: ErrActionAmbiguous},
-		{name: "literal_comma", values: []string{"read,delete"}, wantErr: ErrActionAmbiguous},
+		{name: "missing", wantErr: actionheader.ErrActionMissing},
+		{name: "empty", values: []string{""}, wantErr: actionheader.ErrActionInvalid},
+		{name: "invalid", values: []string{"orders/create"}, wantErr: actionheader.ErrActionInvalid},
+		{name: "duplicates", values: []string{"read", "delete"}, wantErr: actionheader.ErrActionAmbiguous},
+		{name: "identical_duplicates", values: []string{"read", "read"}, wantErr: actionheader.ErrActionAmbiguous},
+		{name: "literal_comma", values: []string{"read,delete"}, wantErr: actionheader.ErrActionAmbiguous},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			for _, format := range []string{"typed_v1", "raw_rest", "raw_http_v1", "typed_v2", "raw_http_v2", "native_http"} {

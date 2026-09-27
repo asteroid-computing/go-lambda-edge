@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/asteroid-computing/go-lambda-edge"
+	"github.com/asteroid-computing/go-lambda-edge/actionheader"
 	"github.com/asteroid-computing/go-lambda-edge/authn"
 	"github.com/asteroid-computing/go-lambda-edge/authz"
 	"github.com/asteroid-computing/go-lambda-edge/identity"
@@ -25,7 +25,7 @@ func TestAuthorizationAcrossTransports(t *testing.T) {
 		return jwksResponse(keys), nil
 	})))
 	a := authenticator(t, authn.Config{Bearer: verifier.Verify, IAMProof: mapProofErrors(proofVerifier)})
-	selector, err := edge.NewActionHeader("Action")
+	selector, err := actionheader.NewSelector("Action")
 	if err != nil {
 		t.Fatal(err)
 	}
