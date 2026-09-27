@@ -3,7 +3,7 @@
 //
 // Construct rules once and share them across requests.
 // Custom checks must be concurrency-safe, honor their context and return false, nil for ordinary denial.
-// Every callback error becomes ErrUnavailable.
+// Every callback error becomes [ErrUnavailable].
 // All and Any evaluate left to right and stop on an observed error;
 // keep mandatory application guards outside alternative permission branches.
 //

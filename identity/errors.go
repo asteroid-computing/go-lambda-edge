@@ -23,7 +23,7 @@ type ClaimsLimitError struct {
 // Error returns a sanitized description of the failure.
 func (e *ClaimsLimitError) Error() string { return "identity: claims budget exceeded" }
 
-// Unwrap returns ErrClaimsLimit.
+// Unwrap returns [ErrClaimsLimit].
 func (e *ClaimsLimitError) Unwrap() error { return ErrClaimsLimit }
 
 // Maximum returns the configured allowance in bytes, or zero for a nil error.

@@ -18,16 +18,16 @@ import (
 // A nil interface is null.
 // Inputs must not change during construction;
 // afterward they may be mutated.
-// Invalid input matches ErrInvalidClaims;
-// byte exhaustion is a ClaimsLimitError.
+// Invalid input matches [ErrInvalidClaims];
+// byte exhaustion is a [ClaimsLimitError].
 func NewClaims(values map[string]any, opts ...ClaimsOption) (Claims, error) {
 	return newTypedClaims(values, RepresentationDecoded, opts)
 }
 
 // NewTextClaims owns gateway text without parsing embedded JSON or numbers.
-// All values retain RepresentationGatewayText.
+// All values retain [RepresentationGatewayText].
 // Nil means an empty object.
-// Ownership, options and errors follow NewClaims.
+// Ownership, options and errors follow [NewClaims].
 func NewTextClaims(values map[string]string, opts ...ClaimsOption) (Claims, error) {
 	return newTypedClaims(values, RepresentationGatewayText, opts)
 }

@@ -56,7 +56,7 @@ type Claims struct {
 }
 
 // Claim is an immutable view of a value.
-// The zero value has kind ClaimInvalid.
+// The zero value has kind [ClaimInvalid].
 // Its representation describes the available input, not authentication strength.
 type Claim struct {
 	node   claimNode
@@ -87,7 +87,7 @@ type claimsConfig struct {
 // WithClaimsBudget sets the weighted resource allowance in bytes, defaulting to 256 KiB.
 // Constructors reject a final setting outside 1..6 MiB.
 // Each value costs 64 bytes plus object-name, string and exact-number text bytes.
-// ParseClaims also limits the original JSON byte length to this maximum.
+// [ParseClaims] also limits the original JSON byte length to this maximum.
 // The allowance is not an AWS quota or a heap cap.
 // Nesting is limited separately to 64 containers, including the root, and cannot be disabled.
 func WithClaimsBudget(bytes int) ClaimsOption {
@@ -144,8 +144,8 @@ func (c Claim) Text() (string, bool) {
 	return c.node.text, true
 }
 
-// Bool reports whether the claim is a boolean.
-func (c Claim) Bool() (bool, bool) {
+// Bool reports whether the claim is a boolean and, if so, returns its value.
+func (c Claim) Bool() (value, ok bool) {
 	if c.node.kind != ClaimBoolean {
 		return false, false
 	}

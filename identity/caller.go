@@ -37,7 +37,7 @@ type Caller struct {
 	iam    *IAM
 }
 
-// Kind returns the identity representation, or KindAnonymous for the zero value.
+// Kind returns the identity representation, or [KindAnonymous] for the zero value.
 func (c Caller) Kind() Kind {
 	if c.jwt != nil {
 		return KindJWT
@@ -48,7 +48,7 @@ func (c Caller) Kind() Kind {
 	return KindAnonymous
 }
 
-// Source returns the attributed producer, or SourceNone for an anonymous caller.
+// Source returns the attributed producer, or [SourceNone] for an anonymous caller.
 func (c Caller) Source() Source { return c.source }
 
 // JWT reports whether the caller has a JWT identity and returns an immutable view.

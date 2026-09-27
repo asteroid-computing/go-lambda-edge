@@ -11,7 +11,7 @@ import (
 )
 
 // StreamingAdapter serves REST API proxy events through an ordinary HTTP handler and returns a metadata-prefixed body stream.
-// Construct it with NewStreaming;
+// Construct it with [NewStreaming];
 // its zero value is unusable.
 // Configuration is immutable;
 // the application owns handler concurrency safety.
@@ -26,12 +26,12 @@ type StreamingAdapter struct {
 }
 
 // WithStreamErrorReporter reports a sanitized terminal failure once after producer cleanup and before stream completion.
-// It applies only to NewStreaming;
+// It applies only to [NewStreaming];
 // New rejects it.
 // A final nil callback is invalid.
 // The callback receives the invocation context, possibly canceled, and must return promptly.
 // Pre-handoff failures are returned directly and not reported.
-// A callback panic is recovered and adds a sanitized ErrStream fault without replacing the original failure.
+// A callback panic is recovered and adds a sanitized [ErrStream] fault without replacing the original failure.
 // It must not read or close the same stream: reporting precedes its completion.
 func WithStreamErrorReporter(report func(context.Context, error)) Option {
 	return func(c *config) {

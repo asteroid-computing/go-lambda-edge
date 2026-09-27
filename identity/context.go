@@ -11,10 +11,10 @@ func FromContext(ctx context.Context) Caller {
 	return caller
 }
 
-// NewContext returns a derived context carrying caller, for retrieval with FromContext.
+// NewContext returns a derived context carrying caller, for retrieval with [FromContext].
 // Anonymous on an empty context is a no-op.
-// Any attempted installation over a nonanonymous caller, including an identical caller or anonymous, returns ErrConflict and a nil context.
-// A nil context returns ErrInvalidCaller.
+// Any attempted installation over a nonanonymous caller, including an identical caller or anonymous, returns [ErrConflict] and a nil context.
+// A nil context returns [ErrInvalidCaller].
 // Unrelated values are preserved.
 func NewContext(ctx context.Context, caller Caller) (context.Context, error) {
 	if ctx == nil {
