@@ -8,7 +8,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 )
 
-var errInformationalResponse = invocationError("response", ErrResponse, "informational response is unsupported", http.ErrNotSupported)
+var errInformationalResponse = invocationError(OperationResponse, ErrResponse, "informational response is unsupported", http.ErrNotSupported)
 
 // bufferedWriter belongs to one handler invocation.
 // Only Header, WriteHeader and Write form its HTTP surface;
@@ -48,7 +48,7 @@ func (w *bufferedWriter) WriteHeader(status int) {
 		return
 	}
 	if status < 200 || status > 599 {
-		w.err = invocationError("response", ErrResponse, "invalid final response status")
+		w.err = invocationError(OperationResponse, ErrResponse, "invalid final response status")
 		return
 	}
 	w.status = status
@@ -79,11 +79,11 @@ func (w *bufferedWriter) Write(p []byte) (int, error) {
 		return 0, http.ErrBodyNotAllowed
 	}
 	if w.hasLength && int64(len(p)) > w.declaredLength-w.written {
-		w.err = invocationError("response", ErrResponse, "response exceeds declared content length", http.ErrContentLength)
+		w.err = invocationError(OperationResponse, ErrResponse, "response exceeds declared content length", http.ErrContentLength)
 		return 0, w.err
 	}
 	if int64(len(p)) > math.MaxInt64-w.written {
-		w.err = limitError("response", "buffered_body", math.MaxInt64, errResponseTooLarge)
+		w.err = limitError(OperationResponse, ResourceBufferedBody, math.MaxInt64, errResponseTooLarge)
 		return 0, w.err
 	}
 	data := p
@@ -91,7 +91,7 @@ func (w *bufferedWriter) Write(p []byte) (int, error) {
 		data = p[:min(len(p), 512-len(w.body.data))]
 	}
 	if _, err := w.body.Write(data); err != nil {
-		w.err = limitError("response", "buffered_body", maxResponseBytes, errResponseTooLarge)
+		w.err = limitError(OperationResponse, ResourceBufferedBody, maxResponseBytes, errResponseTooLarge)
 		return 0, w.err
 	}
 	w.written += int64(len(p))
@@ -116,7 +116,7 @@ func (w *bufferedWriter) finish() (*bufferedResponse, error) {
 		return nil, err
 	}
 	if w.method != http.MethodHead && w.hasLength && w.written != w.declaredLength {
-		return nil, invocationError("response", ErrResponse, "response body length mismatch", http.ErrContentLength)
+		return nil, invocationError(OperationResponse, ErrResponse, "response body length mismatch", http.ErrContentLength)
 	}
 	if responseBodyAllowed(w.status) {
 		if len(w.body.data) > 0 && w.headers.canSniffType() {

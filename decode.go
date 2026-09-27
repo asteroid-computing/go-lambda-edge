@@ -28,22 +28,22 @@ func decodeEvent(payload []byte) (decodedEvent, error) {
 	if err := json.Unmarshal(payload, &envelope); err != nil {
 		// JSON errors can contain object names and input values.
 		// Do not expose them, even through an unwrap chain, at this credential-bearing boundary.
-		return decodedEvent{}, invocationError("decode", ErrInvalidEvent, "invalid event JSON")
+		return decodedEvent{}, invocationError(OperationDecode, ErrInvalidEvent, "invalid event JSON")
 	}
 	if envelope == nil {
-		return decodedEvent{}, invocationError("decode", ErrInvalidEvent, "event must be a JSON object")
+		return decodedEvent{}, invocationError(OperationDecode, ErrInvalidEvent, "event must be a JSON object")
 	}
 	var version string
 	if len(envelope.Version) != 0 {
 		if err := json.Unmarshal(envelope.Version, &version); err != nil {
-			return decodedEvent{}, invocationError("decode", ErrInvalidEvent, "invalid payload version")
+			return decodedEvent{}, invocationError(OperationDecode, ErrInvalidEvent, "invalid payload version")
 		}
 		if version != "1.0" && version != "2.0" {
-			return decodedEvent{}, invocationError("decode", ErrUnsupportedEvent, "unsupported payload version")
+			return decodedEvent{}, invocationError(OperationDecode, ErrUnsupportedEvent, "unsupported payload version")
 		}
 	}
 	if len(envelope.IsBase64Encoded) != 0 && envelope.IsBase64Encoded.Kind() != 't' && envelope.IsBase64Encoded.Kind() != 'f' {
-		return decodedEvent{}, invocationError("decode", ErrInvalidEvent, "isBase64Encoded must be a boolean")
+		return decodedEvent{}, invocationError(OperationDecode, ErrInvalidEvent, "isBase64Encoded must be a boolean")
 	}
 
 	if version == "2.0" {
@@ -55,7 +55,7 @@ func decodeEvent(payload []byte) (decodedEvent, error) {
 			} `json:"requestContext"`
 		}
 		if err := json.Unmarshal(payload, &wire, eventStringOptions); err != nil {
-			return decodedEvent{}, invocationError("decode", ErrInvalidEvent, "invalid v2 event fields")
+			return decodedEvent{}, invocationError(OperationDecode, ErrInvalidEvent, "invalid v2 event fields")
 		}
 		event := wire.APIGatewayV2HTTPRequest
 		event.RequestContext = wire.RequestContext.APIGatewayV2HTTPRequestContext
@@ -73,7 +73,7 @@ func decodeEvent(payload []byte) (decodedEvent, error) {
 		} `json:"requestContext"`
 	}
 	if err := json.Unmarshal(payload, &wire, eventStringOptions); err != nil {
-		return decodedEvent{}, invocationError("decode", ErrInvalidEvent, "invalid v1 event fields")
+		return decodedEvent{}, invocationError(OperationDecode, ErrInvalidEvent, "invalid v1 event fields")
 	}
 	event := wire.APIGatewayProxyRequest
 	event.RequestContext = wire.RequestContext.APIGatewayProxyRequestContext
@@ -85,29 +85,29 @@ func decodeEvent(payload []byte) (decodedEvent, error) {
 
 func validateV1(event events.APIGatewayProxyRequest) error {
 	if event.RequestContext.APIID == "" {
-		return invocationError("validate", ErrInvalidEvent, "missing requestContext.apiId")
+		return invocationError(OperationValidate, ErrInvalidEvent, "missing requestContext.apiId")
 	}
 	if event.HTTPMethod == "" {
-		return invocationError("validate", ErrInvalidEvent, "missing httpMethod")
+		return invocationError(OperationValidate, ErrInvalidEvent, "missing httpMethod")
 	}
 	if event.Path == "" {
-		return invocationError("validate", ErrInvalidEvent, "missing path")
+		return invocationError(OperationValidate, ErrInvalidEvent, "missing path")
 	}
 	return nil
 }
 
 func validateV2(event events.APIGatewayV2HTTPRequest) error {
 	if event.Version != "" && event.Version != "2.0" {
-		return invocationError("validate", ErrInvalidEvent, "conflicting v2 payload version")
+		return invocationError(OperationValidate, ErrInvalidEvent, "conflicting v2 payload version")
 	}
 	if event.RequestContext.APIID == "" {
-		return invocationError("validate", ErrInvalidEvent, "missing requestContext.apiId")
+		return invocationError(OperationValidate, ErrInvalidEvent, "missing requestContext.apiId")
 	}
 	if event.RequestContext.HTTP.Method == "" {
-		return invocationError("validate", ErrInvalidEvent, "missing requestContext.http.method")
+		return invocationError(OperationValidate, ErrInvalidEvent, "missing requestContext.http.method")
 	}
 	if event.RawPath == "" {
-		return invocationError("validate", ErrInvalidEvent, "missing rawPath")
+		return invocationError(OperationValidate, ErrInvalidEvent, "missing rawPath")
 	}
 	return nil
 }

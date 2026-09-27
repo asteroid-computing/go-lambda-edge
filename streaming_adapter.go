@@ -79,7 +79,7 @@ func (a *StreamingAdapter) Handle(ctx context.Context, event jsontext.Value) (io
 			return decodedEvent{}, err
 		}
 		if decoded.version != "" || decoded.v1 == nil {
-			return decodedEvent{}, invocationError("validate", ErrUnsupportedEvent, "streaming requires a REST proxy event")
+			return decodedEvent{}, invocationError(OperationValidate, ErrUnsupportedEvent, "streaming requires a REST proxy event")
 		}
 		return decoded, nil
 	}, true)
@@ -102,7 +102,7 @@ func (a *StreamingAdapter) HandleV1(ctx context.Context, event events.APIGateway
 
 func (a *StreamingAdapter) valid() error {
 	if a == nil || a.handler == nil {
-		return invocationError("validate", ErrInvalidInvocation, "uninitialized streaming adapter")
+		return invocationError(OperationValidate, ErrInvalidInvocation, "uninitialized streaming adapter")
 	}
 	return nil
 }

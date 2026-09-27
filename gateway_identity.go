@@ -27,10 +27,10 @@ func (c gatewayCandidates) caller() (identity.Caller, error) {
 		}
 	}
 	if count > 1 {
-		return identity.Caller{}, invocationError("identity", ErrIdentity, "conflicting gateway assertions", identity.ErrConflict)
+		return identity.Caller{}, invocationError(OperationIdentity, ErrIdentity, "conflicting gateway assertions", identity.ErrConflict)
 	}
 	if c.custom || c.unknown {
-		return identity.Caller{}, invocationError("identity", ErrIdentity, "unsupported gateway assertion", errors.ErrUnsupported)
+		return identity.Caller{}, invocationError(OperationIdentity, ErrIdentity, "unsupported gateway assertion", errors.ErrUnsupported)
 	}
 	var caller identity.Caller
 	var err error
@@ -45,7 +45,7 @@ func (c gatewayCandidates) caller() (identity.Caller, error) {
 			return identity.Caller{}, err // A package-owned preflight limit.
 		}
 		if errors.Is(err, identity.ErrInvalidCaller) && !errors.Is(err, identity.ErrClaimsLimit) {
-			return identity.Caller{}, invocationError("identity", ErrIdentity, "invalid gateway caller", identity.ErrInvalidCaller)
+			return identity.Caller{}, invocationError(OperationIdentity, ErrIdentity, "invalid gateway caller", identity.ErrInvalidCaller)
 		}
 		return identity.Caller{}, claimsError(err)
 	}
@@ -88,7 +88,7 @@ func nonnull(raw jsontext.Value) bool { return len(raw) != 0 && raw.Kind() != 'n
 func rawGatewayCaller(event decodedEvent, budget int) (identity.Caller, error) {
 	fields, err := rawObject(event.authorizer)
 	if err != nil {
-		return identity.Caller{}, invocationError("identity", ErrIdentity, "invalid authorizer object", identity.ErrInvalidCaller)
+		return identity.Caller{}, invocationError(OperationIdentity, ErrIdentity, "invalid authorizer object", identity.ErrInvalidCaller)
 	}
 	var candidates gatewayCandidates
 	if event.v1 != nil {
@@ -193,7 +193,7 @@ func rawGatewayScopes(raw jsontext.Value, maximum int) ([]string, error) {
 
 func gatewayScopeLimit(maximum int) error {
 	// Keep byte-limit metadata without constructing identity's opaque error type.
-	return limitError("identity", "identity_claims", int64(maximum), errors.Join(ErrIdentity, identity.ErrClaimsLimit))
+	return limitError(OperationIdentity, ResourceIdentityClaims, int64(maximum), errors.Join(ErrIdentity, identity.ErrClaimsLimit))
 }
 
 func typedGatewayCaller(event decodedEvent, budget int) (identity.Caller, error) {

@@ -96,7 +96,7 @@ func (a *Adapter) HandleV2(ctx context.Context, event events.APIGatewayV2HTTPReq
 
 func (a *Adapter) valid() error {
 	if a == nil || a.handler == nil {
-		return invocationError("validate", ErrInvalidInvocation, "uninitialized adapter")
+		return invocationError(OperationValidate, ErrInvalidInvocation, "uninitialized adapter")
 	}
 	return nil
 }
@@ -135,7 +135,7 @@ func prepareRequest(ctx context.Context, inv *invocation, event decodedEvent, ra
 		}
 		ctx, err = identity.NewContext(ctx, caller)
 		if err != nil {
-			return nil, invocationError("identity", ErrIdentity, "caller installation failed", identity.ErrConflict)
+			return nil, invocationError(OperationIdentity, ErrIdentity, "caller installation failed", identity.ErrConflict)
 		}
 		request = request.WithContext(ctx)
 		// Track the actual served request for multipart cleanup, retaining the original transport body separately even if the handler replaces it.
