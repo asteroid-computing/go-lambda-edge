@@ -252,20 +252,20 @@ func TestCallerContextAndDiagnostics(t *testing.T) {
 	if got := identity.FromContext(parent); got.Kind() != identity.KindAnonymous || got.Source() != identity.SourceNone {
 		t.Errorf("empty context = %v", got)
 	}
-	unchanged, err := identity.WithCaller(parent, identity.Caller{})
+	unchanged, err := identity.NewContext(parent, identity.Caller{})
 	if err != nil || unchanged != parent {
 		t.Error("anonymous installation did not preserve empty context")
 	}
-	ctx, err := identity.WithCaller(parent, caller)
+	ctx, err := identity.NewContext(parent, caller)
 	if err != nil || ctx.Value(unrelatedKey{}) != "kept" || identity.FromContext(ctx).Kind() != identity.KindIAM {
-		t.Fatalf("WithCaller lost context/caller: %v", err)
+		t.Fatalf("NewContext lost context/caller: %v", err)
 	}
 	for _, next := range []identity.Caller{caller, {}} {
-		if ctx, err := identity.WithCaller(ctx, next); ctx != nil || !errors.Is(err, identity.ErrConflict) {
+		if ctx, err := identity.NewContext(ctx, next); ctx != nil || !errors.Is(err, identity.ErrConflict) {
 			t.Errorf("reinstallation = %v, %v", ctx, err)
 		}
 	}
-	if ctx, err := identity.WithCaller(nil, caller); ctx != nil || !errors.Is(err, identity.ErrInvalidCaller) {
+	if ctx, err := identity.NewContext(nil, caller); ctx != nil || !errors.Is(err, identity.ErrInvalidCaller) {
 		t.Errorf("nil context = %v, %v", ctx, err)
 	}
 	iam, _ := caller.IAM()

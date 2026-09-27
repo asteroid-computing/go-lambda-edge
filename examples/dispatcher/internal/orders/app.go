@@ -162,7 +162,7 @@ func New(cfg Config) (http.Handler, error) {
 			writeAuthenticationError(w, err)
 			return
 		}
-		ctx, err := identity.WithCaller(r.Context(), caller)
+		ctx, err := identity.NewContext(r.Context(), caller)
 		if err != nil {
 			writeError(w, 500, "internal_error")
 			return

@@ -50,7 +50,7 @@ Successful callers have SourceVerifiedIAMProof, preserve the full ARN/session an
 Root, user, assumed-role session and federated-user identities are represented;
 representation grants no application permission.
 
-The authentication layer must select exactly one credential, call exactly one verifier, install the returned caller using identity.WithCaller, then authorize the selected application action.
+The authentication layer must select exactly one credential, call exactly one verifier, install the returned caller using identity.NewContext, then authorize the selected application action.
 The [authn guide](authn.md) shows this middleware and the explicit adapter mapping iamproof.ErrInvalidProof to authn.ErrInvalidCredentials.
 Never fall back to another verifier after rejection.
 

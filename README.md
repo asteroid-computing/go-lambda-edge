@@ -96,7 +96,7 @@ JWT issuer, subject, client ID, audience, scopes and Cognito groups stay distinc
 Ambiguous gateway collections remain unavailable, while conflicting interpretable scope sets fail.
 IAM callers retain exact ARN paths and session names.
 
-`identity.WithCaller` installs one caller in a derived context and rejects replacement, even by an apparently identical caller.
+`identity.NewContext` installs one caller in a derived context and rejects replacement, even by an apparently identical caller.
 `identity.FromContext` returns anonymous when absent.
 See the [caller examples](identity/caller_example_test.go).
 

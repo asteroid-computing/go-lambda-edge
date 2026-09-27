@@ -229,7 +229,7 @@ func TestContextIsolationAndConflict(t *testing.T) {
 	jwt := jwtCaller(t, identity.SourceLocallyVerifiedToken)
 	var calls int
 	a := authenticator(t, authn.Config{Bearer: func(context.Context, string) (identity.Caller, error) { calls++; return jwt, nil }})
-	ctx, err := identity.WithCaller(t.Context(), jwt)
+	ctx, err := identity.NewContext(t.Context(), jwt)
 	if err != nil {
 		t.Fatal(err)
 	}

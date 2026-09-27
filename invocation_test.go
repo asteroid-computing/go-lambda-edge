@@ -17,7 +17,7 @@ func TestInvocationRejectsInheritedCaller(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	parent, err := identity.WithCaller(t.Context(), caller)
+	parent, err := identity.NewContext(t.Context(), caller)
 	if err != nil {
 		t.Fatal(err)
 	}

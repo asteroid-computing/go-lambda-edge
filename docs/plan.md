@@ -378,7 +378,7 @@ these are placement, naming, typing and documentation changes made before the fi
 
 - [x] E1: move the action-header selector to the standard-library-only `actionheader` package as `Selector`/`NewSelector`.
 - [x] E2: rename the moved sentinels to `ErrMissing`, `ErrAmbiguous` and `ErrInvalid`.
-- [ ] E3: rename `identity.WithCaller` to `identity.NewContext`.
+- [x] E3: rename `identity.WithCaller` to `identity.NewContext`.
 - [ ] E4: type the `InvocationError` operation and limit names with exported constants.
 - [ ] E5: add `String` methods to the `identity` enumerations.
 - [ ] E6: complete sentinel docs, doc links, callback parameter names and `Claim.Bool` result names.

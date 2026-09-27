@@ -133,7 +133,7 @@ func prepareRequest(ctx context.Context, inv *invocation, event decodedEvent, ra
 		if err != nil {
 			return nil, err
 		}
-		ctx, err = identity.WithCaller(ctx, caller)
+		ctx, err = identity.NewContext(ctx, caller)
 		if err != nil {
 			return nil, invocationError("identity", ErrIdentity, "caller installation failed", identity.ErrConflict)
 		}

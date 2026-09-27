@@ -27,20 +27,20 @@ func ExampleNewJWT() {
 	// Output: batch-worker false [orders.read] true
 }
 
-func ExampleWithCaller() {
+func ExampleNewContext() {
 	// This validates a synthetic identifier;
 	// it does not authenticate it.
 	caller, err := identity.NewIAM("arn:aws:sts::123456789012:assumed-role/Worker/batch-1", identity.SourceCustomAssertion)
 	if err != nil {
 		panic(err)
 	}
-	ctx, err := identity.WithCaller(context.Background(), caller)
+	ctx, err := identity.NewContext(context.Background(), caller)
 	if err != nil {
 		panic(err)
 	}
 	iam, _ := identity.FromContext(ctx).IAM()
 	fmt.Println(iam.PrincipalARN())
-	_, err = identity.WithCaller(ctx, caller)
+	_, err = identity.NewContext(ctx, caller)
 	fmt.Println(errors.Is(err, identity.ErrConflict))
 	// Output:
 	// arn:aws:sts::123456789012:assumed-role/Worker/batch-1

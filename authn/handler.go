@@ -37,7 +37,7 @@ func (a *Authenticator) Handler(next http.Handler) (http.Handler, error) {
 			writeFailure(w, err)
 			return
 		}
-		ctx, err := identity.WithCaller(r.Context(), caller)
+		ctx, err := identity.NewContext(r.Context(), caller)
 		if err != nil {
 			writeFailure(w, a.failure(identity.ErrConflict, http.StatusInternalServerError, noScheme))
 			return
