@@ -1,0 +1,19 @@
+{
+  "resource": "/{proxy+}",
+  "path": "/a?b#c",
+  "httpMethod": "POST",
+  "headers": {"Content-Type": "application/json", "X-Single": "one"},
+  "multiValueHeaders": {"X-Multi": ["one", "two"]},
+  "queryStringParameters": {"single": "one"},
+  "multiValueQueryStringParameters": {"multi": ["one", "two"]},
+  "requestContext": {
+    "apiId": "example",
+    "stage": "test",
+    "identity": {"sourceIp": "192.0.2.1", "userArn": null},
+    "authorizer": {"claims": null, "scopes": null}
+  },
+  "body": "{application-invalid-json",
+  "isBase64Encoded": false,
+  "pathParameters": {"proxy": "a?b#c"},
+  "stageVariables": null
+}

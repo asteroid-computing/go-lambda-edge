@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/v17.6.0/schemas/config.json",
+  "packages": {
+    ".": {
+      "release-type": "go",
+      "package-name": "go-lambda-edge",
+      "include-component-in-tag": false,
+      "include-v-in-tag": true,
+      "initial-version": "0.1.0",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": false,
+      "changelog-path": "CHANGELOG.md"
+    }
+  }
+}
