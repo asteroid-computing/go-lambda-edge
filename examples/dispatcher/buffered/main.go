@@ -22,7 +22,7 @@ func main() {
 		slog.Error("configure buffered adapter", "error", err)
 		os.Exit(1)
 	}
-	// Register the object to retain JSON v2 envelope ownership. For a fixed
-	// typed input, register adapter.HandleV1 or adapter.HandleV2 instead.
+	// Register the object to retain JSON v2 envelope ownership.
+	// For a fixed typed input, register adapter.HandleV1 or adapter.HandleV2 instead.
 	lambda.Start(adapter)
 }

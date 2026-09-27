@@ -9,10 +9,11 @@ import (
 	"github.com/asteroid-computing/go-lambda-edge/identity"
 )
 
-// Sources matches any supplied nonanonymous producer. Empty lists, SourceNone
-// and unknown sources return ErrInvalidConfiguration. Source is trusted-code
-// attribution, not an unforgeable credential. Combine this broad predicate with
-// permission checks. The input slice is copied.
+// Sources matches any supplied nonanonymous producer.
+// Empty lists, SourceNone and unknown sources return ErrInvalidConfiguration.
+// Source is trusted-code attribution, not an unforgeable credential.
+// Combine this broad predicate with permission checks.
+// The input slice is copied.
 func Sources(allowed ...identity.Source) (Rule, error) {
 	if len(allowed) == 0 {
 		return Rule{}, ErrInvalidConfiguration
@@ -30,9 +31,10 @@ func Sources(allowed ...identity.Source) (Rule, error) {
 	})
 }
 
-// JWTSubject matches an exact issuer and subject. Both must be nonempty UTF-8
-// or construction returns ErrInvalidConfiguration. A subject does not prove a
-// human identity. Wrong kind or missing subject does not match.
+// JWTSubject matches an exact issuer and subject.
+// Both must be nonempty UTF-8 or construction returns ErrInvalidConfiguration.
+// A subject does not prove a human identity.
+// Wrong kind or missing subject does not match.
 func JWTSubject(issuer, subject string) (Rule, error) {
 	if !validIdentifier(issuer) || !validIdentifier(subject) {
 		return Rule{}, ErrInvalidConfiguration
@@ -44,9 +46,8 @@ func JWTSubject(issuer, subject string) (Rule, error) {
 	})
 }
 
-// JWTClient matches an exact issuer and client_id, without interpreting audience
-// or subject as a client ID or inferring a machine grant. Both arguments must
-// be nonempty UTF-8 or construction returns ErrInvalidConfiguration.
+// JWTClient matches an exact issuer and client_id, without interpreting audience or subject as a client ID or inferring a machine grant.
+// Both arguments must be nonempty UTF-8 or construction returns ErrInvalidConfiguration.
 func JWTClient(issuer, clientID string) (Rule, error) {
 	if !validIdentifier(issuer) || !validIdentifier(clientID) {
 		return Rule{}, ErrInvalidConfiguration
@@ -59,19 +60,21 @@ func JWTClient(issuer, clientID string) (Rule, error) {
 }
 
 // JWTScopes requires all supplied exact OAuth scope tokens from the exact issuer.
-// It does not interpret wildcards. Missing or unavailable scopes do not match.
-// Issuer must be nonempty UTF-8 and required must contain at least one valid
-// RFC 6749 scope token, otherwise construction returns ErrInvalidConfiguration.
-// The input slice is copied. Use Any for alternative scope requirements.
+// It does not interpret wildcards.
+// Missing or unavailable scopes do not match.
+// Issuer must be nonempty UTF-8 and required must contain at least one valid RFC 6749 scope token, otherwise construction returns ErrInvalidConfiguration.
+// The input slice is copied.
+// Use Any for alternative scope requirements.
 func JWTScopes(issuer string, required ...string) (Rule, error) {
 	return jwtSet(issuer, required, identity.JWT.Scopes, validScope)
 }
 
-// CognitoGroups requires all supplied exact cognito:groups values from the exact
-// issuer. Flattened gateway strings remain unavailable and never match. Groups
-// are distinct from scopes and application grants. Issuer and each required
-// value must be nonempty UTF-8; an empty list or invalid value returns
-// ErrInvalidConfiguration. The input slice is copied.
+// CognitoGroups requires all supplied exact cognito:groups values from the exact issuer.
+// Flattened gateway strings remain unavailable and never match.
+// Groups are distinct from scopes and application grants.
+// Issuer and each required value must be nonempty UTF-8;
+// an empty list or invalid value returns ErrInvalidConfiguration.
+// The input slice is copied.
 func CognitoGroups(issuer string, required ...string) (Rule, error) {
 	return jwtSet(issuer, required, identity.JWT.CognitoGroups, validIdentifier)
 }
@@ -123,11 +126,10 @@ func validScope(s string) bool {
 }
 
 // IAMPrincipal matches the full caller ARN literally, including path and session.
-// A root ARN matches only that root caller, not the account. Valid literal * and
-// ? in user paths retain their meaning as characters. Unsupported caller forms
-// (including bare role ARNs) return ErrInvalidConfiguration, following NewIAM's
-// grammar. This does not evaluate AWS IAM permissions or bind a unique identity
-// across deletion and recreation of the principal.
+// A root ARN matches only that root caller, not the account.
+// Valid literal * and ? in user paths retain their meaning as characters.
+// Unsupported caller forms (including bare role ARNs) return ErrInvalidConfiguration, following NewIAM's grammar.
+// This does not evaluate AWS IAM permissions or bind a unique identity across deletion and recreation of the principal.
 func IAMPrincipal(principalARN string) (Rule, error) {
 	if _, err := identity.NewIAM(principalARN, identity.SourceCustomAssertion); err != nil {
 		return Rule{}, ErrInvalidConfiguration
@@ -138,15 +140,14 @@ func IAMPrincipal(principalARN string) (Rule, error) {
 	})
 }
 
-// IAMRoleSessions matches assumed-role callers with the exact partition, account
-// and role name, allowing any valid session name. Invalid components, wildcards
-// and role paths return ErrInvalidConfiguration. This is a role-name policy:
-// recreating the same role name can match again. It does not bind a unique role
-// ID, identify the original actor, fabricate a role ARN or evaluate IAM policies.
+// IAMRoleSessions matches assumed-role callers with the exact partition, account and role name, allowing any valid session name.
+// Invalid components, wildcards and role paths return ErrInvalidConfiguration.
+// This is a role-name policy: recreating the same role name can match again.
+// It does not bind a unique role ID, identify the original actor, fabricate a role ARN or evaluate IAM policies.
 func IAMRoleSessions(partition, accountID, roleName string) (Rule, error) {
 	prefix := "arn:" + partition + ":sts::" + accountID + ":assumed-role/" + roleName + "/"
-	// Validate a sample session with the identity grammar rather than maintaining
-	// a second ARN parser. Cross-check components to exclude delimiter injection.
+	// Validate a sample session with the identity grammar rather than maintaining a second ARN parser.
+	// Cross-check components to exclude delimiter injection.
 	caller, err := identity.NewIAM(prefix+"validation", identity.SourceCustomAssertion)
 	i, ok := caller.IAM()
 	if err != nil || !ok || i.PrincipalType() != identity.IAMPrincipalAssumedRole || i.Partition() != partition || i.AccountID() != accountID {

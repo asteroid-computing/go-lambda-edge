@@ -7,15 +7,14 @@ var (
 	ErrInvalidCaller = errors.New("identity: invalid caller")
 	// ErrConflict indicates an attempt to replace an established caller.
 	ErrConflict = errors.New("identity: caller conflict")
-	// ErrInvalidClaims indicates malformed JSON, unsupported typed values,
-	// invalid UTF-8, nonfinite numbers, or excessive container nesting.
+	// ErrInvalidClaims indicates malformed JSON, unsupported typed values, invalid UTF-8, nonfinite numbers, or excessive container nesting.
 	ErrInvalidClaims = errors.New("identity: invalid claims")
 	// ErrClaimsLimit indicates exhaustion of the wire or weighted byte allowance.
 	ErrClaimsLimit = errors.New("identity: claims budget exceeded")
 )
 
-// ClaimsLimitError describes a claims byte allowance failure. Its diagnostics
-// contain no claim names, values, or underlying parser errors.
+// ClaimsLimitError describes a claims byte allowance failure.
+// Its diagnostics contain no claim names, values, or underlying parser errors.
 // The zero value has an unspecified maximum of zero.
 type ClaimsLimitError struct {
 	maximum int64

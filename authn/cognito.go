@@ -14,9 +14,11 @@ import (
 )
 
 // CognitoClient restricts one app client independently of its resource audience.
-// Audience requires an exact string aud. AllowUnbound additionally permits an
-// absent aud; with an empty Audience it permits only absent aud. At least one
-// of Audience or AllowUnbound is required. No policy accepts an arbitrary aud.
+// Audience requires an exact string aud.
+// AllowUnbound additionally permits an absent aud;
+// with an empty Audience it permits only absent aud.
+// At least one of Audience or AllowUnbound is required.
+// No policy accepts an arbitrary aud.
 type CognitoClient struct {
 	ClientID     string
 	Audience     string
@@ -25,34 +27,39 @@ type CognitoClient struct {
 
 // CognitoConfig supplies explicit trust and resource policy for access tokens.
 type CognitoConfig struct {
-	// Issuer is an exact HTTPS pool URL, without trailing slash, escaped path,
-	// dot segments, credentials, query or fragment. JWKS is fetched from this
-	// trusted endpoint plus /.well-known/jwks.json, never from token headers.
+	// Issuer is an exact HTTPS pool URL, without trailing slash, escaped path, dot segments, credentials, query or fragment.
+	// JWKS is fetched from this trusted endpoint plus /.well-known/jwks.json, never from token headers.
 	Issuer string
 	// Clients must contain at least one policy with a distinct nonempty ClientID.
 	Clients []CognitoClient
-	// ClockSkew permits 0..5 minutes of leeway. Zero does not extend token life.
+	// ClockSkew permits 0..5 minutes of leeway.
+	// Zero does not extend token life.
 	ClockSkew time.Duration
-	// CacheTTL defaults to 15 minutes; explicit values allow 1 minute..24 hours.
-	// Expired keys are not used during outages. No token results are cached.
+	// CacheTTL defaults to 15 minutes;
+	// explicit values allow 1 minute..24 hours.
+	// Expired keys are not used during outages.
+	// No token results are cached.
 	CacheTTL time.Duration
-	// Timeout defaults to 5 seconds; explicit values must be positive and <=1 minute.
+	// Timeout defaults to 5 seconds;
+	// explicit values must be positive and <=1 minute.
 	Timeout time.Duration
-	// Transport defaults to http.DefaultTransport. A supplied transport remains
-	// caller-owned, must support concurrency and must honor context cancellation.
+	// Transport defaults to http.DefaultTransport.
+	// A supplied transport remains caller-owned, must support concurrency and must honor context cancellation.
 	Transport http.RoundTripper
-	// MaxTokenBytes defaults to 16 KiB; explicit values allow 1 byte..1 MiB.
+	// MaxTokenBytes defaults to 16 KiB;
+	// explicit values allow 1 byte..1 MiB.
 	// The separate Authorization field bound also includes the scheme/framing.
 	MaxTokenBytes int
-	// ClaimsBudget defaults to identity's 256 KiB weighted allowance. Explicit
-	// values allow 1 byte..6 MiB, independently of the compact token byte limit.
+	// ClaimsBudget defaults to identity's 256 KiB weighted allowance.
+	// Explicit values allow 1 byte..6 MiB, independently of the compact token byte limit.
 	ClaimsBudget int
 }
 
-// CognitoVerifier verifies a narrow RS256 Cognito access-token profile using
-// JSON v2 and standard-library cryptography. It does not check revocation or
-// grant permissions. It is safe for concurrent use, but must not be copied.
-// Its zero value is unconfigured. Reuse one instance to share its bounded cache.
+// CognitoVerifier verifies a narrow RS256 Cognito access-token profile using JSON v2 and standard-library cryptography.
+// It does not check revocation or grant permissions.
+// It is safe for concurrent use, but must not be copied.
+// Its zero value is unconfigured.
+// Reuse one instance to share its bounded cache.
 type CognitoVerifier struct {
 	cfg     CognitoConfig
 	clients map[string]CognitoClient
@@ -67,9 +74,10 @@ type CognitoVerifier struct {
 	failed       bool
 }
 
-// NewCognitoVerifier validates and copies cfg without I/O. Invalid configuration
-// returns a nil verifier and ErrInvalidConfiguration. It trusts the configured
-// issuer endpoint; it does not establish that the operator supplied an AWS URL.
+// NewCognitoVerifier validates and copies cfg without I/O.
+// Invalid configuration returns a nil verifier and ErrInvalidConfiguration.
+// It trusts the configured issuer endpoint;
+// it does not establish that the operator supplied an AWS URL.
 func NewCognitoVerifier(cfg CognitoConfig) (*CognitoVerifier, error) {
 	u, err := url.Parse(cfg.Issuer)
 	if err != nil || u.Scheme != "https" || u.Hostname() == "" || u.User != nil || u.Opaque != "" {
@@ -130,10 +138,11 @@ func NewCognitoVerifier(cfg CognitoConfig) (*CognitoVerifier, error) {
 }
 
 // Verify returns one locally verified caller without installing it in context.
-// It accepts access tokens only, with integer exp/iat and optional nbf, and a
-// string aud when present. Rejections match ErrInvalidCredentials; unavailable
-// JWKS matches ErrUnavailable. Caller cancellation returns ctx.Err, never its
-// cause. Every failure returns a zero caller and sanitized diagnostics.
+// It accepts access tokens only, with integer exp/iat and optional nbf, and a string aud when present.
+// Rejections match ErrInvalidCredentials;
+// unavailable JWKS matches ErrUnavailable.
+// Caller cancellation returns ctx.Err, never its cause.
+// Every failure returns a zero caller and sanitized diagnostics.
 func (v *CognitoVerifier) Verify(ctx context.Context, token string) (identity.Caller, error) {
 	if v == nil || v.http == nil || ctx == nil {
 		return identity.Caller{}, ErrInvalidConfiguration
@@ -148,10 +157,10 @@ func (v *CognitoVerifier) Verify(ctx context.Context, token string) (identity.Ca
 	return caller, err
 }
 
-// Warm obtains a fresh usable JWKS snapshot, sharing any required fetch. It
-// obeys refresh/backoff gates; it does not force refresh, validate a token or
-// start a background refresh loop. Failures are ErrUnavailable, caller ctx.Err
-// or ErrInvalidConfiguration for a nil context or unconfigured verifier.
+// Warm obtains a fresh usable JWKS snapshot, sharing any required fetch.
+// It obeys refresh/backoff gates;
+// it does not force refresh, validate a token or start a background refresh loop.
+// Failures are ErrUnavailable, caller ctx.Err or ErrInvalidConfiguration for a nil context or unconfigured verifier.
 func (v *CognitoVerifier) Warm(ctx context.Context) error {
 	if v == nil || v.http == nil || ctx == nil {
 		return ErrInvalidConfiguration

@@ -12,8 +12,8 @@ import (
 	"github.com/asteroid-computing/go-lambda-edge/identity"
 )
 
-// FromEnvironment configures real verification and a small, explicitly enrolled
-// read-only demonstration store. It never obtains server-side AWS credentials.
+// FromEnvironment configures real verification and a small, explicitly enrolled read-only demonstration store.
+// It never obtains server-side AWS credentials.
 func FromEnvironment(streaming bool) (http.Handler, error) {
 	values := make(map[string]string)
 	for _, name := range []string{"COGNITO_ISSUER", "COGNITO_CLIENT_ID", "COGNITO_AUDIENCE", "IAM_PROOF_REGION", "IAM_PROOF_AUDIENCE", "ORDER_JWT_SUBJECT", "ORDER_IAM_PRINCIPAL", "CORS_ORIGIN"} {
@@ -31,16 +31,19 @@ func FromEnvironment(streaming bool) (http.Handler, error) {
 			Issuer:  values["COGNITO_ISSUER"],
 			Clients: []authn.CognitoClient{{ClientID: values["COGNITO_CLIENT_ID"], Audience: values["COGNITO_AUDIENCE"]}},
 		},
-		Region: values["IAM_PROOF_REGION"], ProofAudience: values["IAM_PROOF_AUDIENCE"],
-		IAMPrincipal: values["ORDER_IAM_PRINCIPAL"], Origin: values["CORS_ORIGIN"],
-		Grants: demoGrants{issuer: values["COGNITO_ISSUER"], subject: values["ORDER_JWT_SUBJECT"], principal: values["ORDER_IAM_PRINCIPAL"]},
-		Store:  demoStore{}, Streaming: streaming,
+		Region:        values["IAM_PROOF_REGION"],
+		ProofAudience: values["IAM_PROOF_AUDIENCE"],
+		IAMPrincipal:  values["ORDER_IAM_PRINCIPAL"],
+		Origin:        values["CORS_ORIGIN"],
+		Grants:        demoGrants{issuer: values["COGNITO_ISSUER"], subject: values["ORDER_JWT_SUBJECT"], principal: values["ORDER_IAM_PRINCIPAL"]},
+		Store:         demoStore{},
+		Streaming:     streaming,
 	})
 }
 
-// These application grants are server configuration, never client claims. This
-// example enrolls one exact JWT subject and one full IAM caller ARN. It does not
-// infer IAM role paths, role lifecycle identity or a human behind a session.
+// These application grants are server configuration, never client claims.
+// This example enrolls one exact JWT subject and one full IAM caller ARN.
+// It does not infer IAM role paths, role lifecycle identity or a human behind a session.
 type demoGrants struct {
 	issuer    string
 	subject   string

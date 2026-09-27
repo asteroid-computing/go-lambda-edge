@@ -18,15 +18,14 @@ import (
 const orderIssuer = "https://issuer.example/pool"
 
 // grantStore is an application interface, not a universal edge principal model.
-// Its implementation chooses the authority and enrollment keys, resolves tenant
-// membership/suspension and checks the exact action/resource in one operation.
+// Its implementation chooses the authority and enrollment keys, resolves tenant membership/suspension and checks the exact action/resource in one operation.
 type grantStore interface {
 	Allowed(context.Context, identity.Caller, string, string) (bool, error)
 }
 
-// orderHandler owns an immutable registry. This example has one fixed resource;
-// a real application validates/resolves its target before calling Authorize and
-// keeps that same object/version for execution, using a transaction if needed.
+// orderHandler owns an immutable registry.
+// This example has one fixed resource;
+// a real application validates/resolves its target before calling Authorize and keeps that same object/version for execution, using a transaction if needed.
 func orderHandler(authentication *authn.Authenticator, grants grantStore, issuer string) (http.Handler, error) {
 	selector, err := edge.NewActionHeader("Action")
 	if err != nil {
@@ -92,8 +91,8 @@ func orderHandler(authentication *authn.Authenticator, grants grantStore, issuer
 			case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded), errors.Is(err, authz.ErrUnavailable):
 				writePolicyError(w, 503, "unavailable")
 			case errors.Is(err, authz.ErrDenied):
-				// This route accepts Bearer. A generic challenge reveals no policy
-				// reason and does not mislabel an IAM or grant denial as a scope error.
+				// This route accepts Bearer.
+				// A generic challenge reveals no policy reason and does not mislabel an IAM or grant denial as a scope error.
 				w.Header().Set("WWW-Authenticate", `Bearer realm="orders"`)
 				writePolicyError(w, 403, "forbidden")
 			case errors.Is(err, authz.ErrUnauthenticated):
@@ -119,9 +118,9 @@ func writePolicyError(w http.ResponseWriter, status int, code string) {
 	}{code})
 }
 
-// exampleGrants is a server-owned, read-only fixture. A database implementation
-// can return false,nil for suspended/unregistered principals and an error when
-// its dependency cannot decide. These grants are never put in identity.Claims.
+// exampleGrants is a server-owned, read-only fixture.
+// A database implementation can return false,nil for suspended/unregistered principals and an error when its dependency cannot decide.
+// These grants are never put in identity.Claims.
 type exampleGrants struct{}
 
 func (exampleGrants) Allowed(ctx context.Context, caller identity.Caller, action, resource string) (bool, error) {
@@ -136,16 +135,17 @@ func (exampleGrants) Allowed(ctx context.Context, caller identity.Caller, action
 		return present && j.Issuer() == orderIssuer && subject == "alice", nil
 	}
 	if i, ok := caller.IAM(); ok {
-		// This fixture explicitly enrolls a full session. Applications can use a
-		// different reviewed enrollment key; account or session name alone is not one.
+		// This fixture explicitly enrolls a full session.
+		// Applications can use a different reviewed enrollment key;
+		// account or session name alone is not one.
 		return i.PrincipalARN() == "arn:aws:sts::123456789012:assumed-role/OrderReader/session-one", nil
 	}
 	return false, nil
 }
 
 func ExampleCheck() {
-	// These are validated fixture facts, not credential verification. A request
-	// handler obtains the caller from its configured authentication producer.
+	// These are validated fixture facts, not credential verification.
+	// A request handler obtains the caller from its configured authentication producer.
 	claims, err := identity.NewClaims(map[string]any{"iss": orderIssuer, "sub": "alice"})
 	if err != nil {
 		panic(err)
@@ -171,9 +171,9 @@ func ExampleCheck() {
 }
 
 func Example_dispatcher() {
-	// Construction performs no network I/O. Configure real pool/client/resource
-	// and STS audience values for deployment. The example sends no credentials,
-	// so neither verifier contacts AWS when run.
+	// Construction performs no network I/O.
+	// Configure real pool/client/resource and STS audience values for deployment.
+	// The example sends no credentials, so neither verifier contacts AWS when run.
 	bearer, err := authn.NewCognitoVerifier(authn.CognitoConfig{
 		Issuer:  orderIssuer,
 		Clients: []authn.CognitoClient{{ClientID: "orders-client", Audience: "https://orders.example"}},
@@ -203,8 +203,8 @@ func Example_dispatcher() {
 	if err != nil {
 		panic(err)
 	}
-	// h is an ordinary http.Handler. For Lambda, edge.New(h) uses the same
-	// dispatcher, with gateway identity left disabled for these local verifiers.
+	// h is an ordinary http.Handler.
+	// For Lambda, edge.New(h) uses the same dispatcher, with gateway identity left disabled for these local verifiers.
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	r.Header.Set("Action", "orders.read")
 	w := httptest.NewRecorder()

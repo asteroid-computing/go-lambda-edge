@@ -288,7 +288,8 @@ func TestAdapterStandardHandlers(t *testing.T) {
 			var body, location string
 			if v2 {
 				response, err := a.HandleV2(t.Context(), events.APIGatewayV2HTTPRequest{
-					RawPath: path, Headers: map[string]string{"Range": "bytes=1-3"},
+					RawPath:        path,
+					Headers:        map[string]string{"Range": "bytes=1-3"},
 					RequestContext: events.APIGatewayV2HTTPRequestContext{APIID: "api", HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{Method: "GET"}},
 				})
 				if err != nil {
@@ -304,7 +305,9 @@ func TestAdapterStandardHandlers(t *testing.T) {
 				}
 			} else {
 				response, err := a.HandleV1(t.Context(), events.APIGatewayProxyRequest{
-					Path: path, HTTPMethod: "GET", Headers: map[string]string{"Range": "bytes=1-3"},
+					Path:           path,
+					HTTPMethod:     "GET",
+					Headers:        map[string]string{"Range": "bytes=1-3"},
 					RequestContext: events.APIGatewayProxyRequestContext{APIID: "api"},
 				})
 				if err != nil {

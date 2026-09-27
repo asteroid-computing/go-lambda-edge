@@ -9,11 +9,9 @@ import (
 )
 
 func ExampleNewJWT() {
-	// Synthetic facts for this example. In an application, an authenticating
-	// producer must establish these facts before constructing the caller.
-	claims, err := identity.NewClaims(map[string]any{
-		"iss": "https://issuer.example", "client_id": "batch-worker", "scope": "orders.read",
-	})
+	// Synthetic facts for this example.
+	// In an application, an authenticating producer must establish these facts before constructing the caller.
+	claims, err := identity.NewClaims(map[string]any{"iss": "https://issuer.example", "client_id": "batch-worker", "scope": "orders.read"})
 	if err != nil {
 		panic(err)
 	}
@@ -30,7 +28,8 @@ func ExampleNewJWT() {
 }
 
 func ExampleWithCaller() {
-	// This validates a synthetic identifier; it does not authenticate it.
+	// This validates a synthetic identifier;
+	// it does not authenticate it.
 	caller, err := identity.NewIAM("arn:aws:sts::123456789012:assumed-role/Worker/batch-1", identity.SourceCustomAssertion)
 	if err != nil {
 		panic(err)

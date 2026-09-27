@@ -27,8 +27,9 @@ func ExampleAuthenticator_Handler() {
 		}
 		return caller, err
 	}
-	// Synthetic fixture only. Replace this function with your actual issuer/key/
-	// signature/expiry/client-policy verifier. Parsing claims is NOT verification.
+	// Synthetic fixture only.
+	// Replace this function with your actual issuer/key/signature/expiry/client-policy verifier.
+	// Parsing claims is NOT verification.
 	verifyBearer := func(_ context.Context, token string) (identity.Caller, error) {
 		if token != "synthetic-example-token" {
 			return identity.Caller{}, authn.ErrInvalidCredentials
@@ -55,8 +56,8 @@ func ExampleAuthenticator_Handler() {
 			http.Error(w, "invalid action", http.StatusBadRequest)
 			return
 		}
-		// Consumer-owned authorization: deny by default. Neither successful
-		// token verification nor AWS account membership grants this action alone.
+		// Consumer-owned authorization: deny by default.
+		// Neither successful token verification nor AWS account membership grants this action alone.
 		caller := identity.FromContext(r.Context())
 		allowed := false
 		if jwt, ok := caller.JWT(); ok {
@@ -70,8 +71,9 @@ func ExampleAuthenticator_Handler() {
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
-		// Execute the exact selection just authorized. Extra consumer headers
-		// remain available through r.Header; authn does not interpret them.
+		// Execute the exact selection just authorized.
+		// Extra consumer headers remain available through r.Header;
+		// authn does not interpret them.
 		w.WriteHeader(http.StatusNoContent)
 	})
 	protected, err := a.Handler(dispatcher)
@@ -80,7 +82,8 @@ func ExampleAuthenticator_Handler() {
 		return
 	}
 	// protected also goes directly to edge.New for Lambda registration.
-	// This local example exercises only the synthetic Bearer path; no AWS calls.
+	// This local example exercises only the synthetic Bearer path;
+	// no AWS calls.
 	r := httptest.NewRequest(http.MethodPost, "/", nil)
 	r.Header.Set("Authorization", "Bearer synthetic-example-token")
 	r.Header.Set("Action", "orders.read")
@@ -100,8 +103,8 @@ func ExampleAuthenticator_Handler() {
 }
 
 func ExampleAuthenticator_Authenticate() {
-	// This example demonstrates a custom JSON error envelope. Its verifier
-	// rejects all credentials and is never called for the missing-header case.
+	// This example demonstrates a custom JSON error envelope.
+	// Its verifier rejects all credentials and is never called for the missing-header case.
 	a, err := authn.New(authn.Config{Bearer: func(context.Context, string) (identity.Caller, error) {
 		return identity.Caller{}, authn.ErrInvalidCredentials
 	}})
@@ -136,8 +139,8 @@ func ExampleAuthenticator_Authenticate() {
 			}
 			return
 		}
-		// A real custom pipeline would install caller, authorize its selected
-		// action, then invoke the application. No such success is possible here.
+		// A real custom pipeline would install caller, authorize its selected action, then invoke the application.
+		// No such success is possible here.
 		_ = caller
 		http.Error(w, "no action authorized", http.StatusForbidden)
 	})

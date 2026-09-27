@@ -1,6 +1,6 @@
-// Package headerprobe measures a candidate for decision 0010. Nothing in edge
-// imports this package. This is an allocation experiment, not the response
-// header implementation: filtering, semantic validation and projection are absent.
+// Package headerprobe measures a candidate for decision 0010.
+// Nothing in edge imports this package.
+// This is an allocation experiment, not the response header implementation: filtering, semantic validation and projection are absent.
 package headerprobe
 
 import (
@@ -15,8 +15,8 @@ import (
 
 const budget = 6 * 1024 * 1024
 
-// preflight uses incremental subtraction so neither long names nor large value
-// slices can overflow a summed charge. Empty slices still cost a name plus 32.
+// preflight uses incremental subtraction so neither long names nor large value slices can overflow a summed charge.
+// Empty slices still cost a name plus 32.
 func preflight(h http.Header, remaining int) bool {
 	for name, values := range h {
 		for i := range max(1, len(values)) {
@@ -116,16 +116,15 @@ func BenchmarkSnapshot(b *testing.B) {
 	}
 }
 
-// TestSnapshotMemory reports incremental live heap after GC, with the input
-// deliberately kept alive in both samples. It excludes the application's input
-// allocations and is not a peak-memory/RSS measurement. Repeat in a quiet process.
+// TestSnapshotMemory reports incremental live heap after GC, with the input deliberately kept alive in both samples.
+// It excludes the application's input allocations and is not a peak-memory/RSS measurement.
+// Repeat in a quiet process.
 func TestSnapshotMemory(t *testing.T) {
 	t.Logf("toolchain=%s target=%s/%s", runtime.Version(), runtime.GOOS, runtime.GOARCH)
 	for _, name := range cases {
 		t.Run(name, func(t *testing.T) {
 			h := fixture(name)
-			// Two collections discard both active and victim sync.Pool entries
-			// from previous cases, including the JSON encoder's large buffers.
+			// Two collections discard both active and victim sync.Pool entries from previous cases, including the JSON encoder's large buffers.
 			runtime.GC()
 			runtime.GC()
 			var before, after runtime.MemStats
@@ -137,8 +136,8 @@ func TestSnapshotMemory(t *testing.T) {
 			runtime.KeepAlive(h)
 			runtime.KeepAlive(out)
 			retained := int64(after.HeapAlloc) - int64(before.HeapAlloc)
-			// Encoding is intentionally outside the snapshot memory sample. This
-			// is ordinary JSON v2, not the production bounded response encoder.
+			// Encoding is intentionally outside the snapshot memory sample.
+			// This is ordinary JSON v2, not the production bounded response encoder.
 			encoded, err := json.Marshal(out)
 			if err != nil {
 				t.Fatal(err)

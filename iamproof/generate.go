@@ -12,8 +12,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 )
 
-// Token owns a versioned proof. Its zero value is unusable. Default string and
-// debug formatting are redacted; Value explicitly exposes the credential.
+// Token owns a versioned proof.
+// Its zero value is unusable.
+// Default string and debug formatting are redacted;
+// Value explicitly exposes the credential.
 type Token struct {
 	value   string
 	expires time.Time
@@ -32,15 +34,15 @@ func (t Token) String() string { return "iamproof.Token(redacted)" }
 // GoString returns the same redacted description as String.
 func (t Token) GoString() string { return t.String() }
 
-// Generator presigns proofs using its credentials provider. It is safe for
-// concurrent use if the provider is. A zero Generator is not configured.
+// Generator presigns proofs using its credentials provider.
+// It is safe for concurrent use if the provider is.
+// A zero Generator is not configured.
 type Generator struct {
 	cfg         configuration
 	credentials aws.CredentialsProvider
 }
 
-// NewGenerator requires an explicit standard STS region, a case-sensitive
-// audience of 1-256 visible ASCII bytes without spaces, and a nonnil provider.
+// NewGenerator requires an explicit standard STS region, a case-sensitive audience of 1-256 visible ASCII bytes without spaces, and a nonnil provider.
 // The provider owns credential caching, refresh and any retrieval I/O.
 func NewGenerator(region, audience string, credentials aws.CredentialsProvider) (*Generator, error) {
 	if isNil(credentials) {
@@ -53,9 +55,10 @@ func NewGenerator(region, audience string, credentials aws.CredentialsProvider) 
 	return &Generator{cfg: cfg, credentials: credentials}, nil
 }
 
-// Generate retrieves fresh credentials and presigns locally, without calling
-// STS. Failure returns a zero Token and a sanitized package or caller-context
-// error. Oversized proofs fail with ErrProofTooLarge; credentials are not cut.
+// Generate retrieves fresh credentials and presigns locally, without calling STS.
+// Failure returns a zero Token and a sanitized package or caller-context error.
+// Oversized proofs fail with ErrProofTooLarge;
+// credentials are not cut.
 func (g *Generator) Generate(ctx context.Context) (Token, error) {
 	if g == nil || g.credentials == nil || ctx == nil {
 		return Token{}, ErrInvalidConfiguration
@@ -74,8 +77,8 @@ func (g *Generator) Generate(ctx context.Context) (Token, error) {
 	if !validAccessKey(creds.AccessKeyID) || creds.SecretAccessKey == "" || !utf8.ValidString(creds.SessionToken) || creds.CanExpire && !now.Before(creds.Expires) {
 		return Token{}, ErrCredentialsUnavailable
 	}
-	// A session longer than the entire decoded budget cannot fit. Check before
-	// query escaping or JSON encoding can amplify a provider's oversized token.
+	// A session longer than the entire decoded budget cannot fit.
+	// Check before query escaping or JSON encoding can amplify a provider's oversized token.
 	if len(creds.SessionToken) > base64.RawURLEncoding.DecodedLen(maxProofBytes-3) {
 		return Token{}, ErrProofTooLarge
 	}
@@ -97,8 +100,10 @@ func (g *Generator) Generate(ctx context.Context) (Token, error) {
 		return Token{}, ErrCredentialsUnavailable
 	}
 	wire, err := json.Marshal(envelope{
-		Audience: g.cfg.audience, Credential: q.Get("X-Amz-Credential"),
-		Date: q.Get("X-Amz-Date"), Signature: q.Get("X-Amz-Signature"),
+		Audience:     g.cfg.audience,
+		Credential:   q.Get("X-Amz-Credential"),
+		Date:         q.Get("X-Amz-Date"),
+		Signature:    q.Get("X-Amz-Signature"),
 		SessionToken: q.Get("X-Amz-Security-Token"),
 	})
 	if err != nil {

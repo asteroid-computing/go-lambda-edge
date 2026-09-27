@@ -9,8 +9,8 @@ import (
 	"testing"
 )
 
-// Exercise real transport fault sites while the public invocation methods await
-// identity producers. Assertions use the exported contract, not private causes.
+// Exercise real transport fault sites while the public invocation methods await identity producers.
+// Assertions use the exported contract, not private causes.
 func TestInvocationErrorCategories(t *testing.T) {
 	for _, tt := range []struct {
 		name      string
@@ -103,8 +103,8 @@ func TestInvocationErrorCategories(t *testing.T) {
 			if name, maximum, ok := diagnostic.Limit(); name != "" || maximum != 0 || ok {
 				t.Errorf("Limit() = %q, %d, %v for a non-limit failure", name, maximum, ok)
 			}
-			// Inspect every exposed cause, including joined siblings. An error's
-			// own sanitized text must not conceal a credential-bearing child.
+			// Inspect every exposed cause, including joined siblings.
+			// An error's own sanitized text must not conceal a credential-bearing child.
 			pending := []error{wrapped}
 			for len(pending) != 0 {
 				node := pending[len(pending)-1]

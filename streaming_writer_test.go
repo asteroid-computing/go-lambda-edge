@@ -266,9 +266,7 @@ func (partialStreamWriter) Write(p []byte) (int, error) {
 
 func TestStreamingPartialWriteCountsAndSanitization(t *testing.T) {
 	for _, sniff := range []bool{false, true} {
-		w := newStreamingWriter(t.Context(), "GET", defaultResponseHeaderBudget, &streamOutput{
-			publish: func([]byte) error { return nil }, body: partialStreamWriter{},
-		})
+		w := newStreamingWriter(t.Context(), "GET", defaultResponseHeaderBudget, &streamOutput{publish: func([]byte) error { return nil }, body: partialStreamWriter{}})
 		if sniff {
 			if n, err := w.Write(bytes.Repeat([]byte("x"), 511)); n != 511 || err != nil {
 				t.Fatalf("buffered Write=%d %v", n, err)

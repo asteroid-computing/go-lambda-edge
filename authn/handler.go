@@ -9,14 +9,17 @@ import (
 	"github.com/asteroid-computing/go-lambda-edge/identity"
 )
 
-// Handler constructs required-authentication middleware. It validates next,
-// including typed nils. Success installs one caller in a derived request context
-// and invokes next exactly once. It leaves the original request and headers intact.
+// Handler constructs required-authentication middleware.
+// It validates next, including typed nils.
+// Success installs one caller in a derived request context and invokes next exactly once.
+// It leaves the original request and headers intact.
 //
 // Failure writes a generic text response, no-store and the applicable challenges;
-// next is not invoked. Caller cancellation attempts 503 without a challenge, but
-// delivery is not guaranteed. Provider/handler panics propagate. Public routes
-// and CORS/preflight must be configured separately; there is no OPTIONS bypass.
+// next is not invoked.
+// Caller cancellation attempts 503 without a challenge, but delivery is not guaranteed.
+// Provider/handler panics propagate.
+// Public routes and CORS/preflight must be configured separately;
+// there is no OPTIONS bypass.
 func (a *Authenticator) Handler(next http.Handler) (http.Handler, error) {
 	if a == nil || a.cfg.MaxAuthorizationBytes == 0 || next == nil {
 		return nil, ErrInvalidConfiguration
@@ -56,8 +59,8 @@ func writeFailure(w http.ResponseWriter, err error) {
 		status = http.StatusServiceUnavailable
 	}
 	headers := w.Header()
-	// Direct map users can leave noncanonical aliases. Own these failure fields
-	// without dropping unrelated outer middleware headers such as CORS.
+	// Direct map users can leave noncanonical aliases.
+	// Own these failure fields without dropping unrelated outer middleware headers such as CORS.
 	for name := range headers {
 		switch http.CanonicalHeaderKey(name) {
 		case "Www-Authenticate", "Cache-Control":

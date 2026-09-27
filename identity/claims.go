@@ -1,6 +1,7 @@
 // Package identity provides immutable callers, owned claims and context transport.
-// Construction validates representation; producers authenticate, and application
-// policy authorizes. The package performs no network or signature verification.
+// Construction validates representation;
+// producers authenticate, and application policy authorizes.
+// The package performs no network or signature verification.
 package identity
 
 import (
@@ -31,12 +32,10 @@ const (
 	ClaimObject
 )
 
-// Representation describes the immediate input representation, not its original
-// token encoding or whether an authenticating producer verified it.
+// Representation describes the immediate input representation, not its original token encoding or whether an authenticating producer verified it.
 type Representation uint8
 
-// Claim representations retain the distinction between JSON, decoded values,
-// and gateway text that may have lost its original JSON type.
+// Claim representations retain the distinction between JSON, decoded values, and gateway text that may have lost its original JSON type.
 const (
 	RepresentationUnknown Representation = iota
 	RepresentationJSON
@@ -44,25 +43,28 @@ const (
 	RepresentationGatewayText
 )
 
-// Claims is an immutable object of named claims. Its zero value is empty.
+// Claims is an immutable object of named claims.
+// Its zero value is empty.
 // Views may share owned backing storage and may be read concurrently.
-// Use Lookup and its checked accessors to inspect values; diagnostic formatting
-// does not reveal claim names or contents. There is no implicit JSON export.
+// Use Lookup and its checked accessors to inspect values;
+// diagnostic formatting does not reveal claim names or contents.
+// There is no implicit JSON export.
 type Claims struct {
 	members map[string]claimNode
 	budget  int
 	charge  int
 }
 
-// Claim is an immutable view of a value. The zero value has kind ClaimInvalid.
+// Claim is an immutable view of a value.
+// The zero value has kind ClaimInvalid.
 // Its representation describes the available input, not authentication strength.
 type Claim struct {
 	node   claimNode
 	budget int
 }
 
-// cost includes this node's entire subtree. It permits an object view to retain
-// the original budget while accounting only for that object's contents.
+// cost includes this node's entire subtree.
+// It permits an object view to retain the original budget while accounting only for that object's contents.
 type claimNode struct {
 	kind           ClaimKind
 	representation Representation
@@ -73,7 +75,8 @@ type claimNode struct {
 	object         map[string]claimNode
 }
 
-// ClaimsOption configures claims construction. A nil option is invalid.
+// ClaimsOption configures claims construction.
+// A nil option is invalid.
 // Scalar settings apply in order, with the last assignment winning.
 type ClaimsOption func(*claimsConfig)
 
@@ -81,12 +84,12 @@ type claimsConfig struct {
 	budget int
 }
 
-// WithClaimsBudget sets the weighted resource allowance in bytes, defaulting to
-// 256 KiB. Constructors reject a final setting outside 1..6 MiB.
+// WithClaimsBudget sets the weighted resource allowance in bytes, defaulting to 256 KiB.
+// Constructors reject a final setting outside 1..6 MiB.
 // Each value costs 64 bytes plus object-name, string and exact-number text bytes.
 // ParseClaims also limits the original JSON byte length to this maximum.
-// The allowance is not an AWS quota or a heap cap. Nesting is limited separately
-// to 64 containers, including the root, and cannot be disabled.
+// The allowance is not an AWS quota or a heap cap.
+// Nesting is limited separately to 64 containers, including the root, and cannot be disabled.
 func WithClaimsBudget(bytes int) ClaimsOption {
 	return func(c *claimsConfig) { c.budget = bytes }
 }
@@ -132,7 +135,8 @@ func (c Claim) Kind() ClaimKind { return c.node.kind }
 // Representation returns the immediate input representation.
 func (c Claim) Representation() Representation { return c.node.representation }
 
-// Text reports whether the claim is a string. It never converts other types.
+// Text reports whether the claim is a string.
+// It never converts other types.
 func (c Claim) Text() (string, bool) {
 	if c.node.kind != ClaimString {
 		return "", false
@@ -170,9 +174,10 @@ func (c Claim) Object() (Claims, bool) {
 }
 
 // NumberText reports whether an exact numeric representation is available.
-// JSON and json.Number preserve their supplied literal; native integers use
-// decimal text. Supplied float32/float64 and all strings return false, even for
-// integral values. Exactness describes the supplied value, not lost upstream data.
+// JSON and json.Number preserve their supplied literal;
+// native integers use decimal text.
+// Supplied float32/float64 and all strings return false, even for integral values.
+// Exactness describes the supplied value, not lost upstream data.
 func (c Claim) NumberText() (string, bool) {
 	if c.node.kind != ClaimNumber || c.node.text == "" {
 		return "", false
@@ -181,8 +186,9 @@ func (c Claim) NumberText() (string, bool) {
 }
 
 // Float64 explicitly converts a number to its nearest float64 representation.
-// It reports false for nonnumbers or a conversion error; ordinary rounding is
-// permitted. For supplied floating-point values it returns their stored value.
+// It reports false for nonnumbers or a conversion error;
+// ordinary rounding is permitted.
+// For supplied floating-point values it returns their stored value.
 // Use NumberText and an exact parser when rounding is unacceptable.
 func (c Claim) Float64() (float64, bool) {
 	if c.node.kind != ClaimNumber {

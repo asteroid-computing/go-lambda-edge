@@ -38,8 +38,8 @@ func ExampleActionHeader() {
 			http.Error(w, "missing action metadata", http.StatusInternalServerError)
 			return
 		}
-		// This example operation is public. Protected operations must authorize
-		// this same selection before executing or publishing streaming output.
+		// This example operation is public.
+		// Protected operations must authorize this same selection before executing or publishing streaming output.
 		switch action {
 		case "service.ping":
 			fmt.Fprintln(w, "pong")

@@ -38,15 +38,13 @@ func configure(region, audience string) (configuration, error) {
 	if len(region) > 63 || !regionPattern.MatchString(region) || strings.HasPrefix(region, "fips-") || !validAudience(audience) {
 		return configuration{}, ErrInvalidConfiguration
 	}
-	endpoint, err := sts.NewDefaultEndpointResolverV2().ResolveEndpoint(context.Background(), sts.EndpointParameters{
-		Region: new(region), UseGlobalEndpoint: new(false), UseFIPS: new(false), UseDualStack: new(false),
-	})
+	endpoint, err := sts.NewDefaultEndpointResolverV2().ResolveEndpoint(context.Background(), sts.EndpointParameters{Region: new(region), UseGlobalEndpoint: new(false), UseFIPS: new(false), UseDualStack: new(false)})
 	if err != nil {
 		return configuration{}, ErrInvalidConfiguration
 	}
-	// The V2 public endpoint does not expose its partition. Obtain that metadata
-	// from the SDK's public legacy resolver, and require both resolvers to agree
-	// on the standard endpoint. No private SDK imports or copied partition table.
+	// The V2 public endpoint does not expose its partition.
+	// Obtain that metadata from the SDK's public legacy resolver, and require both resolvers to agree on the standard endpoint.
+	// No private SDK imports or copied partition table.
 	metadata, err := sts.NewDefaultEndpointResolver().ResolveEndpoint(region, sts.EndpointResolverOptions{})
 	if err != nil || metadata.PartitionID == "" || metadata.SigningRegion != region || metadata.URL != endpoint.URI.String() {
 		return configuration{}, ErrInvalidConfiguration
@@ -180,8 +178,8 @@ func (p envelope) request(ctx context.Context, cfg configuration) *http.Request 
 	if p.SessionToken != "" {
 		query.Set("X-Amz-Security-Token", p.SessionToken)
 	}
-	// SigV4 uses RFC 3986 space escaping, not form encoding's '+'. Preserve
-	// the SDK's encoding even for an unusual opaque session-token value.
+	// SigV4 uses RFC 3986 space escaping, not form encoding's '+'.
+	// Preserve the SDK's encoding even for an unusual opaque session-token value.
 	req.URL.RawQuery = strings.ReplaceAll(query.Encode(), "+", "%20")
 	return req
 }

@@ -18,8 +18,9 @@ import (
 	"github.com/asteroid-computing/go-lambda-edge/identity"
 )
 
-// Synthetic callers stand in for already verified results. They do not prove
-// that a token was authenticated; actual verification belongs to each producer.
+// Synthetic callers stand in for already verified results.
+// They do not prove that a token was authenticated;
+// actual verification belongs to each producer.
 func jwtCaller(t testing.TB, source identity.Source) identity.Caller {
 	t.Helper()
 	claims, err := identity.NewClaims(map[string]any{"iss": "https://issuer.example", "sub": "alice", "scope": "orders.read"})

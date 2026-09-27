@@ -9,9 +9,9 @@ import (
 
 const stsNamespace = "https://sts.amazonaws.com/doc/2011-06-15/"
 
-// parseResponse consumes one complete, bounded document. Only direct children
-// in the expected namespace can supply identity or error fields; duplicate
-// results and fields fail instead of taking the last value as xml.Unmarshal does.
+// parseResponse consumes one complete, bounded document.
+// Only direct children in the expected namespace can supply identity or error fields;
+// duplicate results and fields fail instead of taking the last value as xml.Unmarshal does.
 // Unknown metadata is ignored, but still parsed for well-formedness.
 func parseResponse(wire []byte, success bool) (map[string]string, error) {
 	root, result := "GetCallerIdentityResponse", "GetCallerIdentityResult"

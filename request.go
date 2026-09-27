@@ -59,13 +59,12 @@ func requestV2(ctx context.Context, event events.APIGatewayV2HTTPRequest) (*http
 		return nil, invocationError("request", ErrInvalidEvent, "invalid rawPath encoding")
 	}
 	u := &url.URL{Path: path, RawPath: event.RawPath, RawQuery: event.RawQueryString}
-	// EscapedPath ignores an invalid RawPath hint. Reject rather than silently
-	// replacing raw delimiters, whitespace, or an invalid encoded spelling.
+	// EscapedPath ignores an invalid RawPath hint.
+	// Reject rather than silently replacing raw delimiters, whitespace, or an invalid encoded spelling.
 	if u.EscapedPath() != event.RawPath {
 		return nil, invocationError("request", ErrInvalidEvent, "invalid rawPath syntax")
 	}
-	// Query decoding remains the handler's job, but a request target cannot
-	// contain literal ASCII whitespace or control bytes on an HTTP request line.
+	// Query decoding remains the handler's job, but a request target cannot contain literal ASCII whitespace or control bytes on an HTTP request line.
 	for i := 0; i < len(event.RawQueryString); i++ {
 		if event.RawQueryString[i] <= ' ' || event.RawQueryString[i] == 0x7f {
 			return nil, invocationError("request", ErrInvalidEvent, "invalid raw query syntax")
@@ -106,8 +105,8 @@ func requestHeaders(single map[string]string, multi map[string][]string) (http.H
 			header[name] = append(header[name], value)
 		}
 	}
-	// Keep the original multivalue lists for cross-map deduplication. Repeated
-	// single values under differently cased keys must not deduplicate each other.
+	// Keep the original multivalue lists for cross-map deduplication.
+	// Repeated single values under differently cased keys must not deduplicate each other.
 	multiValues := header.Clone()
 	for _, key := range slices.Sorted(maps.Keys(single)) {
 		if !validToken(key) {

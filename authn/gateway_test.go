@@ -46,8 +46,8 @@ func localProofVerifier(t testing.TB) (*iamproof.Verifier, iamproof.Token, *atom
 		if r.URL.Host != "sts.eu-west-2.amazonaws.com" || r.Header.Get("X-Edge-IAM-Audience") != "orders.production" || r.URL.Query().Get("Action") != "GetCallerIdentity" || r.URL.Query().Get("X-Amz-Signature") == "" {
 			t.Error("incorrect reconstructed STS request")
 		}
-		// A synthetic STS response exercises production composition, not AWS
-		// acceptance. Signature reconstruction is separately tested by iamproof.
+		// A synthetic STS response exercises production composition, not AWS acceptance.
+		// Signature reconstruction is separately tested by iamproof.
 		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(`<GetCallerIdentityResponse xmlns="https://sts.amazonaws.com/doc/2011-06-15/"><GetCallerIdentityResult><Arn>arn:aws:iam::123456789012:user/Alice</Arn><Account>123456789012</Account><UserId>AIDAEXAMPLE</UserId></GetCallerIdentityResult></GetCallerIdentityResponse>`))}, nil
 	})))
 	if err != nil {
@@ -184,10 +184,18 @@ func serveFormatBody(t *testing.T, h http.Handler, format string, values []strin
 		}
 		return resp.StatusCode, resp.Header, body
 	}
-	v1 := events.APIGatewayProxyRequest{HTTPMethod: "GET", Path: "/", RequestContext: events.APIGatewayProxyRequestContext{APIID: "example"},
-		Headers: map[string]string{"action": action, "custom-trace": "keep"}}
-	v2 := events.APIGatewayV2HTTPRequest{Version: "2.0", RawPath: "/", RequestContext: events.APIGatewayV2HTTPRequestContext{APIID: "example", HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{Method: "GET"}},
-		Headers: map[string]string{"action": action, "custom-trace": "keep"}}
+	v1 := events.APIGatewayProxyRequest{
+		HTTPMethod:     "GET",
+		Path:           "/",
+		RequestContext: events.APIGatewayProxyRequestContext{APIID: "example"},
+		Headers:        map[string]string{"action": action, "custom-trace": "keep"},
+	}
+	v2 := events.APIGatewayV2HTTPRequest{
+		Version:        "2.0",
+		RawPath:        "/",
+		RequestContext: events.APIGatewayV2HTTPRequestContext{APIID: "example", HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{Method: "GET"}},
+		Headers:        map[string]string{"action": action, "custom-trace": "keep"},
+	}
 	if len(values) != 0 {
 		v1.Headers["authorization"] = values[0]
 		v1.MultiValueHeaders = map[string][]string{"Authorization": values}
@@ -314,9 +322,7 @@ func TestGatewayProducerConflictAndInvocationCancellation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	event := events.APIGatewayProxyRequest{HTTPMethod: "GET", Path: "/", RequestContext: events.APIGatewayProxyRequestContext{
-		APIID: "example", Identity: events.APIGatewayRequestIdentity{UserArn: "arn:aws:iam::123456789012:user/Alice", AccountID: "123456789012"},
-	}}
+	event := events.APIGatewayProxyRequest{HTTPMethod: "GET", Path: "/", RequestContext: events.APIGatewayProxyRequestContext{APIID: "example", Identity: events.APIGatewayRequestIdentity{UserArn: "arn:aws:iam::123456789012:user/Alice", AccountID: "123456789012"}}}
 	resp, err := adapter.HandleV1(t.Context(), event)
 	if err != nil || resp.StatusCode != 500 || len(resp.MultiValueHeaders["Www-Authenticate"]) != 0 {
 		t.Fatalf("gateway/local conflict: response=%d err=%v; want HTTP 500", resp.StatusCode, err)

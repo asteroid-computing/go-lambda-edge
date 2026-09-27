@@ -16,22 +16,24 @@ import (
 	"github.com/asteroid-computing/go-lambda-edge/identity"
 )
 
-// Grants resolves application enrollment and permissions, independently of token
-// scopes and AWS IAM policies. Implementations must support concurrent requests.
+// Grants resolves application enrollment and permissions, independently of token scopes and AWS IAM policies.
+// Implementations must support concurrent requests.
 type Grants interface {
 	Allowed(context.Context, identity.Caller, string, string) (bool, error)
 }
 
-// Store reads the exact authorized resource. Events calls yield synchronously,
-// stops on its first error, and observes context cancellation. A database-backed
-// application must also preserve object/version consistency through execution.
+// Store reads the exact authorized resource.
+// Events calls yield synchronously, stops on its first error, and observes context cancellation.
+// A database-backed application must also preserve object/version consistency through execution.
 type Store interface {
 	Read(context.Context, string) (string, error)
 	Events(context.Context, string, func(string) error) error
 }
 
-// Config belongs to this example. Required strings have no implicit defaults.
-// Transports are trusted infrastructure; nil selects the verifier's default.
+// Config belongs to this example.
+// Required strings have no implicit defaults.
+// Transports are trusted infrastructure;
+// nil selects the verifier's default.
 type Config struct {
 	Cognito       authn.CognitoConfig
 	Region        string
@@ -44,8 +46,8 @@ type Config struct {
 	Streaming     bool
 }
 
-// New constructs the complete application without network I/O. Streaming is a
-// startup choice: orders.watch is absent from the buffered variant's registry.
+// New constructs the complete application without network I/O.
+// Streaming is a startup choice: orders.watch is absent from the buffered variant's registry.
 func New(cfg Config) (http.Handler, error) {
 	if cfg.Grants == nil || cfg.Store == nil || cfg.Origin == "" {
 		return nil, errors.New("orders: missing application configuration")
@@ -63,7 +65,8 @@ func New(cfg Config) (http.Handler, error) {
 		return nil, err
 	}
 	authentication, err := authn.New(authn.Config{
-		Realm: "orders", Bearer: bearer.Verify,
+		Realm:  "orders",
+		Bearer: bearer.Verify,
 		IAMProof: func(ctx context.Context, credential string) (identity.Caller, error) {
 			caller, err := proof.Verify(ctx, credential)
 			if errors.Is(err, iamproof.ErrInvalidProof) {
@@ -121,8 +124,8 @@ func New(cfg Config) (http.Handler, error) {
 		}}
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// This example owns CORS. Disable conflicting Gateway-managed CORS when
-		// deploying it, or move this policy wholly into that deployment layer.
+		// This example owns CORS.
+		// Disable conflicting Gateway-managed CORS when deploying it, or move this policy wholly into that deployment layer.
 		w.Header().Add("Vary", "Origin")
 		if origins := r.Header.Values("Origin"); len(origins) == 1 && origins[0] == cfg.Origin {
 			w.Header().Set("Access-Control-Allow-Origin", cfg.Origin)
@@ -192,8 +195,8 @@ func New(cfg Config) (http.Handler, error) {
 	}), nil
 }
 
-// The application accepts canonical decimal IDs only; no aliases, escaping or
-// query parameters can change the target between authorization and execution.
+// The application accepts canonical decimal IDs only;
+// no aliases, escaping or query parameters can change the target between authorization and execution.
 func resourcePath(path string) (string, bool) {
 	parts := strings.Split(path, "/")
 	if len(parts) != 5 || parts[0] != "" || parts[1] != "tenants" || parts[3] != "orders" {
@@ -242,7 +245,8 @@ func writeJSON(w http.ResponseWriter, status int, payload map[string]string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(status)
-	// Status is committed. A client write failure cannot be replaced by JSON.
+	// Status is committed.
+	// A client write failure cannot be replaced by JSON.
 	_ = json.MarshalWrite(w, payload)
 }
 
@@ -250,8 +254,8 @@ func watch(w http.ResponseWriter, r *http.Request, store Store, resource string)
 	w.Header().Set("Content-Type", "application/x-ndjson")
 	w.Header().Set("Cache-Control", "no-store")
 	controller := http.NewResponseController(w)
-	// Publish only after authorization; this also makes an empty stream's
-	// commitment explicit before entering a potentially slow producer.
+	// Publish only after authorization;
+	// this also makes an empty stream's commitment explicit before entering a potentially slow producer.
 	if err := controller.Flush(); err != nil {
 		return
 	}
@@ -268,9 +272,10 @@ func watch(w http.ResponseWriter, r *http.Request, store Store, resource string)
 		return controller.Flush()
 	})
 	if err != nil {
-		// net/http's documented abort sentinel prevents a truncated result from
-		// appearing complete. Edge converts this post-handoff panic to ErrStream;
-		// it never exposes the store's diagnostic. Do not recover it in middleware.
+		// net/http's documented abort sentinel prevents a truncated result from appearing complete.
+		// Edge converts this post-handoff panic to ErrStream;
+		// it never exposes the store's diagnostic.
+		// Do not recover it in middleware.
 		panic(http.ErrAbortHandler)
 	}
 }

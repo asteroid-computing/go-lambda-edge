@@ -84,8 +84,7 @@ func (v *CognitoVerifier) verify(ctx context.Context, token string) (identity.Ca
 	if err != nil {
 		return identity.Caller{}, ErrInvalidCredentials
 	}
-	// A process pause after key lookup must not allow a now-expired key or
-	// token to establish an identity on resumption.
+	// A process pause after key lookup must not allow a now-expired key or token to establish an identity on resumption.
 	now := time.Now()
 	if !dates.valid(now, v.cfg.ClockSkew) {
 		return identity.Caller{}, ErrInvalidCredentials
@@ -108,8 +107,8 @@ func decodeJWTPart(text string, limit int) ([]byte, error) {
 	if text == "" || len(text) > base64.RawURLEncoding.EncodedLen(limit) {
 		return nil, ErrInvalidCredentials
 	}
-	// Strict decoding checks unused bits but still ignores CR/LF. Check the
-	// alphabet first so whitespace, padding and extra segments cannot disappear.
+	// Strict decoding checks unused bits but still ignores CR/LF.
+	// Check the alphabet first so whitespace, padding and extra segments cannot disappear.
 	for i := range len(text) {
 		c := text[i]
 		if !(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '-' || c == '_') {

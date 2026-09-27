@@ -8,10 +8,11 @@ import (
 )
 
 // ParseClaims validates exactly one JSON object and owns its semantic contents.
-// It preserves numeric token text, but not whitespace, member order or string
-// escape spelling. It rejects duplicate names, invalid UTF-8 and trailing values.
+// It preserves numeric token text, but not whitespace, member order or string escape spelling.
+// It rejects duplicate names, invalid UTF-8 and trailing values.
 // Input bytes must not change during construction and are not retained afterward.
-// Invalid input matches ErrInvalidClaims; byte exhaustion is a ClaimsLimitError.
+// Invalid input matches ErrInvalidClaims;
+// byte exhaustion is a ClaimsLimitError.
 // The representation is received JSON, not proof of original JWT fidelity.
 func ParseClaims(data jsontext.Value, opts ...ClaimsOption) (Claims, error) {
 	maximum, err := claimsBudget(opts)
@@ -32,8 +33,8 @@ func ParseClaims(data jsontext.Value, opts ...ClaimsOption) (Claims, error) {
 	if _, err := d.ReadToken(); err != io.EOF {
 		return Claims{}, ErrInvalidClaims
 	}
-	// Validation and accounting precede owned-tree allocation. The decoder may
-	// allocate its own bounded wire buffer and duplicate-name tracking on pass one.
+	// Validation and accounting precede owned-tree allocation.
+	// The decoder may allocate its own bounded wire buffer and duplicate-name tracking on pass one.
 	d.Reset(bytes.NewReader(data))
 	budget.remaining = maximum
 	n, err := readJSONClaim(d, &budget, 0, true)

@@ -31,8 +31,8 @@ func (s *spyStore) Read(ctx context.Context, target string) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
-	// The response exposes which target actually executed, independently of the
-	// grant callback's observation. A changed target makes the test fail.
+	// The response exposes which target actually executed, independently of the grant callback's observation.
+	// A changed target makes the test fail.
 	return "read:" + target, nil
 }
 
@@ -95,8 +95,7 @@ func TestConsumerOutcomes(t *testing.T) {
 					}
 					headers := http.Header{"Authorization": authorization, "Action": actions, "Origin": {origin}, "Custom-Trace": {"first", "second"}, "Cookie": {"client=example"}}
 					h := application(t, cfg)
-					// Consumer middleware sees ordinary Go headers/cookies, including
-					// the intentionally lossy V2 comma combination.
+					// Consumer middleware sees ordinary Go headers/cookies, including the intentionally lossy V2 comma combination.
 					observed := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						wantTrace := []string{"first", "second"}
 						if strings.HasSuffix(format, "v2") {

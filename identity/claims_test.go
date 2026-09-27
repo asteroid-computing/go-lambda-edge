@@ -35,8 +35,13 @@ func lookup(t *testing.T, c identity.Claims, name string) identity.Claim {
 func TestClaimsPresenceAndReads(t *testing.T) {
 	c := parseClaims(t, `{"null":null,"false":false,"true":true,"text":"","number":1,"array":[],"object":{}}`)
 	for name, kind := range map[string]identity.ClaimKind{
-		"null": identity.ClaimNull, "false": identity.ClaimBoolean, "true": identity.ClaimBoolean,
-		"text": identity.ClaimString, "number": identity.ClaimNumber, "array": identity.ClaimArray, "object": identity.ClaimObject,
+		"null":   identity.ClaimNull,
+		"false":  identity.ClaimBoolean,
+		"true":   identity.ClaimBoolean,
+		"text":   identity.ClaimString,
+		"number": identity.ClaimNumber,
+		"array":  identity.ClaimArray,
+		"object": identity.ClaimObject,
 	} {
 		v := lookup(t, c, name)
 		if v.Kind() != kind || v.Representation() != identity.RepresentationJSON {
@@ -201,15 +206,21 @@ func TestClaimsOwnership(t *testing.T) {
 
 func TestNilContainerKinds(t *testing.T) {
 	c, err := identity.NewClaims(map[string]any{
-		"map": map[string]any(nil), "strings_map": map[string]string(nil),
-		"array": []any(nil), "strings": []string(nil), "null": nil,
+		"map":         map[string]any(nil),
+		"strings_map": map[string]string(nil),
+		"array":       []any(nil),
+		"strings":     []string(nil),
+		"null":        nil,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for name, want := range map[string]identity.ClaimKind{
-		"map": identity.ClaimObject, "strings_map": identity.ClaimObject,
-		"array": identity.ClaimArray, "strings": identity.ClaimArray, "null": identity.ClaimNull,
+		"map":         identity.ClaimObject,
+		"strings_map": identity.ClaimObject,
+		"array":       identity.ClaimArray,
+		"strings":     identity.ClaimArray,
+		"null":        identity.ClaimNull,
 	} {
 		if got := lookup(t, c, name).Kind(); got != want {
 			t.Errorf("Kind(%s) = %v, want %v", name, got, want)
@@ -228,14 +239,25 @@ func TestInvalidTypedClaims(t *testing.T) {
 	type customString string
 	type customMap map[string]any
 	for name, input := range map[string]any{
-		"nan": math.NaN(), "infinity": math.Inf(1), "float32_infinity": float32(math.Inf(-1)),
-		"custom": customString("text"), "custom_map": customMap{}, "pointer": new(1),
-		"uintptr": uintptr(1), "bytes": []byte("text"), "struct": hostileClaim{},
-		"invalid_utf8": "\xff", "invalid_key": map[string]any{"\xff": nil},
-		"invalid_number": json.Number("secret"), "spaced_number": json.Number(" 1"),
-		"trailing_space": json.Number("1 "), "leading_zero": json.Number("01"),
-		"multiple_numbers": json.Number("1 2"), "null_number": json.Number("null"),
-		"empty_number": json.Number(""), "hex_number": json.Number("0x1p2"),
+		"nan":              math.NaN(),
+		"infinity":         math.Inf(1),
+		"float32_infinity": float32(math.Inf(-1)),
+		"custom":           customString("text"),
+		"custom_map":       customMap{},
+		"pointer":          new(1),
+		"uintptr":          uintptr(1),
+		"bytes":            []byte("text"),
+		"struct":           hostileClaim{},
+		"invalid_utf8":     "\xff",
+		"invalid_key":      map[string]any{"\xff": nil},
+		"invalid_number":   json.Number("secret"),
+		"spaced_number":    json.Number(" 1"),
+		"trailing_space":   json.Number("1 "),
+		"leading_zero":     json.Number("01"),
+		"multiple_numbers": json.Number("1 2"),
+		"null_number":      json.Number("null"),
+		"empty_number":     json.Number(""),
+		"hex_number":       json.Number("0x1p2"),
 	} {
 		t.Run(name, func(t *testing.T) {
 			c, err := identity.NewClaims(map[string]any{"secret": input})
@@ -253,9 +275,19 @@ func TestInvalidTypedClaims(t *testing.T) {
 
 func TestInvalidJSONClaims(t *testing.T) {
 	for _, input := range []string{
-		``, `null`, `[]`, `42`, `{"secret":`, `{"secret":1,"secret":2}`,
-		`{"x":1,"\u0078":2}`, `{} {}`, `{} secret`, "{\"secret\":\"\xff\"}",
-		`{"x":[1,]}`, `{"x":{"a":1,"a":2}}`, `{"x":"\ud800"}`,
+		``,
+		`null`,
+		`[]`,
+		`42`,
+		`{"secret":`,
+		`{"secret":1,"secret":2}`,
+		`{"x":1,"\u0078":2}`,
+		`{} {}`,
+		`{} secret`,
+		"{\"secret\":\"\xff\"}",
+		`{"x":[1,]}`,
+		`{"x":{"a":1,"a":2}}`,
+		`{"x":"\ud800"}`,
 	} {
 		c, err := identity.ParseClaims(jsontext.Value(input))
 		if !errors.Is(err, identity.ErrInvalidClaims) || c.Len() != 0 {
@@ -312,9 +344,7 @@ func TestClaimsBudgets(t *testing.T) {
 	if !errors.Is(err, identity.ErrClaimsLimit) {
 		t.Errorf("wire length greater than 64 accepted: %v", err)
 	}
-	for _, opts := range [][]identity.ClaimsOption{
-		{nil}, {identity.WithClaimsBudget(0)}, {identity.WithClaimsBudget(-1)}, {identity.WithClaimsBudget(6*1024*1024 + 1)},
-	} {
+	for _, opts := range [][]identity.ClaimsOption{{nil}, {identity.WithClaimsBudget(0)}, {identity.WithClaimsBudget(-1)}, {identity.WithClaimsBudget(6*1024*1024 + 1)}} {
 		if _, err := identity.NewClaims(nil, opts...); err == nil {
 			t.Error("invalid constructor configuration accepted")
 		}

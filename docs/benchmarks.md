@@ -1,8 +1,7 @@
 # Performance baselines
 
-Initial response-codec measurements on 2026-09-14: Go 1.27.1, darwin/arm64,
-Apple M2. Command: `go test -run '^$' -bench '^BenchmarkMarshalResponse$'
--benchmem -benchtime=200ms`.
+Initial response-codec measurements on 2026-09-14: Go 1.27.1, darwin/arm64, Apple M2.
+Command: `go test -run '^$' -bench '^BenchmarkMarshalResponse$' -benchmem -benchtime=200ms`.
 
 | Case | Time/op | Allocated bytes/op | Allocations/op |
 | --- | ---: | ---: | ---: |
@@ -10,22 +9,20 @@ Apple M2. Command: `go test -run '^$' -bench '^BenchmarkMarshalResponse$'
 | Text body 1 KiB below 6 MiB | 5.71 ms | 18,875,672 | 11 |
 | NUL body whose JSON escaping exceeds envelope limit | 5.25 ms | 27,559,434 | 19 |
 
-These are exploratory local samples, not CI thresholds or Lambda performance
-claims. Allocated bytes/op measures cumulative allocations, not peak live memory.
-The bounded destination retains at most 6 MiB, but JSON codec temporaries still
-allocate. Do not advertise a 6 MiB total-process or peak-memory guarantee.
+These are exploratory local samples, not CI thresholds or Lambda performance claims.
+Allocated bytes/op measures cumulative allocations, not peak live memory.
+The bounded destination retains at most 6 MiB, but JSON codec temporaries still allocate.
+Do not advertise a 6 MiB total-process or peak-memory guarantee.
 
-Raw/typed adapter comparisons, binary response benchmarks, and peak-memory
-measurements follow when the complete response and invocation paths are wired.
+Raw/typed adapter comparisons, binary response benchmarks, and peak-memory measurements follow when the complete response and invocation paths are wired.
 
 ## Response-header allocation probe
 
-2026-09-15, Go 1.27.1, darwin/arm64, Apple M2. This is an isolated candidate
-algorithm in [internal/headerprobe](../internal/headerprobe/probe_test.go), not
-production edge behavior. It performs weighted preflight, preallocated key
-sorting, canonicalization, merging and outer SP/HTAB trimming. It deliberately
-omits syntax validation, hop-header filtering, automatic headers and transport
-projection; the real writer will have additional costs.
+2026-09-15, Go 1.27.1, darwin/arm64, Apple M2.
+This is an isolated candidate algorithm in [internal/headerprobe](../internal/headerprobe/probe_test.go), not production edge behavior.
+It performs weighted preflight, preallocated key sorting, canonicalization, merging and outer SP/HTAB trimming.
+It deliberately omits syntax validation, hop-header filtering, automatic headers and transport projection;
+the real writer will have additional costs.
 
 Commands (three samples each):
 
@@ -48,50 +45,46 @@ Median benchmark results and approximate retained heap after GC:
 | One quote-filled value, near 6 MiB charge | 191 ns | 416 B | 416 B |
 | Empty values exceeding budget by one entry | 390 µs | 0 B | 0–112 B noise |
 
-The smaller fixtures use the same algorithm and allocate inputs whose weighted
-charge fits the named candidate budget. The prototype still enforces the original
-6 MiB ceiling; it does not implement the proposed configurable production option.
-Over-budget preflight rejection allocates no snapshot. The quote-filled value
-shares immutable string storage with the still-live input; the tiny snapshot
-allocation does not include a copy of its bytes. Unbounded JSON v2 encoding of
-that snapshot alone produces 12,582,856 bytes, demonstrating why exact encoded
-limits remain independent of the weighted charge.
+The smaller fixtures use the same algorithm and allocate inputs whose weighted charge fits the named candidate budget.
+The prototype still enforces the original 6 MiB ceiling;
+it does not implement the proposed configurable production option.
+Over-budget preflight rejection allocates no snapshot.
+The quote-filled value shares immutable string storage with the still-live input;
+the tiny snapshot allocation does not include a copy of its bytes.
+Unbounded JSON v2 encoding of that snapshot alone produces 12,582,856 bytes, demonstrating why exact encoded limits remain independent of the weighted charge.
 
-Memory samples keep both the original header map and snapshot alive across
-measurement. Two garbage collections before and after clear previous cases'
-sync.Pool buffers. Small deltas remain noisy. Reported retained heap excludes the
-application's existing input and is not peak memory, total process memory or RSS.
-Encoding happens outside the snapshot memory sample. The suppressed-name case
-retains all suppression entries; production may eliminate some once automatic
-header decisions finish. Timings are local samples, not Lambda latency claims.
+Memory samples keep both the original header map and snapshot alive across measurement.
+Two garbage collections before and after clear previous cases' sync.Pool buffers.
+Small deltas remain noisy.
+Reported retained heap excludes the application's existing input and is not peak memory, total process memory or RSS.
+Encoding happens outside the snapshot memory sample.
+The suppressed-name case retains all suppression entries;
+production may eliminate some once automatic header decisions finish.
+Timings are local samples, not Lambda latency claims.
 
-Preallocating the sorted key slice reduced cumulative allocation for the largest
-distinct-name case from roughly 29.35 MB to 17.63 MB; retained map/slice costs
-still dominate. This optimization alone does not make a 6 MiB accounting budget
-an equivalent heap bound.
+Preallocating the sorted key slice reduced cumulative allocation for the largest distinct-name case from roughly 29.35 MB to 17.63 MB;
+retained map/slice costs still dominate.
+This optimization alone does not make a 6 MiB accounting budget an equivalent heap bound.
 
-Recommendation for review: use a 256 KiB weighted default and an explicit override
-up to 6 MiB, preserving separate encoded limits. The lower default targets modest
-additional metadata storage; its exact number is an engineering choice informed
-by the measured 0.48 MiB retained/0.58 MiB cumulative high-cardinality case, not
-an AWS quota or a proven universal memory bound. See
-[decision 0010](decisions/0010-response-header-design.md).
+Recommendation for review: use a 256 KiB weighted default and an explicit override up to 6 MiB, preserving separate encoded limits.
+The lower default targets modest additional metadata storage;
+its exact number is an engineering choice informed by the measured 0.48 MiB retained/0.58 MiB cumulative high-cardinality case, not an AWS quota or a proven universal memory bound.
+See [decision 0010](decisions/0010-response-header-design.md).
 
-The isolated probe passes race detection, vet and formatting/diff checks. No
-production adapter code changed, and no live AWS services were invoked.
+The isolated probe passes race detection, vet and formatting/diff checks.
+No production adapter code changed, and no live AWS services were invoked.
 
 ## Implemented response-header layer
 
-After approval of decision 0010, repeated measurements against the actual
-snapshot and projection functions on the same Go 1.27.1 / Apple M2 environment:
+After approval of decision 0010, repeated measurements against the actual snapshot and projection functions on the same Go 1.27.1 / Apple M2 environment:
 
 ```sh
 go test -run '^TestResponseHeaderRetainedMemory$' -v -count=3
 go test -run '^$' -bench '^BenchmarkResponseHeaders$' -benchmem -benchtime=200ms -count=3
 ```
 
-Median cumulative allocations in bytes per operation; projection columns include
-snapshot construction and independently owned projection storage:
+Median cumulative allocations in bytes per operation;
+projection columns include snapshot construction and independently owned projection storage:
 
 | Fixture | Snapshot only | Snapshot + V1 | Snapshot + V2 | Retained snapshot heap |
 | --- | ---: | ---: | ---: | ---: |
@@ -99,23 +92,24 @@ snapshot construction and independently owned projection storage:
 | 6,553 distinct names near default 256 KiB charge | 607,557 | 1,106,130 | 937,527 | 498,648–498,760 |
 | 157,286 distinct names near explicit 6 MiB charge | 17,633,192 | 32,743,176 | 28,129,496 | 15,110,248–15,126,208 |
 
-The default's high-cardinality retained snapshot remains about 0.48 MiB, matching
-the candidate probe. Projections add allocations, especially with the largest
-opt-in budget. Suppressed entries are omitted from output; projection maps are
-sized for represented fields, not the number of suppression markers.
+The default's high-cardinality retained snapshot remains about 0.48 MiB, matching the candidate probe.
+Projections add allocations, especially with the largest opt-in budget.
+Suppressed entries are omitted from output;
+projection maps are sized for represented fields, not the number of suppression markers.
 
-These helper benchmarks exclude the HTTP writer, body handling and final JSON
-encoding. Compiler escape analysis can also differ once they are called through
-the future public invocation path. Retained heap excludes the application input
-and projections; it is not peak memory or RSS. Median snapshot timings were
-approximately 1.36 µs, 1.27 ms and 52.17 ms respectively, with substantial timing
-variation in the largest case. These are exploratory samples, not CI thresholds
-or Lambda latency claims. They do not warrant changing the approved default.
+These helper benchmarks exclude the HTTP writer, body handling and final JSON encoding.
+Compiler escape analysis can also differ once they are called through the future public invocation path.
+Retained heap excludes the application input and projections;
+it is not peak memory or RSS.
+Median snapshot timings were approximately 1.36 µs, 1.27 ms and 52.17 ms respectively, with substantial timing variation in the largest case.
+These are exploratory samples, not CI thresholds or Lambda latency claims.
+They do not warrant changing the approved default.
 
 ## Candidate claims storage (2026-09-16)
 
-The isolated `internal/claimprobe` test package measures a candidate owned tree,
-not an implemented identity API. Go 1.27.1, darwin/arm64, Apple M2; three samples:
+The isolated `internal/claimprobe` test package measures a candidate owned tree, not an implemented identity API.
+Go 1.27.1, darwin/arm64, Apple M2;
+three samples:
 
 ```sh
 go test ./internal/claimprobe -run '^TestSnapshotMemory$' -v -count=3
@@ -135,37 +129,34 @@ Median snapshot results, with retained heap measured separately:
 | Large string | 262,144 | 23.3 µs | 262,902 | 4 | 262,912 |
 | 64 nested objects | 4,417 | 16.5 µs | 48,388 | 193 | 48,400 |
 
-Depth 65, a cyclic map, an exponentially expanded shared subtree and an oversized
-array all reject before snapshot allocation: 0 B/op and 0 allocs/op in these
-samples. This excludes any eventual public error construction. Shared subtrees
-are charged per occurrence, not per distinct pointer. Rejection of that fixture
-took about 20.6 µs; the container-length fast rejection took about 46 ns.
+Depth 65, a cyclic map, an exponentially expanded shared subtree and an oversized array all reject before snapshot allocation: 0 B/op and 0 allocs/op in these samples.
+This excludes any eventual public error construction.
+Shared subtrees are charged per occurrence, not per distinct pointer.
+Rejection of that fixture took about 20.6 µs;
+the container-length fast rejection took about 46 ns.
 
-The separate lexical JSON scan used direct jsontext, including strict duplicate
-name validation, a wire-length check, an object root and a depth bound. Median
-cumulative allocations were 1,200 bytes for ordinary claims, 692,717 for distinct
-names, 524,696 for a large string and 12,904 for depth 64. These are lexical scan
-costs only: no full raw-JSON-to-owned-tree implementation exists yet. Do not add
-the timings to predict production latency or call lexical allocation a heap cap.
+The separate lexical JSON scan used direct jsontext, including strict duplicate name validation, a wire-length check, an object root and a depth bound.
+Median cumulative allocations were 1,200 bytes for ordinary claims, 692,717 for distinct names, 524,696 for a large string and 12,904 for depth 64.
+These are lexical scan costs only: no full raw-JSON-to-owned-tree implementation exists yet.
+Do not add the timings to predict production latency or call lexical allocation a heap cap.
 
-The tree copies map keys, strings, maps and slices. Inputs remain live across
-memory samples. Two garbage collections before and after each snapshot reduce
-pool retention; small deltas remain noisy. Retained heap excludes input storage,
-transient allocation, normalized JWT views, event decoding, and process RSS. The
-singleton-object case shows why a 256 KiB accounting limit can retain 1.58 MiB.
+The tree copies map keys, strings, maps and slices.
+Inputs remain live across memory samples.
+Two garbage collections before and after each snapshot reduce pool retention;
+small deltas remain noisy.
+Retained heap excludes input storage, transient allocation, normalized JWT views, event decoding, and process RSS.
+The singleton-object case shows why a 256 KiB accounting limit can retain 1.58 MiB.
 No sample establishes the worst possible amplification across all shapes.
 
-The prototype covers a subset of the proposed typed inputs, using float64 for
-decoded numbers. It does not implement exact numeric nodes, provenance, the
-public getters, JWT validation, error translation, or dedicated scope accounting.
+The prototype covers a subset of the proposed typed inputs, using float64 for decoded numbers.
+It does not implement exact numeric nodes, provenance, the public getters, JWT validation, error translation, or dedicated scope accounting.
 Those require production measurements and contract tests after approval.
 
-The SDK probe invokes a real local lambda.NewHandlerWithOptions around a typed
-APIGatewayProxyRequest. For the literal 9007199254740993, default decoding yields
-float64 9007199254740992; WithUseNumber(true) yields json.Number with the original
-digits. This is evidence for data-type compatibility in
-[decision 0014](decisions/0014-claims-api.md), not a proposal to use the v1 codec
-inside edge. No live Lambda or API Gateway request was made.
+The SDK probe invokes a real local lambda.NewHandlerWithOptions around a typed APIGatewayProxyRequest.
+For the literal 9007199254740993, default decoding yields float64 9007199254740992;
+WithUseNumber(true) yields json.Number with the original digits.
+This is evidence for data-type compatibility in [decision 0014](decisions/0014-claims-api.md), not a proposal to use the v1 codec inside edge.
+No live Lambda or API Gateway request was made.
 
 ## Implemented claims constructors (2026-09-16)
 
@@ -186,32 +177,32 @@ Median bytes per operation and independently sampled retained heap in bytes:
 | Singleton objects, 256 KiB budget | 1,661,221 | 1,922,539 | 1,661,184 | 1,669,376 |
 | Large string, 256 KiB budget | 262,912 | 1,311,952 | 262,912 | 262,912 |
 
-Ordinary typed construction took a median 1.24 µs and 30 allocations; ordinary
-raw construction took 3.02 µs and 81 allocations. Raw construction includes strict
-lexical validation and preflight, then owned-tree construction, while typed input
-has no JSON round trip. Raw numbers retain their literal, while input float64
-values retain only the available floating-point value. Both paths clone strings.
+Ordinary typed construction took a median 1.24 µs and 30 allocations;
+ordinary raw construction took 3.02 µs and 81 allocations.
+Raw construction includes strict lexical validation and preflight, then owned-tree construction, while typed input has no JSON round trip.
+Raw numbers retain their literal, while input float64 values retain only the available floating-point value.
+Both paths clone strings.
 
-The largest opt-in raw case has substantial transient allocation (about 51 MiB
-cumulative versus 12.3 MiB retained). Two parser passes, duplicate-name tracking,
-string conversion/copying, and map growth contribute. These measurements do not
-justify equating the 6 MiB weighted budget with memory use, or making it the
-default. Future storage optimizations can retain the approved accounting policy.
+The largest opt-in raw case has substantial transient allocation (about 51 MiB cumulative versus 12.3 MiB retained).
+Two parser passes, duplicate-name tracking, string conversion/copying, and map growth contribute.
+These measurements do not justify equating the 6 MiB weighted budget with memory use, or making it the default.
+Future storage optimizations can retain the approved accounting policy.
 
-The raw and typed retained totals can differ because map construction capacity,
-array growth and exact numeric storage differ. Inputs remain alive during memory
-samples; two collections before and after reduce pool retention. Small deltas
-are noisy (ordinary typed samples ranged from 2,696 to 8,016 bytes). No figure is
-peak memory, RSS, total invocation allocation, or a Lambda latency prediction.
+The raw and typed retained totals can differ because map construction capacity, array growth and exact numeric storage differ.
+Inputs remain alive during memory samples;
+two collections before and after reduce pool retention.
+Small deltas are noisy (ordinary typed samples ranged from 2,696 to 8,016 bytes).
+No figure is peak memory, RSS, total invocation allocation, or a Lambda latency prediction.
 JWT normalized views and dedicated scopes are not implemented in these samples.
 
 ## Public buffered invocation (2026-09-16)
 
-Go 1.27.1, darwin/arm64, Apple M2. These run the complete public adapter with
-gateway identity disabled and a body-echo handler. Fixtures are created outside
-the timed loop. Raw calls include event decoding and response JSON v2 encoding;
-typed calls deliberately exclude upstream/downstream envelope codecs. They are
-not an end-to-end SDK or Lambda performance comparison.
+Go 1.27.1, darwin/arm64, Apple M2.
+These run the complete public adapter with gateway identity disabled and a body-echo handler.
+Fixtures are created outside the timed loop.
+Raw calls include event decoding and response JSON v2 encoding;
+typed calls deliberately exclude upstream/downstream envelope codecs.
+They are not an end-to-end SDK or Lambda performance comparison.
 
 ```sh
 go test -run '^$' -bench '^BenchmarkAdapterPublic$' -benchmem -benchtime=100ms -count=3 .
@@ -225,24 +216,26 @@ Median allocated bytes per invocation (three samples, not peak/live memory):
 | 64 KiB binary, base64 request/response | 777,999 | 776,900 | 322,514 | 322,258 |
 | 5 MiB text, near buffered envelope limit | 37,776,984 | 37,777,048 | 15,731,675 | 15,731,427 |
 
-The small case used 65/48/35/33 allocations per invocation respectively. Large
-raw envelopes incur substantial transient codec/copy costs despite bounded
-output buffers. The 6 MiB wire limit is not a heap limit. These are initial local
-baselines, without performance thresholds or Lambda latency claims. Short-run
-timings vary with GC and host load; comparisons should use longer repeated runs.
+The small case used 65/48/35/33 allocations per invocation respectively.
+Large raw envelopes incur substantial transient codec/copy costs despite bounded output buffers.
+The 6 MiB wire limit is not a heap limit.
+These are initial local baselines, without performance thresholds or Lambda latency claims.
+Short-run timings vary with GC and host load;
+comparisons should use longer repeated runs.
 
 Initial three-iteration measurements included noticeable cold codec setup costs;
-the table instead uses the repeated 100 ms runs above. Native identity costs are
-additional and depend on claim shape and source fidelity.
+the table instead uses the repeated 100 ms runs above.
+Native identity costs are additional and depend on claim shape and source fidelity.
 
 ## Public incremental streaming (2026-09-21)
 
-Go 1.27.1, darwin/arm64, Apple M2, default GOMAXPROCS=8. Three 100 ms samples per
-case exercise the public REST adapter, including stream completion and Close.
-The application reuses a chunk of at most 4 KiB, flushing after each write. The
-consumer reuses an 8 KiB buffer and reads incrementally; it never collects the
-body. Adapter/event construction, raw fixture encoding and reusable buffers are
-outside the timed loop. Gateway identity and local authentication are disabled.
+Go 1.27.1, darwin/arm64, Apple M2, default GOMAXPROCS=8.
+Three 100 ms samples per case exercise the public REST adapter, including stream completion and Close.
+The application reuses a chunk of at most 4 KiB, flushing after each write.
+The consumer reuses an 8 KiB buffer and reads incrementally;
+it never collects the body.
+Adapter/event construction, raw fixture encoding and reusable buffers are outside the timed loop.
+Gateway identity and local authentication are disabled.
 
 ```sh
 go test -run '^$' -bench '^BenchmarkStreamingPublic$' -benchmem -benchtime=100ms -count=3 .
@@ -256,15 +249,14 @@ Medians across the three samples:
 | 64 KiB | 7,905 | 80 | 6,117 | 56 |
 | 5 MiB | 7,877 | 80 | 6,124 | 56 |
 
-Raw calls include input decoding; typed calls exclude upstream input decoding.
+Raw calls include input decoding;
+typed calls exclude upstream input decoding.
 Both include metadata serialization, the producer/reader bridge and cleanup.
-The roughly constant allocated bytes in this fixture are evidence that the
-adapter does not accumulate its response body. They do not establish a universal
-heap bound: retained application data, metadata, request bodies, authentication
-and concurrency add costs. One 5 MiB raw sample measured 8,170 B/op and 81
-allocations, illustrating short-run scheduling/allocation noise.
+The roughly constant allocated bytes in this fixture are evidence that the adapter does not accumulate its response body.
+They do not establish a universal heap bound: retained application data, metadata, request bodies, authentication and concurrency add costs.
+One 5 MiB raw sample measured 8,170 B/op and 81 allocations, illustrating short-run scheduling/allocation noise.
 
-These are cumulative allocations, not peak memory or RSS, and not an SDK Runtime
-API or deployed Lambda benchmark. The buffered body-echo fixtures above also
-carry large request bodies; do not treat these as a controlled timing comparison
-between modes. No performance thresholds or AWS bandwidth claims are inferred.
+These are cumulative allocations, not peak memory or RSS, and not an SDK Runtime API or deployed Lambda benchmark.
+The buffered body-echo fixtures above also carry large request bodies;
+do not treat these as a controlled timing comparison between modes.
+No performance thresholds or AWS bandwidth claims are inferred.

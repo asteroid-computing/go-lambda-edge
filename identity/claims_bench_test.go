@@ -16,10 +16,15 @@ func claimsFixture(name string) (map[string]any, int) {
 	switch name {
 	case "ordinary":
 		return map[string]any{
-			"iss": "https://issuer.example", "sub": "subject", "client_id": "client",
-			"scope": "orders.read orders.write", "token_use": "access",
-			"aud": []any{"orders", "inventory"}, "cognito:groups": []any{"staff", "billing"},
-			"exp": float64(1900000000), "tenant": map[string]any{"id": "tenant", "active": true},
+			"iss":            "https://issuer.example",
+			"sub":            "subject",
+			"client_id":      "client",
+			"scope":          "orders.read orders.write",
+			"token_use":      "access",
+			"aud":            []any{"orders", "inventory"},
+			"cognito:groups": []any{"staff", "billing"},
+			"exp":            float64(1900000000),
+			"tenant":         map[string]any{"id": "tenant", "active": true},
 		}, budget
 	case "distinct_names", "distinct_names_6m":
 		if name == "distinct_names_6m" {

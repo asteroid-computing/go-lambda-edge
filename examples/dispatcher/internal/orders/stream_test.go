@@ -83,8 +83,8 @@ func TestStreamLifecycle(t *testing.T) {
 					close(continueProduction)
 					synctest.Wait()
 					if outcome == "complete" {
-						// No consumer has read the second record. The unbuffered bridge
-						// must hold the writer here instead of collecting the body.
+						// No consumer has read the second record.
+						// The unbuffered bridge must hold the writer here instead of collecting the body.
 						select {
 						case <-finished:
 							t.Fatal("slow reader did not apply backpressure")

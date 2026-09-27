@@ -11,10 +11,11 @@ func FromContext(ctx context.Context) Caller {
 	return caller
 }
 
-// WithCaller installs caller in a derived context. Anonymous on an empty context
-// is a no-op. Any attempted installation over a nonanonymous caller, including
-// an identical caller or anonymous, returns ErrConflict and a nil context.
-// A nil context returns ErrInvalidCaller. Unrelated values are preserved.
+// WithCaller installs caller in a derived context.
+// Anonymous on an empty context is a no-op.
+// Any attempted installation over a nonanonymous caller, including an identical caller or anonymous, returns ErrConflict and a nil context.
+// A nil context returns ErrInvalidCaller.
+// Unrelated values are preserved.
 func WithCaller(ctx context.Context, caller Caller) (context.Context, error) {
 	if ctx == nil {
 		return nil, ErrInvalidCaller

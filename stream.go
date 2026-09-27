@@ -14,8 +14,8 @@ var (
 	errStreamUnpublished = invocationError("stream", ErrStream, "stream producer ended without publishing a response")
 )
 
-// streamOutput belongs to the producer. publish accepts an already validated,
-// bounded wire prefix and completes the handoff before body writes may block.
+// streamOutput belongs to the producer.
+// publish accepts an already validated, bounded wire prefix and completes the handoff before body writes may block.
 // Its caller must supply sanitized errors and publish exactly once.
 type streamOutput struct {
 	publish func([]byte) error
@@ -23,8 +23,9 @@ type streamOutput struct {
 }
 
 // responseStream separates producer lifetime from the entry point's stack.
-// mu protects handoff, interruption, and terminal commitment. done publishes the
-// final error/panic after cleanup and reporting. readMu only serializes readers;
+// mu protects handoff, interruption, and terminal commitment.
+// done publishes the final error/panic after cleanup and reporting.
+// readMu only serializes readers;
 // interruption and Close must never acquire it while a Read can be blocked.
 type responseStream struct {
 	reader *io.PipeReader
@@ -48,9 +49,9 @@ type responseStream struct {
 	closeOnce sync.Once
 }
 
-// startStream performs preparation synchronously, then transfers request cleanup
-// to one producer. Until publication, errors return directly and producer panics
-// are rethrown here. The caller must consume and Close a successful result.
+// startStream performs preparation synchronously, then transfers request cleanup to one producer.
+// Until publication, errors return directly and producer panics are rethrown here.
+// The caller must consume and Close a successful result.
 // prepare and produce are private transport callbacks, not application hooks.
 func startStream(parent context.Context, prepare func(context.Context, *invocation) error, produce func(context.Context, *streamOutput) error, report func(context.Context, error)) (result *responseStream, err error) {
 	ctx, cancel, err := invocationContext(parent)
@@ -124,8 +125,8 @@ func startStream(parent context.Context, prepare func(context.Context, *invocati
 	case prefix := <-s.offer:
 		s.mu.Lock()
 		if !s.settled && s.stopErr == nil && ctx.Err() == nil {
-			// This acknowledgement is the error boundary. The producer cannot
-			// finish publication or write until the stream has an owner.
+			// This acknowledgement is the error boundary.
+			// The producer cannot finish publication or write until the stream has an owner.
 			s.handedOff = true
 			s.source = io.MultiReader(bytes.NewReader(prefix), reader)
 			close(s.accept)
@@ -145,9 +146,8 @@ func startStream(parent context.Context, prepare func(context.Context, *invocati
 	return nil, s.err
 }
 
-// interrupt never joins the producer: it is also called by the cancellation
-// watcher that the producer itself must join. Closing the reader unblocks both
-// directions of the pipe, including writes when no consumer is reading.
+// interrupt never joins the producer: it is also called by the cancellation watcher that the producer itself must join.
+// Closing the reader unblocks both directions of the pipe, including writes when no consumer is reading.
 func (s *responseStream) interrupt(err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -165,8 +165,8 @@ func (s *responseStream) interrupt(err error) {
 func (s *responseStream) finish(ctx context.Context, err error, panicValue any, report func(context.Context, error)) {
 	s.mu.Lock()
 	s.settled = true
-	// A pipe-close error is only a consequence of interruption. Other producer
-	// and cleanup faults retain precedence over concurrent cancellation.
+	// A pipe-close error is only a consequence of interruption.
+	// Other producer and cleanup faults retain precedence over concurrent cancellation.
 	if err == nil || err == io.ErrClosedPipe {
 		if s.stopErr != nil {
 			err = s.stopErr
@@ -221,8 +221,8 @@ func (s *responseStream) Read(p []byte) (int, error) {
 	}
 	n, err := s.source.Read(p)
 	if err != nil {
-		// Interruption can close the pipe before cleanup finishes. Never expose
-		// terminal status until producer cleanup and reporting have completed.
+		// Interruption can close the pipe before cleanup finishes.
+		// Never expose terminal status until producer cleanup and reporting have completed.
 		<-s.done
 		s.cancel()
 		if s.err != nil {
@@ -253,8 +253,8 @@ func (*responseStream) ContentType() string {
 	return "application/vnd.awslambda.http-integration-response"
 }
 
-// MarshalJSON deliberately declines serialization so the SDK selects its
-// io.Reader response path. Edge's framing codec uses JSON v2 separately.
+// MarshalJSON deliberately declines serialization so the SDK selects its io.Reader response path.
+// Edge's framing codec uses JSON v2 separately.
 func (*responseStream) MarshalJSON() ([]byte, error) {
 	return nil, invocationError("encode", ErrStream, "streaming response cannot be marshaled as JSON")
 }

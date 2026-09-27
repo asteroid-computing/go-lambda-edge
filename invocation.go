@@ -9,22 +9,22 @@ import (
 	"github.com/asteroid-computing/go-lambda-edge/identity"
 )
 
-// invocation owns the transport-created request and original body. The context
-// is passed separately so every stage uses the same explicit lifetime.
+// invocation owns the transport-created request and original body.
+// The context is passed separately so every stage uses the same explicit lifetime.
 type invocation struct {
 	request *http.Request
 	body    io.ReadCloser
 }
 
-// ownRequest must run immediately after successful conversion, before identity
-// or application code can fail or replace the request's Body field.
+// ownRequest must run immediately after successful conversion, before identity or application code can fail or replace the request's Body field.
 func (inv *invocation) ownRequest(r *http.Request) {
 	inv.request = r
 	inv.body = r.Body
 }
 
-// cleanup runs once under the invocation owner's control, after application
-// execution. Transport errors remain primary; cleanup details stay private.
+// cleanup runs once under the invocation owner's control, after application execution.
+// Transport errors remain primary;
+// cleanup details stay private.
 func (inv *invocation) cleanup(err error) error {
 	if inv.body != nil {
 		if closeErr := inv.body.Close(); closeErr != nil {
@@ -53,8 +53,9 @@ func invocationContext(parent context.Context) (context.Context, context.CancelF
 	return ctx, cancel, nil
 }
 
-// withInvocation scopes conversion, identity, serving, and finalization. A panic
-// passes through after cleanup. The caller must discard its result on error.
+// withInvocation scopes conversion, identity, serving, and finalization.
+// A panic passes through after cleanup.
+// The caller must discard its result on error.
 func withInvocation(parent context.Context, run func(context.Context, *invocation) error) (err error) {
 	ctx, cancel, err := invocationContext(parent)
 	if err != nil {
@@ -64,8 +65,8 @@ func withInvocation(parent context.Context, run func(context.Context, *invocatio
 	var inv invocation
 	defer func() {
 		err = inv.cleanup(err)
-		// Normal child cancellation is not a failed invocation. Preserve an
-		// existing operation/cleanup error when the parent also canceled.
+		// Normal child cancellation is not a failed invocation.
+		// Preserve an existing operation/cleanup error when the parent also canceled.
 		if err == nil {
 			err = parent.Err()
 		}

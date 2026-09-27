@@ -22,7 +22,8 @@ func BenchmarkStreamingPublic(b *testing.B) {
 		{name: "5MiB", bytes: 5 * 1024 * 1024},
 	} {
 		b.Run(size.name, func(b *testing.B) {
-			// Reuse one bounded application chunk; never allocate a whole body.
+			// Reuse one bounded application chunk;
+			// never allocate a whole body.
 			chunk := bytes.Repeat([]byte("x"), min(size.bytes, 4096))
 			adapter, err := edge.NewStreaming(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/octet-stream")
@@ -65,8 +66,7 @@ func BenchmarkStreamingPublic(b *testing.B) {
 						if err != nil {
 							b.Fatal(err)
 						}
-						// Explicit incremental reads avoid io.ReadAll and io.Copy's
-						// optional ReaderFrom/WriterTo shortcuts or buffer pooling.
+						// Explicit incremental reads avoid io.ReadAll and io.Copy's optional ReaderFrom/WriterTo shortcuts or buffer pooling.
 						total := 0
 						for {
 							n, readErr := stream.Read(buffer)

@@ -21,10 +21,14 @@ func mustSnapshot(t testing.TB, fields http.Header, budget int) *responseHeaders
 
 func TestResponseHeaderSnapshotOwnership(t *testing.T) {
 	fields := http.Header{
-		"X-Mixed": {" \tfirst\t ", "second"}, "x-mixed": {"third"},
-		"X-Empty": {""}, "X-Suppressed": nil,
-		"Vary": nil, "vary": {"Origin"},
-		"X-Unicode": {"café"}, "X-Interior": {"a\t b"},
+		"X-Mixed":      {" \tfirst\t ", "second"},
+		"x-mixed":      {"third"},
+		"X-Empty":      {""},
+		"X-Suppressed": nil,
+		"Vary":         nil,
+		"vary":         {"Origin"},
+		"X-Unicode":    {"café"},
+		"X-Interior":   {"a\t b"},
 	}
 	h := mustSnapshot(t, fields, defaultResponseHeaderBudget)
 	fields["X-Mixed"][0] = "changed"
@@ -88,14 +92,21 @@ func TestResponseHeaderValidation(t *testing.T) {
 
 func TestResponseHeaderConnectionFiltering(t *testing.T) {
 	fields := http.Header{
-		"Connection": {" custom , content-type, ,CONTENT-LENGTH, "},
-		"connection": {"Other,Connection"},
-		"Custom":     {"secret"}, "Other": {"hidden"},
-		"Content-Type": {"application/json"}, "Content-Length": {"bad", "length"},
-		"Proxy-Connection": {"close"}, "Keep-Alive": {"timeout=5"},
-		"Proxy-Authenticate": {"Basic"}, "Proxy-Authorization": {"credentials"},
-		"Te": {"trailers"}, "Transfer-Encoding": {"chunked"},
-		"Trailer": nil, "Upgrade": {}, "Remain": {"visible"},
+		"Connection":          {" custom , content-type, ,CONTENT-LENGTH, "},
+		"connection":          {"Other,Connection"},
+		"Custom":              {"secret"},
+		"Other":               {"hidden"},
+		"Content-Type":        {"application/json"},
+		"Content-Length":      {"bad", "length"},
+		"Proxy-Connection":    {"close"},
+		"Keep-Alive":          {"timeout=5"},
+		"Proxy-Authenticate":  {"Basic"},
+		"Proxy-Authorization": {"credentials"},
+		"Te":                  {"trailers"},
+		"Transfer-Encoding":   {"chunked"},
+		"Trailer":             nil,
+		"Upgrade":             {},
+		"Remain":              {"visible"},
 	}
 	h := mustSnapshot(t, fields, defaultResponseHeaderBudget)
 	if !maps.EqualFunc(h.fields, http.Header{"Remain": {"visible"}}, slices.Equal[[]string]) {
@@ -158,8 +169,8 @@ func TestResponseHeaderBudgetAndAutomaticFields(t *testing.T) {
 		}
 	}
 	tooMany := http.Header{"A": make([]string, defaultResponseHeaderBudget/33+1)}
-	// Charging must not copy rejected input. The caller now separately allocates
-	// a bounded InvocationError describing the configured limit.
+	// Charging must not copy rejected input.
+	// The caller now separately allocates a bounded InvocationError describing the configured limit.
 	if allocations := testing.AllocsPerRun(10, func() {
 		_, _ = chargeResponseHeaders(tooMany, defaultResponseHeaderBudget)
 	}); allocations != 0 {
@@ -178,7 +189,8 @@ func TestResponseContentLength(t *testing.T) {
 		want   int64
 		set    bool
 	}{
-		{values: nil}, {values: []string{}},
+		{values: nil},
+		{values: []string{}},
 		{values: []string{"0"}, set: true},
 		{values: []string{" \t00012 "}, want: 12, set: true},
 		{values: []string{"9223372036854775807"}, want: 9223372036854775807, set: true},
@@ -199,13 +211,34 @@ func TestResponseHeaderV2Projection(t *testing.T) {
 			t.Errorf("suppressed fields produced V1/V2 output: %v, %v, %v", v2, cookies, err)
 		}
 	})
-	// Each audited name has a fixture containing complete values. This tests
-	// conversion and ordering, not a second implementation of each field grammar.
+	// Each audited name has a fixture containing complete values.
+	// This tests conversion and ordering, not a second implementation of each field grammar.
 	for _, name := range []string{
-		"Accept-Ranges", "Allow", "Content-Encoding", "Content-Language", "Vary", "WWW-Authenticate", "Cache-Control",
-		"Access-Control-Allow-Headers", "Access-Control-Allow-Methods", "Access-Control-Expose-Headers",
-		"Link", "Content-Security-Policy", "Content-Security-Policy-Report-Only", "Referrer-Policy", "Server-Timing", "Accept-Patch", "Accept-CH",
-		"Cache-Status", "Proxy-Status", "Content-Digest", "Repr-Digest", "Want-Content-Digest", "Want-Repr-Digest", "Signature", "Signature-Input",
+		"Accept-Ranges",
+		"Allow",
+		"Content-Encoding",
+		"Content-Language",
+		"Vary",
+		"WWW-Authenticate",
+		"Cache-Control",
+		"Access-Control-Allow-Headers",
+		"Access-Control-Allow-Methods",
+		"Access-Control-Expose-Headers",
+		"Link",
+		"Content-Security-Policy",
+		"Content-Security-Policy-Report-Only",
+		"Referrer-Policy",
+		"Server-Timing",
+		"Accept-Patch",
+		"Accept-CH",
+		"Cache-Status",
+		"Proxy-Status",
+		"Content-Digest",
+		"Repr-Digest",
+		"Want-Content-Digest",
+		"Want-Repr-Digest",
+		"Signature",
+		"Signature-Input",
 	} {
 		t.Run(name, func(t *testing.T) {
 			h := mustSnapshot(t, http.Header{name: {"first", "second"}}, defaultResponseHeaderBudget)
@@ -230,7 +263,9 @@ func TestResponseHeaderV2Projection(t *testing.T) {
 		"Set-Cookie":       {"a=1; Expires=Wed, 21 Oct 2030 07:28:00 GMT", "b=2"},
 		"WWW-Authenticate": {`Digest realm="a,b", nonce="x"`, `Basic realm="other"`},
 		"Signature-Input":  {`sig1=("@method" "@path");created=1`, `sig2=("content-digest");created=2`},
-		"Custom":           {"literal, comma"}, "Empty": {""}, "Suppressed": nil,
+		"Custom":           {"literal, comma"},
+		"Empty":            {""},
+		"Suppressed":       nil,
 	}, defaultResponseHeaderBudget)
 	fields, cookies, err := h.v2()
 	if err != nil {

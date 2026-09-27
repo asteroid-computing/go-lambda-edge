@@ -5,8 +5,8 @@ import (
 	"errors"
 )
 
-// Edge's conservative interpretation includes the entire eight-NUL delimiter
-// within AWS's documented first 16 KB. This is not a stream body limit.
+// Edge's conservative interpretation includes the entire eight-NUL delimiter within AWS's documented first 16 KB.
+// This is not a stream body limit.
 const maxStreamPrefixBytes = 16000
 
 var errStreamPrefixTooLarge = errors.New("edge: response metadata exceeds streaming prefix limit")
@@ -26,7 +26,8 @@ func encodeStreamPrefix(status int, headers *responseHeaders) ([]byte, error) {
 		}
 		return nil, invocationError("encode", ErrResponse, "streaming metadata JSON encoding failed")
 	}
-	// Allocate exactly the framed length. The final zeroed bytes are the delimiter.
+	// Allocate exactly the framed length.
+	// The final zeroed bytes are the delimiter.
 	prefix := make([]byte, len(out.data)+8)
 	copy(prefix, out.data)
 	return prefix, nil

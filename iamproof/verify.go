@@ -9,17 +9,20 @@ import (
 	"github.com/asteroid-computing/go-lambda-edge/identity"
 )
 
-// Verifier authenticates each proof through its configured regional STS
-// endpoint. It is safe for concurrent use if its transport is. Its zero value
-// is not configured. It never obtains or uses server-side AWS credentials.
+// Verifier authenticates each proof through its configured regional STS endpoint.
+// It is safe for concurrent use if its transport is.
+// Its zero value is not configured.
+// It never obtains or uses server-side AWS credentials.
 type Verifier struct {
 	cfg     configuration
 	client  *http.Client
 	timeout time.Duration
 }
 
-// VerifierOption configures a verifier. Options apply in order; the last value
-// for a setting wins. Nil options and invalid values fail construction.
+// VerifierOption configures a verifier.
+// Options apply in order;
+// the last value for a setting wins.
+// Nil options and invalid values fail construction.
 type VerifierOption func(*verifierConfig) error
 
 type verifierConfig struct {
@@ -40,8 +43,8 @@ func WithTransport(transport http.RoundTripper) VerifierOption {
 	}
 }
 
-// WithTimeout sets a positive verification network deadline, defaulting to five
-// seconds. The caller's earlier context deadline still wins.
+// WithTimeout sets a positive verification network deadline, defaulting to five seconds.
+// The caller's earlier context deadline still wins.
 func WithTimeout(timeout time.Duration) VerifierOption {
 	return func(cfg *verifierConfig) error {
 		if timeout <= 0 {
@@ -53,8 +56,8 @@ func WithTimeout(timeout time.Duration) VerifierOption {
 }
 
 // NewVerifier requires the same region and audience as the client generator.
-// Its owned HTTP client disables redirects and cookies. The default transport
-// is http.DefaultTransport as configured when this constructor is called.
+// Its owned HTTP client disables redirects and cookies.
+// The default transport is http.DefaultTransport as configured when this constructor is called.
 func NewVerifier(region, audience string, opts ...VerifierOption) (*Verifier, error) {
 	cfg, err := configure(region, audience)
 	if err != nil {
@@ -73,21 +76,22 @@ func NewVerifier(region, audience string, opts ...VerifierOption) (*Verifier, er
 		return nil, ErrInvalidConfiguration
 	}
 	return &Verifier{
-		cfg: cfg, timeout: network.timeout,
+		cfg:     cfg,
+		timeout: network.timeout,
 		client: &http.Client{Transport: network.transport, CheckRedirect: func(*http.Request, []*http.Request) error {
 			return http.ErrUseLastResponse
 		}},
 	}, nil
 }
 
-// Verify accepts Token.Value, without an HTTP authentication scheme. It returns
-// an IAM caller with SourceVerifiedIAMProof only after STS confirms the proof,
-// response invariants hold and the proof remains fresh. It does not install the
-// caller in a context. Every failure returns an anonymous zero caller.
+// Verify accepts Token.Value, without an HTTP authentication scheme.
+// It returns an IAM caller with SourceVerifiedIAMProof only after STS confirms the proof, response invariants hold and the proof remains fresh.
+// It does not install the caller in a context.
+// Every failure returns an anonymous zero caller.
 //
-// Malformed or rejected credentials match ErrInvalidProof. Dependency failures,
-// internal timeouts and unexpected responses match ErrUnavailable. Caller
-// cancellation/deadline errors are preserved, without unsafe dependency causes.
+// Malformed or rejected credentials match ErrInvalidProof.
+// Dependency failures, internal timeouts and unexpected responses match ErrUnavailable.
+// Caller cancellation/deadline errors are preserved, without unsafe dependency causes.
 func (v *Verifier) Verify(ctx context.Context, token string) (identity.Caller, error) {
 	if v == nil || v.client == nil || ctx == nil {
 		return identity.Caller{}, ErrInvalidConfiguration
@@ -126,8 +130,7 @@ func (v *Verifier) Verify(ctx context.Context, token string) (identity.Caller, e
 	if err != nil {
 		return identity.Caller{}, ErrUnavailable
 	}
-	caller, err := identity.NewIAM(fields["Arn"], identity.SourceVerifiedIAMProof,
-		identity.WithIAMAccountID(fields["Account"]), identity.WithIAMPrincipalID(fields["UserId"]))
+	caller, err := identity.NewIAM(fields["Arn"], identity.SourceVerifiedIAMProof, identity.WithIAMAccountID(fields["Account"]), identity.WithIAMPrincipalID(fields["UserId"]))
 	if err != nil {
 		return identity.Caller{}, ErrUnavailable
 	}

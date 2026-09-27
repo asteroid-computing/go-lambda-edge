@@ -48,9 +48,12 @@ func providerFixtures(t *testing.T) (orders.Config, map[string]string) {
 		t.Fatal(err)
 	}
 	jwks := marshal(t, map[string]any{"keys": []any{map[string]any{
-		"kty": "RSA", "alg": "RS256", "use": "sig", "kid": "fixture",
-		"n": base64.RawURLEncoding.EncodeToString(key.N.Bytes()),
-		"e": base64.RawURLEncoding.EncodeToString(big.NewInt(int64(key.E)).Bytes()),
+		"kty": "RSA",
+		"alg": "RS256",
+		"use": "sig",
+		"kid": "fixture",
+		"n":   base64.RawURLEncoding.EncodeToString(key.N.Bytes()),
+		"e":   base64.RawURLEncoding.EncodeToString(big.NewInt(int64(key.E)).Bytes()),
 	}}})
 	now := time.Now().Unix()
 	claims := marshal(t, map[string]any{"iss": issuer, "sub": "alice", "client_id": "app", "aud": "https://orders.example", "token_use": "access", "scope": "orders.read", "iat": now, "exp": now + 3600})
@@ -73,7 +76,9 @@ func providerFixtures(t *testing.T) (orders.Config, map[string]string) {
 		t.Fatal(err)
 	}
 	cfg := orders.Config{
-		Cognito: authn.CognitoConfig{Issuer: issuer, Clients: []authn.CognitoClient{{ClientID: "app", Audience: "https://orders.example"}},
+		Cognito: authn.CognitoConfig{
+			Issuer:  issuer,
+			Clients: []authn.CognitoClient{{ClientID: "app", Audience: "https://orders.example"}},
 			Transport: transportFunc(func(r *http.Request) (*http.Response, error) {
 				if r.URL.String() != issuer+"/.well-known/jwks.json" {
 					return nil, errors.New("unexpected JWKS request")
@@ -81,7 +86,10 @@ func providerFixtures(t *testing.T) (orders.Config, map[string]string) {
 				return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(bytes.NewReader(jwks))}, nil
 			}),
 		},
-		Region: "eu-west-2", ProofAudience: "orders.test", IAMPrincipal: principal, Origin: origin,
+		Region:        "eu-west-2",
+		ProofAudience: "orders.test",
+		IAMPrincipal:  principal,
+		Origin:        origin,
 		STSTransport: transportFunc(func(r *http.Request) (*http.Response, error) {
 			if r.URL.Host != "sts.eu-west-2.amazonaws.com" || r.Header.Get("X-Edge-IAM-Audience") != "orders.test" || r.URL.Query().Get("Action") != "GetCallerIdentity" || r.URL.Query().Get("X-Amz-Signature") == "" {
 				return nil, errors.New("unexpected STS request")
@@ -111,8 +119,8 @@ func application(t *testing.T, cfg orders.Config) http.Handler {
 	return h
 }
 
-// Explicitly authored fixtures retain the product/version distinction. The SDK
-// V1 request type cannot distinguish REST from HTTP API payload 1.0 by itself.
+// Explicitly authored fixtures retain the product/version distinction.
+// The SDK V1 request type cannot distinguish REST from HTTP API payload 1.0 by itself.
 func restEvent(path string, headers http.Header) events.APIGatewayProxyRequest {
 	return events.APIGatewayProxyRequest{HTTPMethod: "GET", Path: path, MultiValueHeaders: headers.Clone(), RequestContext: events.APIGatewayProxyRequestContext{APIID: "synthetic-rest"}}
 }
@@ -130,12 +138,19 @@ func httpV2Event(path string, headers http.Header) events.APIGatewayV2HTTPReques
 		}
 		combined[strings.ToLower(name)] = strings.Join(values, ",")
 	}
-	return events.APIGatewayV2HTTPRequest{Version: "2.0", RawPath: path, Headers: combined, Cookies: cookies,
-		RequestContext: events.APIGatewayV2HTTPRequestContext{APIID: "synthetic-http", HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{Method: "GET"}}}
+	return events.APIGatewayV2HTTPRequest{
+		Version:        "2.0",
+		RawPath:        path,
+		Headers:        combined,
+		Cookies:        cookies,
+		RequestContext: events.APIGatewayV2HTTPRequestContext{APIID: "synthetic-http", HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{Method: "GET"}},
+	}
 }
 
-// Small responses only. Repeated V2 headers remain combined; cookies are kept
-// separate. Incremental/late-error assertions use the reader directly elsewhere.
+// Small responses only.
+// Repeated V2 headers remain combined;
+// cookies are kept separate.
+// Incremental/late-error assertions use the reader directly elsewhere.
 type response struct {
 	status  int
 	headers http.Header

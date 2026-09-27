@@ -12,12 +12,12 @@ const (
 	KindIAM
 )
 
-// Source records the producer's assertion, not cryptographic evidence. Trusted
-// application code must authenticate inputs before attributing a source.
+// Source records the producer's assertion, not cryptographic evidence.
+// Trusted application code must authenticate inputs before attributing a source.
 type Source uint8
 
-// Sources distinguish gateway assertions, verified tokens, custom mappings and
-// IAM proofs verified online by STS. None is reserved for anonymous callers.
+// Sources distinguish gateway assertions, verified tokens, custom mappings and IAM proofs verified online by STS.
+// None is reserved for anonymous callers.
 const (
 	SourceNone Source = iota
 	SourceGatewayAssertion
@@ -27,9 +27,12 @@ const (
 )
 
 // Caller is an immutable identity snapshot with exactly one JWT or IAM view.
-// Its zero value is anonymous. Constructors validate facts; they neither
-// authenticate nor authorize. Copies may be shared concurrently. There is no
-// identity equality contract or implicit JSON export. Diagnostics omit facts.
+// Its zero value is anonymous.
+// Constructors validate facts;
+// they neither authenticate nor authorize.
+// Copies may be shared concurrently.
+// There is no identity equality contract or implicit JSON export.
+// Diagnostics omit facts.
 type Caller struct {
 	source Source
 	jwt    *JWT

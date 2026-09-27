@@ -13,8 +13,9 @@ func ExampleNewCognitoVerifier() {
 		Issuer: "https://issuer-cognito-idp.eu-west-2.amazonaws.com/eu-west-2_example",
 		Clients: []authn.CognitoClient{
 			{ClientID: "user-app-client", Audience: "https://orders.example"},
-			// Cognito M2M grants do not provide resource binding. This permits
-			// absent aud only; any audience on this client's token is rejected.
+			// Cognito M2M grants do not provide resource binding.
+			// This permits absent aud only;
+			// any audience on this client's token is rejected.
 			{ClientID: "machine-app-client", AllowUnbound: true},
 		},
 	})
@@ -27,8 +28,10 @@ func ExampleNewCognitoVerifier() {
 		fmt.Println(err)
 		return
 	}
-	// Constructors perform no I/O. Verification is lazy; optional Warm(ctx)
-	// can fetch keys during application initialization. Reuse the verifier.
+	// Constructors perform no I/O.
+	// Verification is lazy;
+	// optional Warm(ctx) can fetch keys during application initialization.
+	// Reuse the verifier.
 	// Missing credentials are rejected without contacting the issuer.
 	_, err = a.Authenticate(context.Background(), make(http.Header))
 	fmt.Println(err)

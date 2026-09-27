@@ -72,7 +72,8 @@ func TestAuthorizeValidationOrder(t *testing.T) {
 	if calls != 0 {
 		t.Fatalf("invalid requests invoked callback %d times", calls)
 	}
-	// authz preserves application strings; it does not impose the action header grammar.
+	// authz preserves application strings;
+	// it does not impose the action header grammar.
 	valid.Action, valid.Resource = " Read 日本語 ", ""
 	if err := r.Authorize(t.Context(), valid); err != nil || calls != 1 {
 		t.Fatalf("valid UTF-8 request = %v, calls=%d", err, calls)

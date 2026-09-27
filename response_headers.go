@@ -19,8 +19,9 @@ var (
 	errResponseHeaderRepeat = invocationError("response", ErrResponse, "repeated response field cannot be represented in payload 2.0")
 )
 
-// responseHeaders owns its map and value slices. Strings are immutable and may
-// share storage with the input. One writer owns the snapshot until completion.
+// responseHeaders owns its map and value slices.
+// Strings are immutable and may share storage with the input.
+// One writer owns the snapshot until completion.
 // remaining never refunds bytes trimmed, removed or suppressed at commitment.
 type responseHeaders struct {
 	fields          http.Header
@@ -30,8 +31,8 @@ type responseHeaders struct {
 	noContentLength bool
 }
 
-// canSniffType uses the committed, trimmed fields. A later nonblank encoding
-// value still suppresses detection if an earlier repeated value was empty.
+// canSniffType uses the committed, trimmed fields.
+// A later nonblank encoding value still suppresses detection if an earlier repeated value was empty.
 func (h *responseHeaders) canSniffType() bool {
 	if _, present := h.fields["Content-Type"]; present || h.noContentType {
 		return false
@@ -109,8 +110,7 @@ func snapshotResponseHeaders(fields http.Header, budget int) (*responseHeaders, 
 		}
 		h.fields[name] = values
 	}
-	// Check before Connection removal: a nomination must not hide an attempt
-	// to declare trailers or upgrade the response protocol.
+	// Check before Connection removal: a nomination must not hide an attempt to declare trailers or upgrade the response protocol.
 	if len(h.fields["Trailer"]) != 0 {
 		return nil, errResponseTrailers
 	}
@@ -154,9 +154,10 @@ func (h *responseHeaders) remove(name string) {
 	}
 }
 
-// automatic adds a canonical field only when absent and not suppressed. It is
-// used for generated Content-Type/Content-Length; removing a field never creates
-// new budget. A failed addition leaves both fields and remaining unchanged.
+// automatic adds a canonical field only when absent and not suppressed.
+// It is used for generated Content-Type/Content-Length;
+// removing a field never creates new budget.
+// A failed addition leaves both fields and remaining unchanged.
 func (h *responseHeaders) automatic(name, value string) error {
 	if _, present := h.fields[name]; present {
 		return nil

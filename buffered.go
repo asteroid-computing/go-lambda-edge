@@ -10,9 +10,10 @@ import (
 
 var errInformationalResponse = invocationError("response", ErrResponse, "informational response is unsupported", http.ErrNotSupported)
 
-// bufferedWriter belongs to one handler invocation. Only Header, WriteHeader
-// and Write form its HTTP surface; it deliberately exposes no network or
-// streaming capabilities. The owning call must finish it after ServeHTTP returns.
+// bufferedWriter belongs to one handler invocation.
+// Only Header, WriteHeader and Write form its HTTP surface;
+// it deliberately exposes no network or streaming capabilities.
+// The owning call must finish it after ServeHTTP returns.
 type bufferedWriter struct {
 	header         http.Header
 	headers        *responseHeaders
@@ -101,10 +102,9 @@ func responseBodyAllowed(status int) bool {
 	return status != http.StatusNoContent && status != http.StatusResetContent && status != http.StatusNotModified
 }
 
-// finish freezes transport output without exposing the mutable application
-// header map. Errors discard the response, even if the handler ignored Write's
-// failure. Header-map changes after commitment are ignored except for trailers,
-// which net/http would otherwise send after the committed response.
+// finish freezes transport output without exposing the mutable application header map.
+// Errors discard the response, even if the handler ignored Write's failure.
+// Header-map changes after commitment are ignored except for trailers, which net/http would otherwise send after the committed response.
 func (w *bufferedWriter) finish() (*bufferedResponse, error) {
 	if w.status == 0 {
 		w.WriteHeader(http.StatusOK)
@@ -138,8 +138,10 @@ func (w *bufferedWriter) finish() (*bufferedResponse, error) {
 	return &bufferedResponse{status: w.status, headers: w.headers, body: body}, nil
 }
 
-// bufferedResponse owns the finalized response. The writer is no longer usable.
-// Projections retain the JSON-free typed boundary; marshalResponse is separate.
+// bufferedResponse owns the finalized response.
+// The writer is no longer usable.
+// Projections retain the JSON-free typed boundary;
+// marshalResponse is separate.
 type bufferedResponse struct {
 	status  int
 	headers *responseHeaders
@@ -166,8 +168,8 @@ func (r *bufferedResponse) v2() (events.APIGatewayV2HTTPResponse, error) {
 	return events.APIGatewayV2HTTPResponse{StatusCode: r.status, Headers: headers, Cookies: cookies, Body: body, IsBase64Encoded: binary}, nil
 }
 
-// serveBuffered runs inside the caller's invocation scope. Capturing the method
-// first prevents a handler's Request mutation from changing HEAD semantics.
+// serveBuffered runs inside the caller's invocation scope.
+// Capturing the method first prevents a handler's Request mutation from changing HEAD semantics.
 // Panics propagate to that scope so cleanup precedes runtime panic handling.
 func serveBuffered(handler http.Handler, r *http.Request, headerBudget int) (*bufferedResponse, error) {
 	w := newBufferedWriter(r.Method, headerBudget)
