@@ -84,13 +84,13 @@ func NewVerifier(region, audience string, opts ...VerifierOption) (*Verifier, er
 	}, nil
 }
 
-// Verify accepts Token.Value, without an HTTP authentication scheme.
+// Verify accepts [Token.Value], without an HTTP authentication scheme.
 // It returns an IAM caller with SourceVerifiedIAMProof only after STS confirms the proof, response invariants hold and the proof remains fresh.
 // It does not install the caller in a context.
 // Every failure returns an anonymous zero caller.
 //
-// Malformed or rejected credentials match ErrInvalidProof.
-// Dependency failures, internal timeouts and unexpected responses match ErrUnavailable.
+// Malformed or rejected credentials match [ErrInvalidProof].
+// Dependency failures, internal timeouts and unexpected responses match [ErrUnavailable].
 // Caller cancellation/deadline errors are preserved, without unsafe dependency causes.
 func (v *Verifier) Verify(ctx context.Context, token string) (identity.Caller, error) {
 	if v == nil || v.client == nil || ctx == nil {

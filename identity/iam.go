@@ -67,7 +67,7 @@ func WithIAMPrincipalID(id string) IAMOption {
 // Bare role ARNs and policy patterns are not caller forms.
 // Literal punctuation in a valid IAM user path is preserved without wildcard interpretation.
 // Source must be gateway, custom assertion or verified IAM proof.
-// Errors match ErrInvalidCaller and contain no supplied identifiers.
+// Errors match [ErrInvalidCaller] and contain no supplied identifiers.
 func NewIAM(principalARN string, source Source, opts ...IAMOption) (Caller, error) {
 	if source != SourceGatewayAssertion && source != SourceCustomAssertion && source != SourceVerifiedIAMProof {
 		return Caller{}, ErrInvalidCaller

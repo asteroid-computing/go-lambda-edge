@@ -3,7 +3,7 @@
 // It neither authorizes application actions nor installs callers in a context;
 // compose those responsibilities in the application.
 //
-// Send Token.Value as the credential in Authorization: EdgeIAM <value>, over HTTPS.
+// Send [Token.Value] as the credential in Authorization: EdgeIAM <value>, over HTTPS.
 // A proof is reusable within its freshness window and does not sign the application request body, method or action.
 // Do not log credentials or signed STS requests.
 // Generation uses the caller's AWS credentials;

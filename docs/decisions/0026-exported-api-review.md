@@ -390,3 +390,19 @@ The Cognito verifier stays in `authn`.
 E1 moves the selector and renames its type and constructor;
 E2 then renames the moved sentinels, so each PR is a single kind of change.
 This is compatible with decision 0011's intent: the new package holds only the existing selector, and action metadata remains consumer-owned.
+
+## Implementation evidence
+
+Each item landed as its own stacked PR, in order E1 to E6, and each passed gofmt, vet, module verification, the full race suite, the external consumer check, both Linux builds and the whitespace check on Go 1.27.1.
+
+- E1: `go list -deps ./examples/dispatcher/native` no longer includes the root adapter or `aws-lambda-go/events`, and `actionheader` depends only on the standard library.
+  Parsing behavior and tests moved unchanged;
+  the gateway-format and composition tests remain in `edge`.
+- E2 and E3 are renames with unchanged behavior.
+  Decision 0012 carries a dated note about the E3 rename.
+- E4 adds `Operation` and `Resource` constants, used by every internal call site;
+  error text is unchanged.
+- E5 adds `String` methods with tests for every declared value, one undeclared value per type and the sanitized `Caller` text.
+- E6 documents every sentinel (including `authn`'s HTTP statuses, checked against the code), names callback parameters and `Claim.Bool` results, and adds doc links.
+  Links are added only for camel-case identifiers, methods and qualified module names, to avoid linking ordinary words such as `Any` or `Request`;
+  a go/doc-based check found every link in the six public packages resolves.

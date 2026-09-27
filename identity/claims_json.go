@@ -11,8 +11,8 @@ import (
 // It preserves numeric token text, but not whitespace, member order or string escape spelling.
 // It rejects duplicate names, invalid UTF-8 and trailing values.
 // Input bytes must not change during construction and are not retained afterward.
-// Invalid input matches ErrInvalidClaims;
-// byte exhaustion is a ClaimsLimitError.
+// Invalid input matches [ErrInvalidClaims];
+// byte exhaustion is a [ClaimsLimitError].
 // The representation is received JSON, not proof of original JWT fidelity.
 func ParseClaims(data jsontext.Value, opts ...ClaimsOption) (Claims, error) {
 	maximum, err := claimsBudget(opts)

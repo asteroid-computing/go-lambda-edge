@@ -35,12 +35,12 @@ type jwtConfig struct {
 }
 
 // WithGatewayScopes supplies API Gateway's dedicated scopes collection.
-// It is valid only with SourceGatewayAssertion.
+// It is valid only with [SourceGatewayAssertion].
 // Nil means unavailable;
 // a nonnil empty slice means known empty.
 // Interpretable claim scopes must agree as exact sets.
 // The supplied collection consumes the claims' remaining weighted budget before copying, even when its values duplicate a claim.
-// Do not mutate it during NewJWT.
+// Do not mutate it during [NewJWT].
 func WithGatewayScopes(scopes []string) JWTOption {
 	return func(c *jwtConfig) error {
 		if c.scopesSet {
@@ -55,8 +55,8 @@ func WithGatewayScopes(scopes []string) JWTOption {
 // It requires a nonempty issuer and a subject or client_id, without conflating those fields.
 // Allowed sources are gateway, locally verified token and custom assertion.
 // It does not verify signatures or expiry.
-// Invalid inputs match ErrInvalidCaller;
-// a dedicated-scope budget failure additionally matches ErrClaimsLimit.
+// Invalid inputs match [ErrInvalidCaller];
+// a dedicated-scope budget failure additionally matches [ErrClaimsLimit].
 func NewJWT(claims Claims, source Source, opts ...JWTOption) (Caller, error) {
 	if source != SourceGatewayAssertion && source != SourceLocallyVerifiedToken && source != SourceCustomAssertion {
 		return Caller{}, ErrInvalidCaller

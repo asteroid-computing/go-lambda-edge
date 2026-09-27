@@ -10,11 +10,11 @@ import (
 )
 
 // VerifyFunc authenticates a credential without its HTTP scheme.
-// It must return ErrInvalidCredentials for a definite rejection;
+// It must return [ErrInvalidCredentials] for a definite rejection;
 // unknown errors are treated as unavailable.
 // Success requires JWT/SourceLocallyVerifiedToken for Bearer or IAM/SourceVerifiedIAMProof for EdgeIAM.
 // Constructors alone do not verify tokens.
-type VerifyFunc func(context.Context, string) (identity.Caller, error)
+type VerifyFunc func(ctx context.Context, credential string) (identity.Caller, error)
 
 // Config supplies explicit verifier dependencies and HTTP framing policy.
 type Config struct {
@@ -44,7 +44,7 @@ type Authenticator struct {
 }
 
 // New validates and copies cfg without I/O or invoking a verifier.
-// It returns a nil Authenticator and ErrInvalidConfiguration for invalid configuration.
+// It returns a nil Authenticator and [ErrInvalidConfiguration] for invalid configuration.
 func New(cfg Config) (*Authenticator, error) {
 	if cfg.Bearer == nil && cfg.IAMProof == nil || cfg.MaxAuthorizationBytes < 0 || cfg.MaxAuthorizationBytes > 1<<20 {
 		return nil, ErrInvalidConfiguration
@@ -79,10 +79,10 @@ func New(cfg Config) (*Authenticator, error) {
 // Callers must not mutate headers concurrently.
 // Every failure returns an anonymous zero caller.
 //
-// An established caller fails with identity.ErrConflict before credential work.
+// An established caller fails with [identity.ErrConflict] before credential work.
 // Runtime failures are *Error with sanitized categories;
 // caller cancellation returns ctx.Err directly.
-// Nil contexts and nil/zero Authenticators return ErrInvalidConfiguration.
+// Nil contexts and nil/zero Authenticators return [ErrInvalidConfiguration].
 // No provider diagnostic or context cause is exposed.
 func (a *Authenticator) Authenticate(ctx context.Context, headers http.Header) (identity.Caller, error) {
 	if a == nil || a.cfg.MaxAuthorizationBytes == 0 || ctx == nil {

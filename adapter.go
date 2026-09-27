@@ -52,7 +52,7 @@ func WithGatewayIdentity(enabled bool) Option {
 
 // WithIdentityClaimsBudget sets the gateway identity claims allowance in bytes.
 // The default is 256 KiB;
-// New and NewStreaming reject settings outside 1..6 MiB.
+// New and [NewStreaming] reject settings outside 1..6 MiB.
 // Each claim value costs 64 bytes plus name, string and exact-number text bytes.
 // Dedicated gateway scopes consume the same allowance.
 // Raw claim JSON is also limited to this byte length.

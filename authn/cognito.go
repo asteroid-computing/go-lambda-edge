@@ -75,7 +75,7 @@ type CognitoVerifier struct {
 }
 
 // NewCognitoVerifier validates and copies cfg without I/O.
-// Invalid configuration returns a nil verifier and ErrInvalidConfiguration.
+// Invalid configuration returns a nil verifier and [ErrInvalidConfiguration].
 // It trusts the configured issuer endpoint;
 // it does not establish that the operator supplied an AWS URL.
 func NewCognitoVerifier(cfg CognitoConfig) (*CognitoVerifier, error) {
@@ -139,8 +139,8 @@ func NewCognitoVerifier(cfg CognitoConfig) (*CognitoVerifier, error) {
 
 // Verify returns one locally verified caller without installing it in context.
 // It accepts access tokens only, with integer exp/iat and optional nbf, and a string aud when present.
-// Rejections match ErrInvalidCredentials;
-// unavailable JWKS matches ErrUnavailable.
+// Rejections match [ErrInvalidCredentials];
+// unavailable JWKS matches [ErrUnavailable].
 // Caller cancellation returns ctx.Err, never its cause.
 // Every failure returns a zero caller and sanitized diagnostics.
 func (v *CognitoVerifier) Verify(ctx context.Context, token string) (identity.Caller, error) {
@@ -160,7 +160,7 @@ func (v *CognitoVerifier) Verify(ctx context.Context, token string) (identity.Ca
 // Warm obtains a fresh usable JWKS snapshot, sharing any required fetch.
 // It obeys refresh/backoff gates;
 // it does not force refresh, validate a token or start a background refresh loop.
-// Failures are ErrUnavailable, caller ctx.Err or ErrInvalidConfiguration for a nil context or unconfigured verifier.
+// Failures are [ErrUnavailable], caller ctx.Err or [ErrInvalidConfiguration] for a nil context or unconfigured verifier.
 func (v *CognitoVerifier) Warm(ctx context.Context) error {
 	if v == nil || v.http == nil || ctx == nil {
 		return ErrInvalidConfiguration

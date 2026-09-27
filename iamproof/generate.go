@@ -57,7 +57,7 @@ func NewGenerator(region, audience string, credentials aws.CredentialsProvider) 
 
 // Generate retrieves fresh credentials and presigns locally, without calling STS.
 // Failure returns a zero Token and a sanitized package or caller-context error.
-// Oversized proofs fail with ErrProofTooLarge;
+// Oversized proofs fail with [ErrProofTooLarge];
 // credentials are not cut.
 func (g *Generator) Generate(ctx context.Context) (Token, error) {
 	if g == nil || g.credentials == nil || ctx == nil {

@@ -10,7 +10,7 @@ import (
 )
 
 // Sources matches any supplied nonanonymous producer.
-// Empty lists, SourceNone and unknown sources return ErrInvalidConfiguration.
+// Empty lists, SourceNone and unknown sources return [ErrInvalidConfiguration].
 // Source is trusted-code attribution, not an unforgeable credential.
 // Combine this broad predicate with permission checks.
 // The input slice is copied.
@@ -32,7 +32,7 @@ func Sources(allowed ...identity.Source) (Rule, error) {
 }
 
 // JWTSubject matches an exact issuer and subject.
-// Both must be nonempty UTF-8 or construction returns ErrInvalidConfiguration.
+// Both must be nonempty UTF-8 or construction returns [ErrInvalidConfiguration].
 // A subject does not prove a human identity.
 // Wrong kind or missing subject does not match.
 func JWTSubject(issuer, subject string) (Rule, error) {
@@ -47,7 +47,7 @@ func JWTSubject(issuer, subject string) (Rule, error) {
 }
 
 // JWTClient matches an exact issuer and client_id, without interpreting audience or subject as a client ID or inferring a machine grant.
-// Both arguments must be nonempty UTF-8 or construction returns ErrInvalidConfiguration.
+// Both arguments must be nonempty UTF-8 or construction returns [ErrInvalidConfiguration].
 func JWTClient(issuer, clientID string) (Rule, error) {
 	if !validIdentifier(issuer) || !validIdentifier(clientID) {
 		return Rule{}, ErrInvalidConfiguration
@@ -62,7 +62,7 @@ func JWTClient(issuer, clientID string) (Rule, error) {
 // JWTScopes requires all supplied exact OAuth scope tokens from the exact issuer.
 // It does not interpret wildcards.
 // Missing or unavailable scopes do not match.
-// Issuer must be nonempty UTF-8 and required must contain at least one valid RFC 6749 scope token, otherwise construction returns ErrInvalidConfiguration.
+// Issuer must be nonempty UTF-8 and required must contain at least one valid RFC 6749 scope token, otherwise construction returns [ErrInvalidConfiguration].
 // The input slice is copied.
 // Use Any for alternative scope requirements.
 func JWTScopes(issuer string, required ...string) (Rule, error) {
@@ -73,7 +73,7 @@ func JWTScopes(issuer string, required ...string) (Rule, error) {
 // Flattened gateway strings remain unavailable and never match.
 // Groups are distinct from scopes and application grants.
 // Issuer and each required value must be nonempty UTF-8;
-// an empty list or invalid value returns ErrInvalidConfiguration.
+// an empty list or invalid value returns [ErrInvalidConfiguration].
 // The input slice is copied.
 func CognitoGroups(issuer string, required ...string) (Rule, error) {
 	return jwtSet(issuer, required, identity.JWT.CognitoGroups, validIdentifier)
@@ -128,7 +128,7 @@ func validScope(s string) bool {
 // IAMPrincipal matches the full caller ARN literally, including path and session.
 // A root ARN matches only that root caller, not the account.
 // Valid literal * and ? in user paths retain their meaning as characters.
-// Unsupported caller forms (including bare role ARNs) return ErrInvalidConfiguration, following NewIAM's grammar.
+// Unsupported caller forms (including bare role ARNs) return [ErrInvalidConfiguration], following NewIAM's grammar.
 // This does not evaluate AWS IAM permissions or bind a unique identity across deletion and recreation of the principal.
 func IAMPrincipal(principalARN string) (Rule, error) {
 	if _, err := identity.NewIAM(principalARN, identity.SourceCustomAssertion); err != nil {
@@ -141,7 +141,7 @@ func IAMPrincipal(principalARN string) (Rule, error) {
 }
 
 // IAMRoleSessions matches assumed-role callers with the exact partition, account and role name, allowing any valid session name.
-// Invalid components, wildcards and role paths return ErrInvalidConfiguration.
+// Invalid components, wildcards and role paths return [ErrInvalidConfiguration].
 // This is a role-name policy: recreating the same role name can match again.
 // It does not bind a unique role ID, identify the original actor, fabricate a role ARN or evaluate IAM policies.
 func IAMRoleSessions(partition, accountID, roleName string) (Rule, error) {

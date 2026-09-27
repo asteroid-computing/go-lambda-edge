@@ -381,7 +381,7 @@ these are placement, naming, typing and documentation changes made before the fi
 - [x] E3: rename `identity.WithCaller` to `identity.NewContext`.
 - [x] E4: type the `InvocationError` operation and limit names with exported constants.
 - [x] E5: add `String` methods to the `identity` enumerations.
-- [ ] E6: complete sentinel docs, doc links, callback parameter names and `Claim.Bool` result names.
+- [x] E6: complete sentinel docs, doc links, callback parameter names and `Claim.Bool` result names.
 
 Acceptance: each PR passes the full AGENTS.md validation set, and examples, guides and the external consumer check use the new names.
 
