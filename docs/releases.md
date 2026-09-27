@@ -30,24 +30,28 @@ prefix. CHANGELOG.md is created by the first release PR.
 
 ## GitHub App setup
 
-Use an organization-owned App installed on `asteroid-computing/go-lambda-edge`.
+Use `astrocompute-release-please`, installed on `asteroid-computing/go-lambda-edge`.
 Its repository permissions must include:
 
 - Contents: read and write.
 - Pull requests: read and write.
 - Issues: read and write, for release labels and related operations.
 
-In this repository's **Settings → Secrets and variables → Actions**, configure:
+In the organization's **Settings → Secrets and variables → Actions**, configure
+both values as organization Actions secrets and grant `go-lambda-edge` access:
 
 | Kind | Name | Value |
 | --- | --- | --- |
-| Variable | `RELEASE_PLEASE_CLIENT_ID` | The App's Client ID |
-| Secret | `RELEASE_PLEASE_PRIVATE_KEY` | Its PEM private key |
+| Organization secret | `RELEASE_PLEASE_CLIENT_ID` | The App's Client ID |
+| Organization secret | `RELEASE_PLEASE_PRIVATE_KEY` | Its PEM private key |
 
-Organization-level settings are also usable when explicitly granted to this
-repository. Use the Client ID, not the installation ID; the current token action
-prefers `client-id` over its deprecated `app-id` input. Store the private key as
-an Actions secret, not in this repository.
+Use selected-repository access for this setup; grant other repositories access
+when they adopt the same automation. Both workflow inputs use the `secrets`
+context. Remove any same-name repository secrets when migrating: a repository
+secret takes precedence over an organization secret. The old repository Client
+ID variable is no longer used. Use the Client ID, not the installation ID; the
+token action prefers `client-id` over its deprecated `app-id` input. Keep the
+private key out of this repository.
 
 The workflow explicitly requests only this repository and the three permissions
 above. The token action revokes its short-lived token after the job. The release

@@ -27,17 +27,22 @@ verification, external consumer checks and both Linux builds. Later commits
 require their own passing PR checks. Per the user's 2026-09-27 direction, Go
 validation runs only on PRs; main pushes run only release automation.
 
-The repository variable RELEASE_PLEASE_CLIENT_ID and encrypted Actions secret
-RELEASE_PLEASE_PRIVATE_KEY are provisioned; their names were verified on
-2026-09-27 without reading the private key. No branch protection was configured.
+The organization Actions secrets RELEASE_PLEASE_CLIENT_ID and
+RELEASE_PLEASE_PRIVATE_KEY are provisioned with selected-repository access for
+go-lambda-edge. Secret metadata and repository access were verified on 2026-09-27;
+the obsolete repository variable and private-key secret were removed. The new
+key and Client ID were verified against the astrocompute-release-please App and
+its repository installation using read-only API calls without printing credentials.
+Its installation grants all three required write permissions. No branch
+protection was configured.
 
 ## Outstanding evidence and owner choices
 
 The [first main run](https://github.com/asteroid-computing/go-lambda-edge/actions/runs/36281181036)
 passed the original repeated validation but failed at App token creation: the
-repository installation lookup returned 404. The organization installation list
-is empty. Install the App on asteroid-computing with access to go-lambda-edge and
-the documented permissions, then verify token creation, the generated v0.1.0
+repository installation lookup returned 404. The owner subsequently installed
+astrocompute-release-please, and installation access is now verified. After the
+workflow credential migration merges, verify token creation, the generated v0.1.0
 release PR and its checks. Release Please has not yet executed successfully.
 
 The owner's license and copyright holder remain undecided. No license, repository

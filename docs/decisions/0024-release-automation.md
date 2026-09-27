@@ -4,6 +4,29 @@ Status: accepted and locally implemented on 2026-09-21. The user approved
 GitHub App authentication and initial v0.1.0 following the recommended v0 policy.
 Release Please, its GitHub Action and PR checks against main are user-directed.
 
+## Revision: Organization App credentials (2026-09-27)
+
+The user created and installed astrocompute-release-please and directed that both
+its Client ID and private key be organization secrets. Use organization Actions
+secrets RELEASE_PLEASE_CLIENT_ID and RELEASE_PLEASE_PRIVATE_KEY, with selected
+repository access for go-lambda-edge. Read both through the secrets context;
+remove the old repository credential entries after provisioning and verifying
+organization access so a repository key cannot override the new organization key.
+This supersedes the original repository variable/private-key-secret setup below.
+
+The new key was validated without printing it. App-authenticated read-only API
+calls confirmed the supplied Client ID and key identify astrocompute-release-please
+and that installation 165295608 includes this repository with Contents, Issues
+and Pull requests write permissions. The installation is not suspended. No
+installation token or release was created by these checks.
+
+[GitHub's organization secret documentation](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets)
+supports selected-repository access and requires admin:org for CLI management.
+Both organization secrets were provisioned and their selected-repository access
+verified. The obsolete repository private-key secret and Client ID variable were
+removed. Local actionlint and whitespace checks pass. Remote token creation and
+release execution remain pending until the workflow change merges.
+
 ## Revision: PR-only validation (2026-09-27)
 
 The user rejected repeating the PR validation after merge. This supersedes the
