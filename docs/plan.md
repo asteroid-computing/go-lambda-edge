@@ -449,21 +449,29 @@ qualifications remain open; no release publication or AWS deployment occurred.
 Release automation follow-up (2026-09-21): the user selected Release Please and
 its GitHub Action, plus checks on PRs against main. [Decision 0024](decisions/0024-release-automation.md)
 records the approved GitHub App credential and initial v0.1.0, with pre-major
-versioning. Release Please will run after reusable main validation; PRs continue
-to use the same Go checks. Local wiring and validation are complete: both workflows
+versioning. The original main-validation dependency is superseded by the
+2026-09-27 user direction: Go validation runs on PRs only, including release PRs;
+main pushes run only release automation. Local wiring and validation are complete: both workflows
 pass actionlint, release JSON passes the bundled schema, and existing Go jobs are
 unchanged. See the [release guide](releases.md).
 
 Subsequent authorized setup and publication of the working branch are complete:
-the App client ID variable and private-key secret are configured, and
-[PR #1](https://github.com/asteroid-computing/go-lambda-edge/pull/1) is open.
+the new App Client ID and private key are configured as organization Actions
+secrets with access granted to this repository, and
+[PR #1](https://github.com/asteroid-computing/go-lambda-edge/pull/1) merged at
+24f7686 on 2026-09-27.
 [The PR run at f6a2624](https://github.com/asteroid-computing/go-lambda-edge/actions/runs/35619720590)
 passed both Go test jobs and both Linux build jobs, verified on 2026-09-27. The action
 review verified all four latest stable releases and pinned checkout/setup-go to
 their release commits; those aliases already selected the same versions. App
-installation, permissions and the main-branch release path still need execution
-evidence. No release was published, and the license and deployment qualifications
-remain open.
+installation initially blocked the main run with a 404 during repository lookup.
+The owner subsequently installed astrocompute-release-please; read-only checks
+confirmed the new credentials and repository installation permissions. Both
+organization secrets and their repository access are verified, and the old
+repository credentials have been removed. The workflow now reads both values
+from secrets. Token creation and Release Please execution still need a successful
+run after merge. No release was published, and the license and deployment
+qualifications remain open.
 
 ## Findings carried forward from the Beakley review
 

@@ -9,14 +9,12 @@ decision. The Go toolchain directive is independent of the module version.
 
 1. Opening or updating a PR against main runs the Go workflow. Reopening a PR
    or marking it ready for review also runs checks. Superseded PR runs cancel.
-2. A push to main starts Release Please's workflow. It calls the same Go workflow
-   for formatting, race tests, vet, module verification, external consumption and
-   Linux arm64/amd64 builds. No separate push-triggered Go run duplicates it.
-3. Only after validation succeeds does the release job mint a GitHub App token
-   and run Release Please. It creates or updates a release PR with CHANGELOG.md
-   and the version manifest. The App's PR events can run CI automatically.
-4. Review and merge that release PR when ready to publish. After the main checks
-   succeed, Release Please creates the version tag and GitHub release. There is
+2. A push to main starts only the release job. It mints a GitHub App token and
+   runs Release Please without repeating the Go checks completed on the PR.
+3. Release Please creates or updates a release PR with CHANGELOG.md and the
+   version manifest. The App's PR events run the same Go validation as other PRs.
+4. Review the release PR and its passing checks, then merge when ready to publish.
+   Release Please creates the version tag and GitHub release. There is
    no automatic merge, binary deployment or separate package-registry upload.
 
 Release runs share one concurrency group and do not cancel a running release.
@@ -32,24 +30,28 @@ prefix. CHANGELOG.md is created by the first release PR.
 
 ## GitHub App setup
 
-Use an organization-owned App installed on `asteroid-computing/go-lambda-edge`.
+Use `astrocompute-release-please`, installed on `asteroid-computing/go-lambda-edge`.
 Its repository permissions must include:
 
 - Contents: read and write.
 - Pull requests: read and write.
 - Issues: read and write, for release labels and related operations.
 
-In this repository's **Settings → Secrets and variables → Actions**, configure:
+In the organization's **Settings → Secrets and variables → Actions**, configure
+both values as organization Actions secrets and grant `go-lambda-edge` access:
 
 | Kind | Name | Value |
 | --- | --- | --- |
-| Variable | `RELEASE_PLEASE_CLIENT_ID` | The App's Client ID |
-| Secret | `RELEASE_PLEASE_PRIVATE_KEY` | Its PEM private key |
+| Organization secret | `RELEASE_PLEASE_CLIENT_ID` | The App's Client ID |
+| Organization secret | `RELEASE_PLEASE_PRIVATE_KEY` | Its PEM private key |
 
-Organization-level settings are also usable when explicitly granted to this
-repository. Use the Client ID, not the installation ID; the current token action
-prefers `client-id` over its deprecated `app-id` input. Store the private key as
-an Actions secret, not in this repository.
+Use selected-repository access for this setup; grant other repositories access
+when they adopt the same automation. Both workflow inputs use the `secrets`
+context. Remove any same-name repository secrets when migrating: a repository
+secret takes precedence over an organization secret. The old repository Client
+ID variable is no longer used. Use the Client ID, not the installation ID; the
+token action prefers `client-id` over its deprecated `app-id` input. Keep the
+private key out of this repository.
 
 The workflow explicitly requests only this repository and the three permissions
 above. The token action revokes its short-lived token after the job. The release
@@ -62,7 +64,11 @@ The workflow does not create/install the App, provision secrets, change rulesets
 or bypass branch protection. Configure required PR checks using the check names
 observed in the first successful run, and review any existing rules that restrict
 the App's release-branch or version-tag writes. PR checks use the proposed merge
-result; main checks validate the push that triggered the release workflow.
+result. Validation runs only on PRs; direct main pushes do not run Go checks.
+
+If token creation fails with a 404 looking up the repository installation,
+check that the configured App is installed on the organization and includes this
+repository. Storing its Client ID and private key does not install the App.
 
 ## Commit and release review
 
