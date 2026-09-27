@@ -251,7 +251,7 @@ func TestCallbackPanicPropagates(t *testing.T) {
 func TestExplicitCallerAndCallerContext(t *testing.T) {
 	facts := request(t)
 	other := iamCaller(t, "arn:aws:iam::123456789012:user/Bob")
-	ctx, err := identity.WithCaller(t.Context(), other)
+	ctx, err := identity.NewContext(t.Context(), other)
 	if err != nil {
 		t.Fatal(err)
 	}

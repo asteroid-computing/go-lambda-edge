@@ -7,7 +7,7 @@ Gateway fixtures describe shapes, not deployed authorizers.
 | Boundary | Tools | Evidence |
 | --- | --- | --- |
 | Business rule | Identity constructors and `authz.Request` | Exact action/resource policy outcomes |
-| Authenticated handler | `httptest`, `identity.WithCaller` | Behavior after admission |
+| Authenticated handler | `httptest`, `identity.NewContext` | Behavior after admission |
 | Authentication | Real verifier with local JWKS/STS transport | Local signature/profile/proof processing |
 | Gateway conversion | Explicit SDK events or raw JSON v2 | Chosen payload format's behavior |
 | Stream lifecycle | Public reader, controlled producer, incremental reads | Delivery, backpressure, cancellation and errors |

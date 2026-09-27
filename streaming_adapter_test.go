@@ -90,7 +90,7 @@ func TestStreamingConstructorsAndValidation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx, err := identity.WithCaller(t.Context(), caller)
+	ctx, err := identity.NewContext(t.Context(), caller)
 	if err != nil {
 		t.Fatal(err)
 	}

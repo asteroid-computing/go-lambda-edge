@@ -103,6 +103,9 @@ func FromContext(ctx context.Context) Caller
 func WithCaller(ctx context.Context, caller Caller) (context.Context, error)
 ```
 
+Note (2026-09-27): [decision 0026](0026-exported-api-review.md) E3 renamed `WithCaller` to `NewContext`, pairing it with `FromContext`;
+its signature and semantics are unchanged.
+
 Kind distinguishes anonymous, JWT, and IAM.
 Source distinguishes no identity, gateway assertion, locally verified token, and explicitly mapped custom assertion.
 JWT/IAM views have private fields and read-only accessors.

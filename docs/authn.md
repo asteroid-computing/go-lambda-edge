@@ -125,7 +125,7 @@ Edge still rejects a usable response for a canceled invocation.
 
 For custom JSON responses, use Authenticate and the Error accessors in ordinary HTTP middleware.
 Serialize application envelopes directly with encoding/json/v2.
-On success, install the returned caller with identity.WithCaller before dispatch.
+On success, install the returned caller with identity.NewContext before dispatch.
 See the [runnable examples](../authn/example_test.go) for error mapping, a custom JSON failure response and a shared action dispatcher.
 Their synthetic Bearer fixture is explicitly not a production token verifier.
 
