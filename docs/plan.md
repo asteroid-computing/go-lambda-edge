@@ -376,7 +376,7 @@ The owner approved E1–E6 and rejected E7 on 2026-09-27, with one stacked PR pe
 Behavior, error semantics and trust boundaries do not change;
 these are placement, naming, typing and documentation changes made before the first release.
 
-- [ ] E1: move the action-header selector to the standard-library-only `actionheader` package as `Selector`/`NewSelector`.
+- [x] E1: move the action-header selector to the standard-library-only `actionheader` package as `Selector`/`NewSelector`.
 - [ ] E2: rename the moved sentinels to `ErrMissing`, `ErrAmbiguous` and `ErrInvalid`.
 - [ ] E3: rename `identity.WithCaller` to `identity.NewContext`.
 - [ ] E4: type the `InvocationError` operation and limit names with exported constants.

@@ -2,19 +2,19 @@ package edge_test
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"slices"
 	"testing"
 
 	"github.com/asteroid-computing/go-lambda-edge"
+	"github.com/asteroid-computing/go-lambda-edge/actionheader"
 )
 
-// These are consumer-owned middleware and metadata, not edge API types.
+// These are consumer-owned middleware and metadata, not edge or actionheader API types.
 type actionKey struct{}
 
-func processActionHeaders(selector edge.ActionHeader, next http.Handler) http.Handler {
+func processActionHeaders(selector actionheader.Selector, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		action, err := selector.Parse(r.Header)
 		if err != nil {
@@ -26,42 +26,8 @@ func processActionHeaders(selector edge.ActionHeader, next http.Handler) http.Ha
 	})
 }
 
-func ExampleActionHeader() {
-	selector, err := edge.NewActionHeader("Action")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	dispatcher := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		action, ok := r.Context().Value(actionKey{}).(string)
-		if !ok {
-			http.Error(w, "missing action metadata", http.StatusInternalServerError)
-			return
-		}
-		// This example operation is public.
-		// Protected operations must authorize this same selection before executing or publishing streaming output.
-		switch action {
-		case "service.ping":
-			fmt.Fprintln(w, "pong")
-		default:
-			http.Error(w, "unknown action", http.StatusBadRequest)
-		}
-	})
-	// The composed http.Handler also goes directly to edge.New.
-	handler := processActionHeaders(selector, dispatcher)
-	r := httptest.NewRequest(http.MethodPost, "/", nil)
-	r.Header.Set("Action", "service.ping")
-	w := httptest.NewRecorder()
-	handler.ServeHTTP(w, r)
-	fmt.Println(w.Code)
-	fmt.Print(w.Body.String())
-	// Output:
-	// 200
-	// pong
-}
-
-func TestActionHeaderMiddlewareComposition(t *testing.T) {
-	selector, err := edge.NewActionHeader("Action")
+func TestActionSelectorMiddlewareComposition(t *testing.T) {
+	selector, err := actionheader.NewSelector("Action")
 	if err != nil {
 		t.Fatal(err)
 	}

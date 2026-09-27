@@ -1,4 +1,7 @@
-package edge
+// Package actionheader selects one application action from a configured HTTP request header.
+// It uses only the standard library, so native HTTP servers and Lambda adapters can share the same selection rules.
+// Consumers own action metadata, registry lookup, authorization and HTTP responses.
+package actionheader
 
 import (
 	"errors"
@@ -9,35 +12,35 @@ import (
 var (
 	// ErrActionMissing means the configured header has no represented values.
 	// An absent header and a nil or empty value slice are all missing.
-	ErrActionMissing = errors.New("edge: missing action")
+	ErrActionMissing = errors.New("actionheader: missing action")
 
 	// ErrActionAmbiguous means the header has multiple represented values or a value containing a comma.
 	// Gateway payload 2.0 combines duplicates with commas;
 	// a literal comma cannot be distinguished from combined values.
-	ErrActionAmbiguous = errors.New("edge: ambiguous action")
+	ErrActionAmbiguous = errors.New("actionheader: ambiguous action")
 
 	// ErrActionInvalid means the single action value is empty after trimming outer spaces and tabs, or does not satisfy the HTTP token grammar.
-	ErrActionInvalid = errors.New("edge: invalid action")
+	ErrActionInvalid = errors.New("actionheader: invalid action")
 )
 
-// ActionHeader selects an action from a configured request header.
-// Construct it with [NewActionHeader];
+// Selector selects an action from a configured request header.
+// Construct it with [NewSelector];
 // its zero value is unconfigured.
-// An ActionHeader is immutable, safe to copy, and safe for concurrent use.
-type ActionHeader struct {
+// A Selector is immutable, safe to copy, and safe for concurrent use.
+type Selector struct {
 	name string
 }
 
-// NewActionHeader validates name as an HTTP field name and returns a selector.
+// NewSelector validates name as an HTTP field name and returns a selector.
 // The name is required and matched case-insensitively;
 // no default is inferred.
 // On error, the returned selector is the zero value.
 // Configuration errors are separate from [ErrActionMissing], [ErrActionAmbiguous] and [ErrActionInvalid].
-func NewActionHeader(name string) (ActionHeader, error) {
+func NewSelector(name string) (Selector, error) {
 	if !validToken(name) {
-		return ActionHeader{}, errors.New("edge: invalid action header name")
+		return Selector{}, errors.New("actionheader: invalid header name")
 	}
-	return ActionHeader{name: http.CanonicalHeaderKey(name)}, nil
+	return Selector{name: http.CanonicalHeaderKey(name)}, nil
 }
 
 // Parse returns the single action in headers, trimming only outer SP/HTAB and preserving case.
@@ -54,16 +57,16 @@ func NewActionHeader(name string) (ActionHeader, error) {
 // Parse does not modify headers or write an HTTP response.
 // Callers must not mutate headers concurrently with Parse.
 // Select once and use that same action for authorization and execution.
-func (h ActionHeader) Parse(headers http.Header) (string, error) {
-	if h.name == "" {
-		return "", errors.New("edge: unconfigured action header")
+func (s Selector) Parse(headers http.Header) (string, error) {
+	if s.name == "" {
+		return "", errors.New("actionheader: unconfigured selector")
 	}
 	var value string
 	found := false
 	for name, values := range headers {
 		// CanonicalHeaderKey folds only valid ASCII field names.
 		// In particular, Unicode case equivalents must not alias the configured HTTP name.
-		if http.CanonicalHeaderKey(name) != h.name || len(values) == 0 {
+		if http.CanonicalHeaderKey(name) != s.name || len(values) == 0 {
 			continue
 		}
 		if found || len(values) > 1 {
@@ -82,4 +85,19 @@ func (h ActionHeader) Parse(headers http.Header) (string, error) {
 		return "", ErrActionInvalid
 	}
 	return value, nil
+}
+
+// validToken reports whether s is a nonempty HTTP token (RFC 9110 §5.6.2).
+func validToken(s string) bool {
+	if s == "" {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || strings.ContainsRune("!#$%&'*+-.^_`|~", rune(c)) {
+			continue
+		}
+		return false
+	}
+	return true
 }

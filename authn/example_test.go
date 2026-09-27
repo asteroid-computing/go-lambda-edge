@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/asteroid-computing/go-lambda-edge"
+	"github.com/asteroid-computing/go-lambda-edge/actionheader"
 	"github.com/asteroid-computing/go-lambda-edge/authn"
 	"github.com/asteroid-computing/go-lambda-edge/iamproof"
 	"github.com/asteroid-computing/go-lambda-edge/identity"
@@ -45,7 +45,7 @@ func ExampleAuthenticator_Handler() {
 		fmt.Println(err)
 		return
 	}
-	selector, err := edge.NewActionHeader("Action")
+	selector, err := actionheader.NewSelector("Action")
 	if err != nil {
 		fmt.Println(err)
 		return

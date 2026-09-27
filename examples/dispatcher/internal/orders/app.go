@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/asteroid-computing/go-lambda-edge"
+	"github.com/asteroid-computing/go-lambda-edge/actionheader"
 	"github.com/asteroid-computing/go-lambda-edge/authn"
 	"github.com/asteroid-computing/go-lambda-edge/authz"
 	"github.com/asteroid-computing/go-lambda-edge/iamproof"
@@ -78,7 +78,7 @@ func New(cfg Config) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	selector, err := edge.NewActionHeader("Action")
+	selector, err := actionheader.NewSelector("Action")
 	if err != nil {
 		return nil, err
 	}

@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 
 	"github.com/asteroid-computing/go-lambda-edge"
+	"github.com/asteroid-computing/go-lambda-edge/actionheader"
 	"github.com/asteroid-computing/go-lambda-edge/authn"
 	"github.com/asteroid-computing/go-lambda-edge/authz"
 	"github.com/asteroid-computing/go-lambda-edge/iamproof"
@@ -71,7 +72,7 @@ func TestAuthenticationAcrossTransports(t *testing.T) {
 	key := signingKey(t)
 	jwt := signedToken(t, key, "integration", accessClaims())
 	keys := keySet(t, publicJWK(key, "integration"))
-	selector, err := edge.NewActionHeader("Action")
+	selector, err := actionheader.NewSelector("Action")
 	if err != nil {
 		t.Fatal(err)
 	}

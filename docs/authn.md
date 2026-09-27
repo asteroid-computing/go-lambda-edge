@@ -131,7 +131,7 @@ Their synthetic Bearer fixture is explicitly not a production token verifier.
 
 ## Action dispatch and deployment
 
-Select an action once using edge.ActionHeader or your own header processor.
+Select an action once using actionheader.Selector or your own header processor.
 Authorize that caller for that exact selection, then execute it.
 Both IAM and JWT callers can reach the same dispatcher.
 Successful IAM authentication does not permit every AWS identity to execute your actions;

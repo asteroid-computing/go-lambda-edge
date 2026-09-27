@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/asteroid-computing/go-lambda-edge"
+	"github.com/asteroid-computing/go-lambda-edge/actionheader"
 	"github.com/asteroid-computing/go-lambda-edge/authn"
 	"github.com/asteroid-computing/go-lambda-edge/authz"
 	"github.com/asteroid-computing/go-lambda-edge/iamproof"
@@ -27,7 +27,7 @@ type grantStore interface {
 // This example has one fixed resource;
 // a real application validates/resolves its target before calling Authorize and keeps that same object/version for execution, using a transaction if needed.
 func orderHandler(authentication *authn.Authenticator, grants grantStore, issuer string) (http.Handler, error) {
-	selector, err := edge.NewActionHeader("Action")
+	selector, err := actionheader.NewSelector("Action")
 	if err != nil {
 		return nil, err
 	}
