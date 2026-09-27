@@ -13,7 +13,7 @@ var errStreamPrefixTooLarge = errors.New("edge: response metadata exceeds stream
 
 func encodeStreamPrefix(status int, headers *responseHeaders) ([]byte, error) {
 	if status < 200 || status > 599 {
-		return nil, invocationError("response", ErrResponse, "invalid final response status")
+		return nil, invocationError(OperationResponse, ErrResponse, "invalid final response status")
 	}
 	metadata := struct {
 		StatusCode        int                 `json:"statusCode"`
@@ -22,9 +22,9 @@ func encodeStreamPrefix(status int, headers *responseHeaders) ([]byte, error) {
 	out := responseBuffer{limit: maxStreamPrefixBytes - 8}
 	if err := json.MarshalWrite(&out, metadata); err != nil {
 		if errors.Is(err, errResponseTooLarge) {
-			return nil, limitError("encode", "stream_metadata", maxStreamPrefixBytes, errStreamPrefixTooLarge)
+			return nil, limitError(OperationEncode, ResourceStreamMetadata, maxStreamPrefixBytes, errStreamPrefixTooLarge)
 		}
-		return nil, invocationError("encode", ErrResponse, "streaming metadata JSON encoding failed")
+		return nil, invocationError(OperationEncode, ErrResponse, "streaming metadata JSON encoding failed")
 	}
 	// Allocate exactly the framed length.
 	// The final zeroed bytes are the delimiter.

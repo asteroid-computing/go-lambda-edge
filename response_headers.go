@@ -13,10 +13,10 @@ const defaultResponseHeaderBudget = 256 * 1024
 
 var (
 	errResponseHeaderBudget = errors.New("edge: response header budget exceeded")
-	errResponseHeaders      = invocationError("response", ErrResponse, "invalid response headers")
-	errResponseTrailers     = invocationError("response", ErrResponse, "response trailers are unsupported", http.ErrNotSupported)
-	errResponseUpgrade      = invocationError("response", ErrResponse, "response upgrade is unsupported", http.ErrNotSupported)
-	errResponseHeaderRepeat = invocationError("response", ErrResponse, "repeated response field cannot be represented in payload 2.0")
+	errResponseHeaders      = invocationError(OperationResponse, ErrResponse, "invalid response headers")
+	errResponseTrailers     = invocationError(OperationResponse, ErrResponse, "response trailers are unsupported", http.ErrNotSupported)
+	errResponseUpgrade      = invocationError(OperationResponse, ErrResponse, "response upgrade is unsupported", http.ErrNotSupported)
+	errResponseHeaderRepeat = invocationError(OperationResponse, ErrResponse, "repeated response field cannot be represented in payload 2.0")
 )
 
 // responseHeaders owns its map and value slices.
@@ -79,11 +79,11 @@ func chargeResponseHeaders(fields http.Header, remaining int) (int, error) {
 
 func snapshotResponseHeaders(fields http.Header, budget int) (*responseHeaders, error) {
 	if budget <= 0 || budget > maxResponseBytes {
-		return nil, invocationError("validate", ErrInvalidInvocation, "invalid response header budget")
+		return nil, invocationError(OperationValidate, ErrInvalidInvocation, "invalid response header budget")
 	}
 	remaining, err := chargeResponseHeaders(fields, budget)
 	if err != nil {
-		return nil, limitError("response", "response_headers", int64(budget), errResponseHeaderBudget)
+		return nil, limitError(OperationResponse, ResourceResponseHeaders, int64(budget), errResponseHeaderBudget)
 	}
 	keys := make([]string, 0, len(fields))
 	for name, values := range fields {
@@ -167,7 +167,7 @@ func (h *responseHeaders) automatic(name, value string) error {
 	}
 	remaining, err := chargeResponseHeaders(http.Header{name: {value}}, h.remaining)
 	if err != nil {
-		return limitError("response", "response_headers", int64(h.budget), errResponseHeaderBudget)
+		return limitError(OperationResponse, ResourceResponseHeaders, int64(h.budget), errResponseHeaderBudget)
 	}
 	h.fields[name] = []string{value}
 	h.remaining = remaining

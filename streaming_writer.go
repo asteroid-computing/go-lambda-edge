@@ -43,7 +43,7 @@ func (w *streamingWriter) WriteHeader(status int) {
 		return
 	}
 	if status < 200 || status > 599 {
-		w.err = invocationError("response", ErrResponse, "invalid final response status")
+		w.err = invocationError(OperationResponse, ErrResponse, "invalid final response status")
 		return
 	}
 	w.status = status
@@ -81,11 +81,11 @@ func (w *streamingWriter) Write(p []byte) (int, error) {
 		return 0, http.ErrBodyNotAllowed
 	}
 	if w.hasLength && int64(len(p)) > w.declaredLength-w.written {
-		w.err = invocationError("response", ErrResponse, "response exceeds declared content length", http.ErrContentLength)
+		w.err = invocationError(OperationResponse, ErrResponse, "response exceeds declared content length", http.ErrContentLength)
 		return 0, w.err
 	}
 	if int64(len(p)) > math.MaxInt64-w.written {
-		w.err = invocationError("response", ErrResponse, "response byte count overflow")
+		w.err = invocationError(OperationResponse, ErrResponse, "response byte count overflow")
 		return 0, w.err
 	}
 	if w.method == http.MethodHead {
@@ -165,7 +165,7 @@ func (w *streamingWriter) writeBody(p []byte) (int, error) {
 		case err == io.ErrClosedPipe:
 			w.err = err // The bridge translates its own interruption safely.
 		default:
-			w.err = invocationError("stream", ErrStream, "response body write failed")
+			w.err = invocationError(OperationStream, ErrStream, "response body write failed")
 		}
 	}
 	return n, w.err
@@ -183,7 +183,7 @@ func (w *streamingWriter) finish() error {
 		return w.err
 	}
 	if w.method != http.MethodHead && w.hasLength && w.written != w.declaredLength {
-		w.err = invocationError("response", ErrResponse, "response body length mismatch", http.ErrContentLength)
+		w.err = invocationError(OperationResponse, ErrResponse, "response body length mismatch", http.ErrContentLength)
 		return w.err
 	}
 	return w.publish()

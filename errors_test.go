@@ -16,7 +16,7 @@ func TestInvocationErrorCategories(t *testing.T) {
 		name      string
 		fail      func(*testing.T) error
 		category  error
-		operation string
+		operation Operation
 		standard  error
 	}{
 		{name: "nil_context", category: ErrInvalidInvocation, operation: "validate", fail: func(t *testing.T) error {
@@ -129,8 +129,8 @@ func TestInvocationErrorLimits(t *testing.T) {
 	for _, tt := range []struct {
 		name      string
 		fail      func(*testing.T) error
-		operation string
-		limit     string
+		operation Operation
+		limit     Resource
 		maximum   int64
 	}{
 		{name: "original_headers", operation: "response", limit: "response_headers", maximum: 32, fail: func(t *testing.T) error {

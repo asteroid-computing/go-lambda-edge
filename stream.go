@@ -9,9 +9,9 @@ import (
 )
 
 var (
-	errStreamPanic       = invocationError("stream", ErrStream, "stream producer panicked")
-	errStreamReporter    = invocationError("stream", ErrStream, "stream error reporter panicked")
-	errStreamUnpublished = invocationError("stream", ErrStream, "stream producer ended without publishing a response")
+	errStreamPanic       = invocationError(OperationStream, ErrStream, "stream producer panicked")
+	errStreamReporter    = invocationError(OperationStream, ErrStream, "stream error reporter panicked")
+	errStreamUnpublished = invocationError(OperationStream, ErrStream, "stream producer ended without publishing a response")
 )
 
 // streamOutput belongs to the producer.
@@ -256,5 +256,5 @@ func (*responseStream) ContentType() string {
 // MarshalJSON deliberately declines serialization so the SDK selects its io.Reader response path.
 // Edge's framing codec uses JSON v2 separately.
 func (*responseStream) MarshalJSON() ([]byte, error) {
-	return nil, invocationError("encode", ErrStream, "streaming response cannot be marshaled as JSON")
+	return nil, invocationError(OperationEncode, ErrStream, "streaming response cannot be marshaled as JSON")
 }

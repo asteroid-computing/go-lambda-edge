@@ -28,12 +28,12 @@ func (inv *invocation) ownRequest(r *http.Request) {
 func (inv *invocation) cleanup(err error) error {
 	if inv.body != nil {
 		if closeErr := inv.body.Close(); closeErr != nil {
-			err = errors.Join(err, invocationError("cleanup", ErrCleanup, "request body cleanup failed"))
+			err = errors.Join(err, invocationError(OperationCleanup, ErrCleanup, "request body cleanup failed"))
 		}
 	}
 	if inv.request != nil && inv.request.MultipartForm != nil {
 		if removeErr := inv.request.MultipartForm.RemoveAll(); removeErr != nil {
-			err = errors.Join(err, invocationError("cleanup", ErrCleanup, "multipart cleanup failed"))
+			err = errors.Join(err, invocationError(OperationCleanup, ErrCleanup, "multipart cleanup failed"))
 		}
 	}
 	return err
@@ -41,13 +41,13 @@ func (inv *invocation) cleanup(err error) error {
 
 func invocationContext(parent context.Context) (context.Context, context.CancelFunc, error) {
 	if parent == nil {
-		return nil, nil, invocationError("validate", ErrInvalidInvocation, "nil invocation context")
+		return nil, nil, invocationError(OperationValidate, ErrInvalidInvocation, "nil invocation context")
 	}
 	if err := parent.Err(); err != nil {
 		return nil, nil, err
 	}
 	if identity.FromContext(parent).Kind() != identity.KindAnonymous {
-		return nil, nil, invocationError("identity", ErrIdentity, "invocation context already has a caller", identity.ErrConflict)
+		return nil, nil, invocationError(OperationIdentity, ErrIdentity, "invocation context already has a caller", identity.ErrConflict)
 	}
 	ctx, cancel := context.WithCancel(parent)
 	return ctx, cancel, nil
