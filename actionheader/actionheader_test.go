@@ -22,34 +22,34 @@ func TestSelectorParse(t *testing.T) {
 		want    string
 		wantErr error
 	}{
-		{name: "nil", wantErr: actionheader.ErrActionMissing},
-		{name: "unrelated", headers: http.Header{"Else": {"orders.create"}}, wantErr: actionheader.ErrActionMissing},
-		{name: "nil_slice", headers: http.Header{"Action": nil}, wantErr: actionheader.ErrActionMissing},
-		{name: "empty_slice", headers: http.Header{"Action": {}}, wantErr: actionheader.ErrActionMissing},
-		{name: "empty", headers: http.Header{"Action": {""}}, wantErr: actionheader.ErrActionInvalid},
-		{name: "whitespace", headers: http.Header{"Action": {" \t "}}, wantErr: actionheader.ErrActionInvalid},
+		{name: "nil", wantErr: actionheader.ErrMissing},
+		{name: "unrelated", headers: http.Header{"Else": {"orders.create"}}, wantErr: actionheader.ErrMissing},
+		{name: "nil_slice", headers: http.Header{"Action": nil}, wantErr: actionheader.ErrMissing},
+		{name: "empty_slice", headers: http.Header{"Action": {}}, wantErr: actionheader.ErrMissing},
+		{name: "empty", headers: http.Header{"Action": {""}}, wantErr: actionheader.ErrInvalid},
+		{name: "whitespace", headers: http.Header{"Action": {" \t "}}, wantErr: actionheader.ErrInvalid},
 		{name: "trim_and_preserve_case", headers: http.Header{"Action": {" \tOrders.Create\t "}}, want: "Orders.Create"},
 		{name: "direct_assignment", headers: http.Header{"aCtIoN": {"orders.create"}}, want: "orders.create"},
 		{name: "empty_alias", headers: http.Header{"ACTION": {}, "action": {"orders.create"}}, want: "orders.create"},
-		{name: "conflict", headers: http.Header{"Action": {"read", "delete"}}, wantErr: actionheader.ErrActionAmbiguous},
-		{name: "identical", headers: http.Header{"Action": {"read", "read"}}, wantErr: actionheader.ErrActionAmbiguous},
-		{name: "case_aliases", headers: http.Header{"Action": {"read"}, "ACTION": {"delete"}}, wantErr: actionheader.ErrActionAmbiguous},
-		{name: "identical_aliases", headers: http.Header{"Action": {"read"}, "action": {"read"}}, wantErr: actionheader.ErrActionAmbiguous},
-		{name: "invalid_plus_alias", headers: http.Header{"Action": {""}, "action": {"read"}}, wantErr: actionheader.ErrActionAmbiguous},
-		{name: "multiple_empty", headers: http.Header{"Action": {"", ""}}, wantErr: actionheader.ErrActionAmbiguous},
-		{name: "joined", headers: http.Header{"Action": {"read,delete"}}, wantErr: actionheader.ErrActionAmbiguous},
-		{name: "identical_joined", headers: http.Header{"Action": {"read,read"}}, wantErr: actionheader.ErrActionAmbiguous},
-		{name: "comma_before_invalid", headers: http.Header{"Action": {",\r\n"}}, wantErr: actionheader.ErrActionAmbiguous},
-		{name: "space_in_token", headers: http.Header{"Action": {"orders create"}}, wantErr: actionheader.ErrActionInvalid},
-		{name: "slash", headers: http.Header{"Action": {"orders/create"}}, wantErr: actionheader.ErrActionInvalid},
-		{name: "colon", headers: http.Header{"Action": {"orders:create"}}, wantErr: actionheader.ErrActionInvalid},
-		{name: "quoted", headers: http.Header{"Action": {`"read"`}}, wantErr: actionheader.ErrActionInvalid},
-		{name: "unicode_space", headers: http.Header{"Action": {"\u00a0read"}}, wantErr: actionheader.ErrActionInvalid},
-		{name: "unicode", headers: http.Header{"Action": {"créer"}}, wantErr: actionheader.ErrActionInvalid},
-		{name: "invalid_utf8", headers: http.Header{"Action": {"\xff"}}, wantErr: actionheader.ErrActionInvalid},
-		{name: "newline", headers: http.Header{"Action": {"read\n"}}, wantErr: actionheader.ErrActionInvalid},
-		{name: "nul", headers: http.Header{"Action": {"read\x00"}}, wantErr: actionheader.ErrActionInvalid},
-		{name: "del", headers: http.Header{"Action": {"read\x7f"}}, wantErr: actionheader.ErrActionInvalid},
+		{name: "conflict", headers: http.Header{"Action": {"read", "delete"}}, wantErr: actionheader.ErrAmbiguous},
+		{name: "identical", headers: http.Header{"Action": {"read", "read"}}, wantErr: actionheader.ErrAmbiguous},
+		{name: "case_aliases", headers: http.Header{"Action": {"read"}, "ACTION": {"delete"}}, wantErr: actionheader.ErrAmbiguous},
+		{name: "identical_aliases", headers: http.Header{"Action": {"read"}, "action": {"read"}}, wantErr: actionheader.ErrAmbiguous},
+		{name: "invalid_plus_alias", headers: http.Header{"Action": {""}, "action": {"read"}}, wantErr: actionheader.ErrAmbiguous},
+		{name: "multiple_empty", headers: http.Header{"Action": {"", ""}}, wantErr: actionheader.ErrAmbiguous},
+		{name: "joined", headers: http.Header{"Action": {"read,delete"}}, wantErr: actionheader.ErrAmbiguous},
+		{name: "identical_joined", headers: http.Header{"Action": {"read,read"}}, wantErr: actionheader.ErrAmbiguous},
+		{name: "comma_before_invalid", headers: http.Header{"Action": {",\r\n"}}, wantErr: actionheader.ErrAmbiguous},
+		{name: "space_in_token", headers: http.Header{"Action": {"orders create"}}, wantErr: actionheader.ErrInvalid},
+		{name: "slash", headers: http.Header{"Action": {"orders/create"}}, wantErr: actionheader.ErrInvalid},
+		{name: "colon", headers: http.Header{"Action": {"orders:create"}}, wantErr: actionheader.ErrInvalid},
+		{name: "quoted", headers: http.Header{"Action": {`"read"`}}, wantErr: actionheader.ErrInvalid},
+		{name: "unicode_space", headers: http.Header{"Action": {"\u00a0read"}}, wantErr: actionheader.ErrInvalid},
+		{name: "unicode", headers: http.Header{"Action": {"créer"}}, wantErr: actionheader.ErrInvalid},
+		{name: "invalid_utf8", headers: http.Header{"Action": {"\xff"}}, wantErr: actionheader.ErrInvalid},
+		{name: "newline", headers: http.Header{"Action": {"read\n"}}, wantErr: actionheader.ErrInvalid},
+		{name: "nul", headers: http.Header{"Action": {"read\x00"}}, wantErr: actionheader.ErrInvalid},
+		{name: "del", headers: http.Header{"Action": {"read\x7f"}}, wantErr: actionheader.ErrInvalid},
 		{name: "all_token_punctuation", headers: http.Header{"Action": {"!#$%&'*+-.^_`|~AZaz09"}}, want: "!#$%&'*+-.^_`|~AZaz09"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -80,7 +80,7 @@ func TestSelectorConfiguration(t *testing.T) {
 			if parseErr == nil {
 				t.Fatal("zero selector Parse succeeded")
 			}
-			for _, category := range []error{actionheader.ErrActionMissing, actionheader.ErrActionAmbiguous, actionheader.ErrActionInvalid} {
+			for _, category := range []error{actionheader.ErrMissing, actionheader.ErrAmbiguous, actionheader.ErrInvalid} {
 				if errors.Is(err, category) || errors.Is(parseErr, category) {
 					t.Errorf("configuration error matched input category %v", category)
 				}

@@ -62,7 +62,7 @@ The `actionheader` package uses only the standard library, so native HTTP server
 Configure the header name explicitly.
 Selection preserves case, trims outer spaces/tabs, and requires a nonempty HTTP token.
 Repeated values and comma-bearing values are rejected, including Gateway payload 2.0's comma-combined duplicates.
-Use `errors.Is` with `actionheader.ErrActionMissing`, `actionheader.ErrActionAmbiguous`, or `actionheader.ErrActionInvalid` to distinguish request-input failures.
+Use `errors.Is` with `actionheader.ErrMissing`, `actionheader.ErrAmbiguous`, or `actionheader.ErrInvalid` to distinguish request-input failures.
 
 Use ordinary `http.Handler` middleware to process this and other custom headers.
 The consumer owns its action registry, metadata, authorization and HTTP error responses.

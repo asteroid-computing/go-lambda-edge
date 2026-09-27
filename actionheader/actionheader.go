@@ -10,17 +10,17 @@ import (
 )
 
 var (
-	// ErrActionMissing means the configured header has no represented values.
+	// ErrMissing means the configured header has no represented values.
 	// An absent header and a nil or empty value slice are all missing.
-	ErrActionMissing = errors.New("actionheader: missing action")
+	ErrMissing = errors.New("actionheader: missing action")
 
-	// ErrActionAmbiguous means the header has multiple represented values or a value containing a comma.
+	// ErrAmbiguous means the header has multiple represented values or a value containing a comma.
 	// Gateway payload 2.0 combines duplicates with commas;
 	// a literal comma cannot be distinguished from combined values.
-	ErrActionAmbiguous = errors.New("actionheader: ambiguous action")
+	ErrAmbiguous = errors.New("actionheader: ambiguous action")
 
-	// ErrActionInvalid means the single action value is empty after trimming outer spaces and tabs, or does not satisfy the HTTP token grammar.
-	ErrActionInvalid = errors.New("actionheader: invalid action")
+	// ErrInvalid means the single action value is empty after trimming outer spaces and tabs, or does not satisfy the HTTP token grammar.
+	ErrInvalid = errors.New("actionheader: invalid action")
 )
 
 // Selector selects an action from a configured request header.
@@ -35,7 +35,7 @@ type Selector struct {
 // The name is required and matched case-insensitively;
 // no default is inferred.
 // On error, the returned selector is the zero value.
-// Configuration errors are separate from [ErrActionMissing], [ErrActionAmbiguous] and [ErrActionInvalid].
+// Configuration errors are separate from [ErrMissing], [ErrAmbiguous] and [ErrInvalid].
 func NewSelector(name string) (Selector, error) {
 	if !validToken(name) {
 		return Selector{}, errors.New("actionheader: invalid header name")
@@ -51,7 +51,7 @@ func NewSelector(name string) (Selector, error) {
 // Multiplicity and comma checks take precedence over token validation.
 // Duplicates already lost by a gateway or earlier proxy cannot be detected.
 //
-// On failure Parse returns an empty string and [ErrActionMissing], [ErrActionAmbiguous] or [ErrActionInvalid], matchable with [errors.Is].
+// On failure Parse returns an empty string and [ErrMissing], [ErrAmbiguous] or [ErrInvalid], matchable with [errors.Is].
 // An unconfigured selector instead returns a configuration error.
 // Errors do not include supplied header values.
 // Parse does not modify headers or write an HTTP response.
@@ -70,19 +70,19 @@ func (s Selector) Parse(headers http.Header) (string, error) {
 			continue
 		}
 		if found || len(values) > 1 {
-			return "", ErrActionAmbiguous
+			return "", ErrAmbiguous
 		}
 		value, found = values[0], true
 	}
 	if !found {
-		return "", ErrActionMissing
+		return "", ErrMissing
 	}
 	if strings.Contains(value, ",") {
-		return "", ErrActionAmbiguous
+		return "", ErrAmbiguous
 	}
 	value = strings.Trim(value, " \t")
 	if !validToken(value) {
-		return "", ErrActionInvalid
+		return "", ErrInvalid
 	}
 	return value, nil
 }
