@@ -33,3 +33,4 @@ Keep related decisions small enough to review and implement independently.
 | [0023: Consumer readiness](0023-consumer-readiness.md) | R1–R5 accepted; local implementation complete; external release prerequisites open | What complete consumer example, test support, deferred scope and release preparation should follow the implemented packages? |
 | [0024: Release automation](0024-release-automation.md) | Accepted; PR-only validation and organization credentials; App installation verified, release execution pending | How should release PRs, validation, credentials and initial versioning work? |
 | [0025: Main-branch protection](0025-main-branch-protection.md) | Proposed; awaiting owner review | Should the existing four CI checks and PR workflow be enforced before merging to main? |
+| [0026: Exported API review](0026-exported-api-review.md) | Proposed; awaiting owner review | Which exported API changes does Google's Go style guidance support before the first release? |
