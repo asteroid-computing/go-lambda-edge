@@ -1,8 +1,7 @@
 # 0026: Exported API review against Google Go style
 
-Status: proposed on 2026-09-27;
-awaiting owner review.
-No exported API has changed.
+Status: E1–E6 accepted and E7 rejected on 2026-09-27;
+implementation proceeds as one stacked PR per item.
 Each numbered recommendation can be approved, redirected or rejected independently.
 
 ## Scope and method
@@ -384,4 +383,10 @@ An optional follow-up could add clause-level breaks (SemBr rule 2) to those sent
 
 ## Resolution
 
-Pending owner review.
+On 2026-09-27 the owner approved E1–E6, rejected E7 and asked for one stacked PR per item.
+The proposed names stand: `actionheader` with `Selector`, `NewSelector`, `ErrMissing`, `ErrAmbiguous` and `ErrInvalid`, and `identity.NewContext`.
+The Cognito verifier stays in `authn`.
+
+E1 moves the selector and renames its type and constructor;
+E2 then renames the moved sentinels, so each PR is a single kind of change.
+This is compatible with decision 0011's intent: the new package holds only the existing selector, and action metadata remains consumer-owned.
