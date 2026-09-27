@@ -4,6 +4,31 @@ Status: accepted and locally implemented on 2026-09-21. The user approved
 GitHub App authentication and initial v0.1.0 following the recommended v0 policy.
 Release Please, its GitHub Action and PR checks against main are user-directed.
 
+## Revision: PR-only validation (2026-09-27)
+
+The user rejected repeating the PR validation after merge. This supersedes the
+main-validation dependency in accepted A and the original implementation below.
+Run the Go matrix only for PRs against main, including generated release PRs.
+On main pushes, run only credential setup and Release Please. Remove the unused
+workflow_call entry point. This avoids a second full matrix for each merge.
+
+The alternative was retaining validation of the exact main push. The chosen
+workflow relies on reviewing passing PR checks before merge; direct main pushes
+will not run Go validation. No branch-protection change is part of this revision.
+The [official release action example](https://github.com/googleapis/release-please-action/tree/v5.0.0)
+also runs Release Please directly on main pushes; a reusable Go validation job
+is a repository policy choice, not an action requirement.
+
+The [first main run](https://github.com/asteroid-computing/go-lambda-edge/actions/runs/36281181036)
+passed all four repeated validation jobs, then failed in App token creation.
+GET /repos/asteroid-computing/go-lambda-edge/installation returned 404. The
+organization installation listing returned total_count=0. The App credentials
+are provisioned, but the App needs installation on the organization with access
+to this repository and the permissions documented in the release guide.
+[GitHub's installation lookup](https://docs.github.com/en/rest/apps/apps#get-a-repository-installation-for-the-authenticated-app)
+looks up the authenticated App's installation for the specified repository.
+Release Please never ran; removing duplicate validation does not fix installation.
+
 ## Evidence
 
 The existing Go workflow already runs formatting, race tests, vet, module
