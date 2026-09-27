@@ -1,7 +1,5 @@
 package identity
 
-import "strconv"
-
 // Kind identifies the caller's mutually exclusive identity representation.
 type Kind uint8
 
@@ -71,7 +69,7 @@ func (c Caller) IAM() (IAM, bool) {
 
 // String describes kind and source without exposing identifiers or claims.
 func (c Caller) String() string {
-	return "identity.Caller{kind:" + strconv.Itoa(int(c.Kind())) + ",source:" + strconv.Itoa(int(c.source)) + "}"
+	return "identity.Caller{kind:" + c.Kind().String() + ",source:" + c.source.String() + "}"
 }
 
 // GoString returns the same sanitized description as String.
