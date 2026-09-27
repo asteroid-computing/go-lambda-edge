@@ -15,8 +15,8 @@ import (
 	"github.com/asteroid-computing/go-lambda-edge/identity"
 )
 
-// Exercise actual token verification and STS-proof parsing before application
-// policy. Only JWKS/STS network responses and the grant service are synthetic.
+// Exercise actual token verification and STS-proof parsing before application policy.
+// Only JWKS/STS network responses and the grant service are synthetic.
 func TestAuthorizationAcrossTransports(t *testing.T) {
 	key := signingKey(t)
 	keys := keySet(t, publicJWK(key, "authorization"))
@@ -148,7 +148,8 @@ func TestAuthorizationAcrossTransports(t *testing.T) {
 						if err := selected.rule.Authorize(r.Context(), facts); err != nil {
 							switch {
 							case errors.Is(err, authz.ErrDenied):
-								// This route supports Bearer; no claim about the denial's cause.
+								// This route supports Bearer;
+								// no claim about the denial's cause.
 								w.Header().Set("WWW-Authenticate", `Bearer realm="edge"`)
 								authorizationResponse(t, w, 403, "forbidden")
 							case errors.Is(err, authz.ErrUnavailable):

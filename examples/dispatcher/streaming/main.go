@@ -20,15 +20,16 @@ func main() {
 		os.Exit(1)
 	}
 	adapter, err := edge.NewStreaming(h, edge.WithStreamErrorReporter(func(_ context.Context, err error) {
-		// Edge supplies sanitized invocation diagnostics. Never log a request's
-		// Authorization header, token, proof or raw provider error here.
+		// Edge supplies sanitized invocation diagnostics.
+		// Never log a request's Authorization header, token, proof or raw provider error here.
 		slog.Error("orders stream terminated", "error", err)
 	}))
 	if err != nil {
 		slog.Error("configure streaming adapter", "error", err)
 		os.Exit(1)
 	}
-	// Return the reader directly; do not collect or JSON-encode the stream.
+	// Return the reader directly;
+	// do not collect or JSON-encode the stream.
 	// For already typed REST events, register adapter.HandleV1 instead.
 	lambda.Start(adapter.Handle)
 }

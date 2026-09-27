@@ -8,8 +8,9 @@ import (
 )
 
 // streamingWriter has one handler owner and retains at most 512 body bytes.
-// Its context belongs to that invocation, not the reusable adapter. Logical
-// HTTP commitment freezes headers; publish transfers ownership to the reader.
+// Its context belongs to that invocation, not the reusable adapter.
+// Logical HTTP commitment freezes headers;
+// publish transfers ownership to the reader.
 type streamingWriter struct {
 	ctx            context.Context
 	out            *streamOutput
@@ -118,8 +119,8 @@ func (w *streamingWriter) Write(p []byte) (int, error) {
 	return accepted + n, err
 }
 
-// publish validates all metadata before acknowledging handoff, then drains any
-// previously accepted sniff bytes. A pipe error cannot undo accepted bytes.
+// publish validates all metadata before acknowledging handoff, then drains any previously accepted sniff bytes.
+// A pipe error cannot undo accepted bytes.
 func (w *streamingWriter) publish() error {
 	if err := w.ready(); err != nil {
 		return err

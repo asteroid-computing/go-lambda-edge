@@ -5,8 +5,7 @@ import (
 	"unicode/utf8"
 )
 
-// IAMPrincipalType describes the supported request-caller form, not an IAM
-// resource-policy Principal expression.
+// IAMPrincipalType describes the supported request-caller form, not an IAM resource-policy Principal expression.
 type IAMPrincipalType uint8
 
 // Supported IAM principal forms preserve session identities.
@@ -29,7 +28,8 @@ type IAM struct {
 	principalID   string
 }
 
-// IAMOption supplies an additional caller fact. Nil and duplicate options fail.
+// IAMOption supplies an additional caller fact.
+// Nil and duplicate options fail.
 type IAMOption func(*iamConfig) error
 
 type iamConfig struct {
@@ -39,8 +39,8 @@ type iamConfig struct {
 	principalIDSet bool
 }
 
-// WithIAMAccountID cross-checks an independently supplied caller account against
-// the ARN. Do not pass API Gateway's API-owner requestContext.accountId here.
+// WithIAMAccountID cross-checks an independently supplied caller account against the ARN.
+// Do not pass API Gateway's API-owner requestContext.accountId here.
 func WithIAMAccountID(account string) IAMOption {
 	return func(c *iamConfig) error {
 		if c.accountSet || !validAccount(account) {
@@ -63,10 +63,10 @@ func WithIAMPrincipalID(id string) IAMOption {
 	}
 }
 
-// NewIAM validates and owns an exact root, user, assumed-role session or
-// federated-user ARN. Bare role ARNs and policy patterns are not caller forms.
-// Literal punctuation in a valid IAM user path is preserved without wildcard
-// interpretation. Source must be gateway, custom assertion or verified IAM proof.
+// NewIAM validates and owns an exact root, user, assumed-role session or federated-user ARN.
+// Bare role ARNs and policy patterns are not caller forms.
+// Literal punctuation in a valid IAM user path is preserved without wildcard interpretation.
+// Source must be gateway, custom assertion or verified IAM proof.
 // Errors match ErrInvalidCaller and contain no supplied identifiers.
 func NewIAM(principalARN string, source Source, opts ...IAMOption) (Caller, error) {
 	if source != SourceGatewayAssertion && source != SourceCustomAssertion && source != SourceVerifiedIAMProof {
@@ -118,9 +118,12 @@ func NewIAM(principalARN string, source Source, opts ...IAMOption) (Caller, erro
 		return Caller{}, ErrInvalidCaller
 	}
 	return Caller{source: source, iam: &IAM{
-		arn: strings.Clone(principalARN), partition: strings.Clone(parts[1]),
-		account: strings.Clone(parts[4]), service: strings.Clone(parts[2]),
-		principalType: form, principalID: strings.Clone(cfg.principalID),
+		arn:           strings.Clone(principalARN),
+		partition:     strings.Clone(parts[1]),
+		account:       strings.Clone(parts[4]),
+		service:       strings.Clone(parts[2]),
+		principalType: form,
+		principalID:   strings.Clone(cfg.principalID),
 	}}, nil
 }
 
@@ -172,8 +175,8 @@ func validUserResource(resource string) bool {
 	if last == -1 {
 		return true // The default IAM path is "/".
 	}
-	// The ARN's user/ separator contributes the path's leading slash. Follow
-	// CreateUser's formal path regex (U+0021..U+007E), not its prose DEL endpoint.
+	// The ARN's user/ separator contributes the path's leading slash.
+	// Follow CreateUser's formal path regex (U+0021..U+007E), not its prose DEL endpoint.
 	path := resource[:last+1]
 	if len(path)+1 > 512 || len(path) < 2 {
 		return false

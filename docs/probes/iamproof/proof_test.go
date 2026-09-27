@@ -1,5 +1,5 @@
-// Package iamproofprobe checks proposed protocol mechanics using synthetic
-// credentials. It is not an authentication implementation or an AWS acceptance test.
+// Package iamproofprobe checks proposed protocol mechanics using synthetic credentials.
+// It is not an authentication implementation or an AWS acceptance test.
 package iamproofprobe
 
 import (
@@ -34,15 +34,18 @@ func TestReconstruction(t *testing.T) {
 				t.Run(strconv.Itoa(size), func(t *testing.T) {
 					ctx := t.Context()
 					endpoint, err := sts.NewDefaultEndpointResolverV2().ResolveEndpoint(ctx, sts.EndpointParameters{
-						Region: new(region), UseGlobalEndpoint: new(false),
-						UseFIPS: new(false), UseDualStack: new(false),
+						Region:            new(region),
+						UseGlobalEndpoint: new(false),
+						UseFIPS:           new(false),
+						UseDualStack:      new(false),
 					})
 					if err != nil {
 						t.Fatal(err)
 					}
 					creds := aws.Credentials{
-						AccessKeyID: "AKIAIOSFODNN7EXAMPLE", SecretAccessKey: "synthetic-secret-never-valid-in-AWS",
-						SessionToken: strings.Repeat("+/=a", size/4),
+						AccessKeyID:     "AKIAIOSFODNN7EXAMPLE",
+						SecretAccessKey: "synthetic-secret-never-valid-in-AWS",
+						SessionToken:    strings.Repeat("+/=a", size/4),
 					}
 					when := time.Date(2026, 9, 16, 12, 0, 0, 0, time.UTC)
 					req := request(t, endpoint.URI.String(), "orders.production")
@@ -60,8 +63,10 @@ func TestReconstruction(t *testing.T) {
 						t.Fatal("unexpected signed headers")
 					}
 					wire, err := json.Marshal(envelope{
-						Audience: "orders.production", Credential: q.Get("X-Amz-Credential"),
-						Date: q.Get("X-Amz-Date"), Signature: q.Get("X-Amz-Signature"),
+						Audience:     "orders.production",
+						Credential:   q.Get("X-Amz-Credential"),
+						Date:         q.Get("X-Amz-Date"),
+						Signature:    q.Get("X-Amz-Signature"),
 						SessionToken: q.Get("X-Amz-Security-Token"),
 					})
 					if err != nil {
@@ -87,8 +92,8 @@ func TestReconstruction(t *testing.T) {
 						params.Set("X-Amz-Security-Token", proof.SessionToken)
 					}
 					rebuilt.URL.RawQuery = params.Encode()
-					// SigV4 canonicalizes query order; the SDK appends the signature
-					// after signing, whereas url.Values.Encode sorts all parameters.
+					// SigV4 canonicalizes query order;
+					// the SDK appends the signature after signing, whereas url.Values.Encode sorts all parameters.
 					u.RawQuery = q.Encode()
 					if rebuilt.URL.String() != u.String() {
 						t.Fatal("reconstruction changed the presigned URL")
@@ -105,8 +110,7 @@ func TestReconstruction(t *testing.T) {
 					if otherURL.Query().Get("X-Amz-Signature") == proof.Signature {
 						t.Fatal("audience did not affect signature")
 					}
-					t.Logf("session bytes=%d compact token bytes=%d URL token bytes=%d host=%s",
-						size, len(token), 3+base64.RawURLEncoding.EncodedLen(len(signedURL)), u.Host)
+					t.Logf("session bytes=%d compact token bytes=%d URL token bytes=%d host=%s", size, len(token), 3+base64.RawURLEncoding.EncodedLen(len(signedURL)), u.Host)
 				})
 			}
 		})

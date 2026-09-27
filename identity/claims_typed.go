@@ -11,19 +11,22 @@ import (
 )
 
 // NewClaims validates and owns already decoded values without a JSON round trip.
-// Supported recursive values are nil, bool, string, built-in integers except
-// uintptr, finite float32/float64, json.Number, map[string]any, map[string]string,
-// []any and []string. Other defined types, pointers, structs and byte slices are
-// rejected without calling user methods. A nil map is an empty object; a typed
-// nil nested map/slice retains its object/array kind. A nil interface is null.
-// Inputs must not change during construction; afterward they may be mutated.
-// Invalid input matches ErrInvalidClaims; byte exhaustion is a ClaimsLimitError.
+// Supported recursive values are nil, bool, string, built-in integers except uintptr, finite float32/float64, json.Number, map[string]any, map[string]string, []any and []string.
+// Other defined types, pointers, structs and byte slices are rejected without calling user methods.
+// A nil map is an empty object;
+// a typed nil nested map/slice retains its object/array kind.
+// A nil interface is null.
+// Inputs must not change during construction;
+// afterward they may be mutated.
+// Invalid input matches ErrInvalidClaims;
+// byte exhaustion is a ClaimsLimitError.
 func NewClaims(values map[string]any, opts ...ClaimsOption) (Claims, error) {
 	return newTypedClaims(values, RepresentationDecoded, opts)
 }
 
 // NewTextClaims owns gateway text without parsing embedded JSON or numbers.
-// All values retain RepresentationGatewayText. Nil means an empty object.
+// All values retain RepresentationGatewayText.
+// Nil means an empty object.
 // Ownership, options and errors follow NewClaims.
 func NewTextClaims(values map[string]string, opts ...ClaimsOption) (Claims, error) {
 	return newTypedClaims(values, RepresentationGatewayText, opts)
@@ -46,8 +49,9 @@ func newTypedClaims(values any, representation Representation, opts []ClaimsOpti
 	return Claims{members: n.object, budget: maximum, charge: int(n.cost)}, nil
 }
 
-// readTypedClaim preflights without copying when build is false. Container depth
-// bounds cycles; each occurrence of a shared subtree consumes its own allowance.
+// readTypedClaim preflights without copying when build is false.
+// Container depth bounds cycles;
+// each occurrence of a shared subtree consumes its own allowance.
 func readTypedClaim(v any, representation Representation, budget *claimBudget, depth int, build bool) (claimNode, error) {
 	start := budget.remaining
 	if err := budget.take(claimCharge); err != nil {

@@ -10,28 +10,30 @@ import (
 	"unicode/utf8"
 )
 
-// Lambda's documented MB unit is binary. This is the complete buffered payload
-// budget, not an allowance for a body plus an uncounted JSON envelope.
+// Lambda's documented MB unit is binary.
+// This is the complete buffered payload budget, not an allowance for a body plus an uncounted JSON envelope.
 const maxResponseBytes = 6 * 1024 * 1024
 
 var errResponseTooLarge = errors.New("edge: response exceeds buffered payload limit")
 
-// marshalResponse is only for the raw invocation path. Typed entry points leave
-// envelope serialization, and its exact final size, to their caller.
+// marshalResponse is only for the raw invocation path.
+// Typed entry points leave envelope serialization, and its exact final size, to their caller.
 func marshalResponse(response any) ([]byte, error) {
 	var out responseBuffer
 	if err := json.MarshalWrite(&out, response); err != nil {
 		if errors.Is(err, errResponseTooLarge) {
 			return nil, limitError("encode", "buffered_envelope", maxResponseBytes, errResponseTooLarge)
 		}
-		// Codec errors can include application values. Do not expose that chain.
+		// Codec errors can include application values.
+		// Do not expose that chain.
 		return nil, invocationError("encode", ErrResponse, "response JSON encoding failed")
 	}
 	return out.data, nil
 }
 
-// responseBuffer bounds both length and backing capacity. MarshalWrite can still
-// allocate temporary codec storage; this is not a total-memory guarantee.
+// responseBuffer bounds both length and backing capacity.
+// MarshalWrite can still allocate temporary codec storage;
+// this is not a total-memory guarantee.
 type responseBuffer struct {
 	data []byte
 	// A zero limit selects the buffered-response ceiling.
@@ -57,8 +59,8 @@ func (b *responseBuffer) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-// encodeResponseBody receives the finalized, canonical response headers. It
-// changes only the gateway envelope representation, never the content bytes.
+// encodeResponseBody receives the finalized, canonical response headers.
+// It changes only the gateway envelope representation, never the content bytes.
 func encodeResponseBody(body []byte, header http.Header) (string, bool, error) {
 	if len(body) > maxResponseBytes {
 		return "", false, limitError("response", "buffered_body", maxResponseBytes, errResponseTooLarge)

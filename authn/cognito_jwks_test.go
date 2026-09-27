@@ -63,9 +63,18 @@ func TestCognitoJWKSValidation(t *testing.T) {
 	good := publicJWK(key, "key")
 	goodWire := keySet(t, good)
 	for _, body := range []string{
-		`null`, `[]`, `{}`, `{"keys":null}`, `{"keys":[]}`, `{"keys":[null]}`, `{"keys":[{}]}`,
-		keySet(t, good, good), keySet(t, good, map[string]any{"kty": "EC", "kid": "key"}),
-		keySet(t, good) + `{}`, `{"keys":[],"keys":[]}`, `{"keys":[],"ignored":{"x":1,"x":2}}`,
+		`null`,
+		`[]`,
+		`{}`,
+		`{"keys":null}`,
+		`{"keys":[]}`,
+		`{"keys":[null]}`,
+		`{"keys":[{}]}`,
+		keySet(t, good, good),
+		keySet(t, good, map[string]any{"kty": "EC", "kid": "key"}),
+		keySet(t, good) + `{}`,
+		`{"keys":[],"keys":[]}`,
+		`{"keys":[],"ignored":{"x":1,"x":2}}`,
 		`{"keys":[],"ignored":` + strings.Repeat("[", 64) + "0" + strings.Repeat("]", 64) + `}`,
 		goodWire[:len(goodWire)-1] + `,"ignored":{"x":1,"x":2}}`,
 		goodWire[:len(goodWire)-1] + `,"ignored":` + strings.Repeat("[", 64) + "0" + strings.Repeat("]", 64) + `}`,
@@ -75,8 +84,9 @@ func TestCognitoJWKSValidation(t *testing.T) {
 			t.Fatalf("invalid key set accepted: %v", err)
 		}
 	}
-	// Unsupported keys do not participate in signature verification. Optional
-	// metadata may be absent; an opaque kid can contain '=' or URL-like text.
+	// Unsupported keys do not participate in signature verification.
+	// Optional metadata may be absent;
+	// an opaque kid can contain '=' or URL-like text.
 	minimal := publicJWK(key, "https://untrusted.invalid/key=")
 	delete(minimal, "use")
 	delete(minimal, "alg")

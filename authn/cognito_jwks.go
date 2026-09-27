@@ -10,8 +10,8 @@ import (
 	"unicode/utf8"
 )
 
-// jwtObject validates all JSON, including ignored extension values, before
-// allocating the member map. JSON v2 rejects duplicate names and invalid UTF-8.
+// jwtObject validates all JSON, including ignored extension values, before allocating the member map.
+// JSON v2 rejects duplicate names and invalid UTF-8.
 func jwtObject(data []byte) (map[string]jsontext.Value, error) {
 	d := jsontext.NewDecoder(bytes.NewReader(data))
 	if d.PeekKind() != '{' {

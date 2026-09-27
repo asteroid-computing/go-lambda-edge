@@ -125,8 +125,7 @@ func TestMarshalResponseSDKTypes(t *testing.T) {
 }
 
 func TestMarshalResponseEnvelopeLimit(t *testing.T) {
-	// Measure the actual codec overhead rather than coupling the test to field
-	// order, optional-field tags, or whitespace choices in the pinned SDK.
+	// Measure the actual codec overhead rather than coupling the test to field order, optional-field tags, or whitespace choices in the pinned SDK.
 	response := events.APIGatewayV2HTTPResponse{StatusCode: 200}
 	empty, err := marshalResponse(response)
 	if err != nil {

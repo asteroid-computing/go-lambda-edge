@@ -42,8 +42,8 @@ func TestHTTPStreamingHeaderReference(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			// Only header behavior is under test; disable automatic decompression
-			// for the synthetic encoding fixture.
+			// Only header behavior is under test;
+			// disable automatic decompression for the synthetic encoding fixture.
 			r.Header.Set("Accept-Encoding", "identity")
 			response, err := server.Client().Do(r)
 			if err != nil {

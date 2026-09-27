@@ -311,10 +311,14 @@ func TestCognitoHTTPBoundAndOwnership(t *testing.T) {
 		body   string
 		want   error
 	}{
-		{200, good, nil}, {200, good + strings.Repeat(" ", 65536-len(good)), nil},
+		{200, good, nil},
+		{200, good + strings.Repeat(" ", 65536-len(good)), nil},
 		{200, strings.Repeat(" ", 1<<20), authn.ErrUnavailable},
-		{200, "not JSON", authn.ErrUnavailable}, {302, good, authn.ErrUnavailable},
-		{304, good, authn.ErrUnavailable}, {429, good, authn.ErrUnavailable}, {500, good, authn.ErrUnavailable},
+		{200, "not JSON", authn.ErrUnavailable},
+		{302, good, authn.ErrUnavailable},
+		{304, good, authn.ErrUnavailable},
+		{429, good, authn.ErrUnavailable},
+		{500, good, authn.ErrUnavailable},
 	} {
 		body := &jwksBody{reader: strings.NewReader(tc.body)}
 		var calls atomic.Int64

@@ -157,7 +157,8 @@ func TestGatewayFidelityAndOwnership(t *testing.T) {
 	}
 	event := events.APIGatewayV2HTTPRequest{
 		RawPath: "/", RequestContext: events.APIGatewayV2HTTPRequestContext{
-			APIID: "api", HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{Method: "GET"},
+			APIID: "api",
+			HTTP:  events.APIGatewayV2HTTPRequestContextHTTPDescription{Method: "GET"},
 			Authorizer: &events.APIGatewayV2HTTPRequestContextAuthorizerDescription{JWT: &events.APIGatewayV2HTTPRequestContextAuthorizerJWTDescription{
 				Claims: map[string]string{"iss": "issuer", "sub": "subject", "aud": "[client]", "cognito:groups": "[Ops]", "custom": "9007199254740993"},
 			}},
@@ -267,8 +268,9 @@ func TestTypedGatewayDoesNotMarshalAndChecksScopeBudget(t *testing.T) {
 	}
 	event := events.APIGatewayProxyRequest{HTTPMethod: "GET", Path: "/", RequestContext: events.APIGatewayProxyRequestContext{
 		APIID: "api", Authorizer: map[string]any{
-			"claims": map[string]string{"iss": "issuer", "sub": "subject"},
-			"scopes": []any{"read"}, "ignored": forbiddenEnvelopeMarshal{},
+			"claims":  map[string]string{"iss": "issuer", "sub": "subject"},
+			"scopes":  []any{"read"},
+			"ignored": forbiddenEnvelopeMarshal{},
 		},
 	}}
 	if _, err := a.HandleV1(t.Context(), event); err != nil {
@@ -297,9 +299,7 @@ func TestTypedV1NilScopesAreUnavailable(t *testing.T) {
 	}
 	for _, scopes := range []any{nil, []any(nil), []string(nil)} {
 		ran = false
-		event := events.APIGatewayProxyRequest{HTTPMethod: "GET", Path: "/", RequestContext: events.APIGatewayProxyRequestContext{
-			APIID: "api", Authorizer: map[string]any{"claims": nil, "scopes": scopes},
-		}}
+		event := events.APIGatewayProxyRequest{HTTPMethod: "GET", Path: "/", RequestContext: events.APIGatewayProxyRequestContext{APIID: "api", Authorizer: map[string]any{"claims": nil, "scopes": scopes}}}
 		if _, err := a.HandleV1(t.Context(), event); err != nil || !ran {
 			t.Errorf("nil scope placeholder %T: ran=%t err=%v", scopes, ran, err)
 		}
@@ -332,7 +332,11 @@ func TestTypedV2CannotDetectDiscardedUnknownProducer(t *testing.T) {
 
 func FuzzGatewayIdentityBoundary(f *testing.F) {
 	for _, auth := range []string{
-		`null`, `{}`, `{"jwt":{}}`, `{"iam":{},"jwt":{}}`, `{"lambda":{}}`,
+		`null`,
+		`{}`,
+		`{"jwt":{}}`,
+		`{"iam":{},"jwt":{}}`,
+		`{"lambda":{}}`,
 		`{"jwt":{"claims":{"iss":"issuer","sub":"s"},"scopes":[]}}`,
 		`{"claims":{"iss":"issuer","sub":"s"},"scopes":["read"]}`,
 		`{"iam":{"userArn":"arn:aws:iam::123456789012:root"}}`,

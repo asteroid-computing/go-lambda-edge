@@ -36,8 +36,9 @@ func ExampleStreamingAdapter_Handle() {
 	if err != nil {
 		panic(err)
 	}
-	// A Lambda main registers lambda.Start(adapter.Handle). This direct call
-	// demonstrates reader ownership locally; it makes no AWS calls.
+	// A Lambda main registers lambda.Start(adapter.Handle).
+	// This direct call demonstrates reader ownership locally;
+	// it makes no AWS calls.
 	stream, err := adapter.Handle(context.Background(), jsontext.Value(`{"httpMethod":"GET","path":"/","requestContext":{"apiId":"example"}}`))
 	if err != nil {
 		panic(err)
@@ -72,8 +73,9 @@ func ExampleStreamingAdapter_HandleV1() {
 	if err != nil {
 		panic(err)
 	}
-	// A Lambda main may register lambda.Start(adapter.HandleV1). Input envelope
-	// decoding then belongs to the SDK; output metadata still uses JSON v2 in edge.
+	// A Lambda main may register lambda.Start(adapter.HandleV1).
+	// Input envelope decoding then belongs to the SDK;
+	// output metadata still uses JSON v2 in edge.
 	stream, err := adapter.HandleV1(context.Background(), exampleRESTEvent())
 	if err != nil {
 		panic(err)
@@ -104,7 +106,8 @@ func ExampleNewStreaming_gzip() {
 	adapter, err := edge.NewStreaming(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		w.Header().Set("Content-Encoding", "gzip")
-		// The example always emits gzip; a real route negotiates Accept-Encoding.
+		// The example always emits gzip;
+		// a real route negotiates Accept-Encoding.
 		compressed := gzip.NewWriter(w)
 		defer compressed.Close()
 		for _, chunk := range []string{"first\n", "last\n"} {
@@ -149,8 +152,9 @@ func exampleRESTEvent() events.APIGatewayProxyRequest {
 	return events.APIGatewayProxyRequest{HTTPMethod: "GET", Path: "/", RequestContext: events.APIGatewayProxyRequestContext{APIID: "example"}}
 }
 
-// This collector is only for the small local examples. Lambda's runtime consumes
-// the reader incrementally; do not collect the stream in a production wrapper.
+// This collector is only for the small local examples.
+// Lambda's runtime consumes the reader incrementally;
+// do not collect the stream in a production wrapper.
 func readExampleStream(stream io.ReadCloser) []byte {
 	defer stream.Close()
 	wire, err := io.ReadAll(stream)

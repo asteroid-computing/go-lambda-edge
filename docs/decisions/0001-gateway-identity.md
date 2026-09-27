@@ -4,37 +4,30 @@ Status: accepted by the user.
 
 ## Context and user direction
 
-The user accepted the overall rebuild plan, then refined the initial review's
-gateway-default recommendation: no gateway assertions by default feels more
-natural, with a positive variadic option such as `WithGateway` to enable them.
+The user accepted the overall rebuild plan, then refined the initial review's gateway-default recommendation: no gateway assertions by default feels more natural, with a positive variadic option such as `WithGateway` to enable them.
 
-This record distinguishes receiving API Gateway traffic from using gateway
-assertions to establish application identity.
+This record distinguishes receiving API Gateway traffic from using gateway assertions to establish application identity.
 
 ## Evidence
 
-- AWS documents that a JWT authorizer validates the token from its configured
-  identity source, then passes claims to the integration. The event's claims are
-  the asserted result; comparing selected claims does not authenticate a second
-  raw token from another source.
+- AWS documents that a JWT authorizer validates the token from its configured identity source, then passes claims to the integration.
+  The event's claims are the asserted result;
+  comparing selected claims does not authenticate a second raw token from another source.
   [JWT authorizer contract](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-jwt-authorizer.html)
-- AWS documents IAM authorization as route configuration requiring SigV4 and
-  `execute-api` permission. Choosing whether this module consumes that assertion
-  does not alter the deployed route's authentication.
+- AWS documents IAM authorization as route configuration requiring SigV4 and `execute-api` permission.
+  Choosing whether this module consumes that assertion does not alter the deployed route's authentication.
   [IAM authorization](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-access-control-iam.html)
 - Beakley's `lambda/adapter.go` attaches an identity even when anonymous;
   `authn/middleware.go` skips verification whenever the context slot is present.
-  That coupling prevents a local verifier from naturally following the adapter
-  on a route with no gateway-authenticated caller.
-- Our repository currently has no runtime code. No existing API constrains the
-  new option name or default.
+  That coupling prevents a local verifier from naturally following the adapter on a route with no gateway-authenticated caller.
+- Our repository currently has no runtime code.
+  No existing API constrains the new option name or default.
 
 ## Decision
 
-Use the variadic option `WithGatewayIdentity(enabled bool)` with a
-default of false. The positive opt-in call reads `WithGatewayIdentity(true)`;
-the boolean permits configuration helpers to explicitly disable it without a
-second negatively named option.
+Use the variadic option `WithGatewayIdentity(enabled bool)` with a default of false.
+The positive opt-in call reads `WithGatewayIdentity(true)`;
+the boolean permits configuration helpers to explicitly disable it without a second negatively named option.
 
 Accepted behavior:
 
@@ -44,52 +37,42 @@ Accepted behavior:
 | `WithGatewayIdentity(true)` | Derive identity from supported native gateway JWT/Cognito and IAM assertions |
 | Local bearer middleware explicitly configured | Verify the supplied token under caller-provided issuer/client policy |
 
-The option covers both IAM and JWT/Cognito assertions. Custom-authorizer
-contexts require an explicit mapper; their schema must not be guessed.
+The option covers both IAM and JWT/Cognito assertions.
+Custom-authorizer contexts require an explicit mapper;
+their schema must not be guessed.
 
-The base adapter must not insert an anonymous identity solely to mark itself
-as having run. Reading absent identity still yields the anonymous zero value,
-and protected routes deny it. Invocation metadata can remain available separately.
-This does not promise to preserve an identity from an unrelated invocation or
-settle precedence between multiple configured producers.
+The base adapter must not insert an anonymous identity solely to mark itself as having run.
+Reading absent identity still yields the anonymous zero value, and protected routes deny it.
+Invocation metadata can remain available separately.
+This does not promise to preserve an identity from an unrelated invocation or settle precedence between multiple configured producers.
 
-Gateway mode uses asserted event claims without supplementing permissions
-from an unverified header token. It assumes the deployment restricts invocation
-to the intended trusted integration. It does not independently verify SigV4 or
-JWT signatures, discover an issuer, or configure AWS authorization.
+Gateway mode uses asserted event claims without supplementing permissions from an unverified header token.
+It assumes the deployment restricts invocation to the intended trusted integration.
+It does not independently verify SigV4 or JWT signatures, discover an issuer, or configure AWS authorization.
 
 ## Alternatives
 
-- `WithGateway`: concise, but suggests enabling the transport, which is already
-  the adapter's purpose.
+- `WithGateway`: concise, but suggests enabling the transport, which is already the adapter's purpose.
 - `NoGateway`: encodes a trust-default that the user's follow-up rejects.
-- `WithGatewayIdentity()` without an argument: concise, but provides no direct
-  way for reusable option configuration to turn the policy back off.
-- Automatically verify JWTs by default: cannot safely choose trusted issuers,
-  clients, audiences, and networking policy from untrusted request data.
-- Opt in for JWT only while always consuming IAM: possible, but gives the same
-  gateway trust boundary two different defaults.
+- `WithGatewayIdentity()` without an argument: concise, but provides no direct way for reusable option configuration to turn the policy back off.
+- Automatically verify JWTs by default: cannot safely choose trusted issuers, clients, audiences, and networking policy from untrusted request data.
+- Opt in for JWT only while always consuming IAM: possible, but gives the same gateway trust boundary two different defaults.
 
 ## Consequences and remaining decisions
 
-- Applications must explicitly select how identity is established. An adapter
-  without authentication can serve public routes; it does not imply that all
-  routes are protected or that gateway authentication was disabled in AWS.
-- Exact option mechanics, constructor validation, and error handling will be
-  reviewed with the adapter API.
-- Local-versus-gateway precedence, re-verification, conflicting credentials,
-  and custom-authorizer mapping need further decisions before implementation.
-- Claims unavailable at full fidelity from the gateway remain unavailable through
-  that source. Local verification is the path to trusted raw-token fidelity.
+- Applications must explicitly select how identity is established.
+  An adapter without authentication can serve public routes;
+  it does not imply that all routes are protected or that gateway authentication was disabled in AWS.
+- Exact option mechanics, constructor validation, and error handling will be reviewed with the adapter API.
+- Local-versus-gateway precedence, re-verification, conflicting credentials, and custom-authorizer mapping need further decisions before implementation.
+- Claims unavailable at full fidelity from the gateway remain unavailable through that source.
+  Local verification is the path to trusted raw-token fidelity.
 
 ## Resolution
 
-The user replied "approved" to the concrete proposal: `WithGatewayIdentity(true)`
-opts in to both IAM and JWT/Cognito assertions, the default performs transport
-adaptation without establishing identity or fetching keys, and local verification
-is explicitly composed. This approves the decision above, not the remaining
-constructor, precedence, mapper, or error-policy decisions.
+The user replied "approved" to the concrete proposal: `WithGatewayIdentity(true)` opts in to both IAM and JWT/Cognito assertions, the default performs transport adaptation without establishing identity or fetching keys, and local verification is explicitly composed.
+This approves the decision above, not the remaining constructor, precedence, mapper, or error-policy decisions.
 
-Implementation status: `WithGatewayIdentity` now records the approved setting in
-constructor-owned configuration. Invocation and identity extraction are not yet
-implemented; the option cannot establish identity until those stages are built.
+Implementation status: `WithGatewayIdentity` now records the approved setting in constructor-owned configuration.
+Invocation and identity extraction are not yet implemented;
+the option cannot establish identity until those stages are built.

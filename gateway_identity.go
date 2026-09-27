@@ -11,8 +11,7 @@ import (
 	"github.com/asteroid-computing/go-lambda-edge/identity"
 )
 
-// Candidate discovery precedes construction, so malformed competing producers
-// cannot disappear through validation or establish precedence by field order.
+// Candidate discovery precedes construction, so malformed competing producers cannot disappear through validation or establish precedence by field order.
 type gatewayCandidates struct {
 	iam     func() (identity.Caller, error)
 	jwt     func() (identity.Caller, error)
@@ -154,9 +153,9 @@ func rawGatewayJWT(fields map[string]jsontext.Value, budget int) (identity.Calle
 	return identity.NewJWT(claims, identity.SourceGatewayAssertion, identity.WithGatewayScopes(scopes))
 }
 
-// Bound scope expansion before building the slice. NewJWT then enforces the
-// combined claims/scopes charge and owns strings. Raw scopes use no extra wire
-// allowance: whitespace does not change their weighted collection cost.
+// Bound scope expansion before building the slice.
+// NewJWT then enforces the combined claims/scopes charge and owns strings.
+// Raw scopes use no extra wire allowance: whitespace does not change their weighted collection cost.
 func rawGatewayScopes(raw jsontext.Value, maximum int) ([]string, error) {
 	if !nonnull(raw) {
 		return nil, nil
@@ -248,8 +247,8 @@ func typedGatewayClaims(input any, maximum int) (identity.Claims, error) {
 	case map[string]any:
 		return identity.NewClaims(input, identity.WithClaimsBudget(maximum))
 	case map[string]string:
-		// V1 callers may supply a concrete string map. Bound the temporary
-		// conversion before allocating it, and retain decoded-value provenance.
+		// V1 callers may supply a concrete string map.
+		// Bound the temporary conversion before allocating it, and retain decoded-value provenance.
 		remaining := maximum - 64
 		if len(input) > max(remaining, 0)/64 {
 			return identity.Claims{}, gatewayScopeLimit(maximum)

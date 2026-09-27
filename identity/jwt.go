@@ -25,7 +25,8 @@ type stringSet struct {
 	known  bool
 }
 
-// JWTOption supplies a separate assertion. Nil or duplicate options are invalid.
+// JWTOption supplies a separate assertion.
+// Nil or duplicate options are invalid.
 type JWTOption func(*jwtConfig) error
 
 type jwtConfig struct {
@@ -33,11 +34,13 @@ type jwtConfig struct {
 	scopesSet bool
 }
 
-// WithGatewayScopes supplies API Gateway's dedicated scopes collection. It is
-// valid only with SourceGatewayAssertion. Nil means unavailable; a nonnil empty
-// slice means known empty. Interpretable claim scopes must agree as exact sets.
-// The supplied collection consumes the claims' remaining weighted budget before
-// copying, even when its values duplicate a claim. Do not mutate it during NewJWT.
+// WithGatewayScopes supplies API Gateway's dedicated scopes collection.
+// It is valid only with SourceGatewayAssertion.
+// Nil means unavailable;
+// a nonnil empty slice means known empty.
+// Interpretable claim scopes must agree as exact sets.
+// The supplied collection consumes the claims' remaining weighted budget before copying, even when its values duplicate a claim.
+// Do not mutate it during NewJWT.
 func WithGatewayScopes(scopes []string) JWTOption {
 	return func(c *jwtConfig) error {
 		if c.scopesSet {
@@ -48,10 +51,11 @@ func WithGatewayScopes(scopes []string) JWTOption {
 	}
 }
 
-// NewJWT validates normalized facts and retains immutable claims. It requires
-// a nonempty issuer and a subject or client_id, without conflating those fields.
+// NewJWT validates normalized facts and retains immutable claims.
+// It requires a nonempty issuer and a subject or client_id, without conflating those fields.
 // Allowed sources are gateway, locally verified token and custom assertion.
-// It does not verify signatures or expiry. Invalid inputs match ErrInvalidCaller;
+// It does not verify signatures or expiry.
+// Invalid inputs match ErrInvalidCaller;
 // a dedicated-scope budget failure additionally matches ErrClaimsLimit.
 func NewJWT(claims Claims, source Source, opts ...JWTOption) (Caller, error) {
 	if source != SourceGatewayAssertion && source != SourceLocallyVerifiedToken && source != SourceCustomAssertion {
@@ -105,7 +109,8 @@ func NewJWT(claims Claims, source Source, opts ...JWTOption) (Caller, error) {
 		if !ok || s == "" {
 			return Caller{}, ErrInvalidCaller
 		}
-		// Validate before allocating; whitespace is specifically ASCII SP.
+		// Validate before allocating;
+		// whitespace is specifically ASCII SP.
 		for part := range strings.SplitSeq(s, " ") {
 			if !validScope(part) {
 				return Caller{}, ErrInvalidCaller

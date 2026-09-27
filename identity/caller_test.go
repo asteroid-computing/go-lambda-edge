@@ -50,11 +50,22 @@ func TestIAMCallerForms(t *testing.T) {
 
 func TestIAMRejectsInvalidCallers(t *testing.T) {
 	for _, resource := range []string{
-		"role/Operator", "user/*", "user/A?ice", "user/", "user//Alice",
-		"user/team name/Alice", "user/team\x7f/Alice", "user/Alice/", "user/" + strings.Repeat("a", 65),
+		"role/Operator",
+		"user/*",
+		"user/A?ice",
+		"user/",
+		"user//Alice",
+		"user/team name/Alice",
+		"user/team\x7f/Alice",
+		"user/Alice/",
+		"user/" + strings.Repeat("a", 65),
 		"user/" + strings.Repeat("a", 511) + "/Alice",
-		"assumed-role/Operator/a", "assumed-role/Operator/session/extra", "assumed-role/*/session",
-		"assumed-role/Operator/" + strings.Repeat("x", 65), "federated-user/x", "federated-user/" + strings.Repeat("x", 33),
+		"assumed-role/Operator/a",
+		"assumed-role/Operator/session/extra",
+		"assumed-role/*/session",
+		"assumed-role/Operator/" + strings.Repeat("x", 65),
+		"federated-user/x",
+		"federated-user/" + strings.Repeat("x", 33),
 	} {
 		for _, service := range []string{"iam", "sts"} {
 			c, err := identity.NewIAM("arn:aws:"+service+"::123456789012:"+resource, identity.SourceGatewayAssertion)
@@ -69,8 +80,11 @@ func TestIAMRejectsInvalidCallers(t *testing.T) {
 		}
 	}
 	for _, opts := range [][]identity.IAMOption{
-		{nil}, {identity.WithIAMAccountID("000000000000")}, {identity.WithIAMPrincipalID("")},
-		{identity.WithIAMPrincipalID("\xff")}, {identity.WithIAMPrincipalID("id"), identity.WithIAMPrincipalID("id")},
+		{nil},
+		{identity.WithIAMAccountID("000000000000")},
+		{identity.WithIAMPrincipalID("")},
+		{identity.WithIAMPrincipalID("\xff")},
+		{identity.WithIAMPrincipalID("id"), identity.WithIAMPrincipalID("id")},
 		{identity.WithIAMAccountID("123456789012"), identity.WithIAMAccountID("123456789012")},
 	} {
 		if _, err := identity.NewIAM("arn:aws:iam::123456789012:root", identity.SourceGatewayAssertion, opts...); !errors.Is(err, identity.ErrInvalidCaller) {
@@ -121,12 +135,20 @@ func TestJWTFactsAndOwnership(t *testing.T) {
 
 func TestJWTInvalidAndUnavailableFacts(t *testing.T) {
 	for _, input := range []string{
-		`{}`, `{"iss":"issuer"}`, `{"iss":1,"sub":"x"}`, `{"iss":"issuer","sub":""}`,
-		`{"iss":"issuer","sub":"x","client_id":null}`, `{"iss":"issuer","sub":"x","token_use":false}`,
-		`{"iss":"issuer","sub":"x","aud":[1]}`, `{"iss":"issuer","sub":"x","cognito:groups":"[Ops]"}`,
-		`{"iss":"issuer","sub":"x","scope":"read  write"}`, `{"iss":"issuer","sub":"x","scope":"read\twrite"}`,
-		`{"iss":"issuer","sub":"x","scope":"read write"}`, `{"iss":"issuer","sub":"x","scope":""}`,
-		`{"iss":"issuer","sub":"x","scope":"read","scp":["write"]}`, `{"iss":"issuer","sub":"x","scp":"read"}`,
+		`{}`,
+		`{"iss":"issuer"}`,
+		`{"iss":1,"sub":"x"}`,
+		`{"iss":"issuer","sub":""}`,
+		`{"iss":"issuer","sub":"x","client_id":null}`,
+		`{"iss":"issuer","sub":"x","token_use":false}`,
+		`{"iss":"issuer","sub":"x","aud":[1]}`,
+		`{"iss":"issuer","sub":"x","cognito:groups":"[Ops]"}`,
+		`{"iss":"issuer","sub":"x","scope":"read  write"}`,
+		`{"iss":"issuer","sub":"x","scope":"read\twrite"}`,
+		`{"iss":"issuer","sub":"x","scope":"read write"}`,
+		`{"iss":"issuer","sub":"x","scope":""}`,
+		`{"iss":"issuer","sub":"x","scope":"read","scp":["write"]}`,
+		`{"iss":"issuer","sub":"x","scp":"read"}`,
 	} {
 		c, err := identity.NewJWT(parseClaims(t, input), identity.SourceLocallyVerifiedToken)
 		if !errors.Is(err, identity.ErrInvalidCaller) || c.Kind() != identity.KindAnonymous {
@@ -201,7 +223,8 @@ func TestDedicatedScopes(t *testing.T) {
 			t.Errorf("Scopes() = %v, %t, expected availability %t", values, known, scopes != nil)
 		}
 	}
-	// Root + two scalar values + names/text = 205; array + "read" = 132.
+	// Root + two scalar values + names/text = 205;
+	// array + "read" = 132.
 	for _, maximum := range []int{336, 337} {
 		claims, err := identity.NewClaims(map[string]any{"iss": "issuer", "sub": "x"}, identity.WithClaimsBudget(maximum))
 		if err != nil {

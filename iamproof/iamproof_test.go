@@ -30,8 +30,9 @@ const (
 )
 
 var testCredentials = aws.Credentials{
-	AccessKeyID: "AKIAIOSFODNN7EXAMPLE", SecretAccessKey: "synthetic-secret-not-valid-in-AWS",
-	SessionToken: "synthetic+/=session-token",
+	AccessKeyID:     "AKIAIOSFODNN7EXAMPLE",
+	SecretAccessKey: "synthetic-secret-not-valid-in-AWS",
+	SessionToken:    "synthetic+/=session-token",
 }
 
 type roundTripFunc func(*http.Request) (*http.Response, error)
@@ -111,8 +112,9 @@ func assertFailure(t testing.TB, caller identity.Caller, err, want error) {
 	}
 }
 
-// The transport recomputes a signature with synthetic credentials. This checks
-// request reconstruction and tampering locally; it is not an AWS acceptance test.
+// The transport recomputes a signature with synthetic credentials.
+// This checks request reconstruction and tampering locally;
+// it is not an AWS acceptance test.
 func checkingTransport(t testing.TB, region, host, arn string, creds aws.Credentials) http.RoundTripper {
 	t.Helper()
 	return roundTripFunc(func(req *http.Request) (*http.Response, error) {
@@ -136,8 +138,7 @@ func checkingTransport(t testing.TB, region, host, arn string, creds aws.Credent
 		}
 		unsigned := req.Clone(req.Context())
 		unsigned.URL.RawQuery = url.Values{"Action": {"GetCallerIdentity"}, "Version": {"2011-06-15"}, "X-Amz-Expires": {"60"}}.Encode()
-		signed, _, err := v4.NewSigner(func(o *v4.SignerOptions) { o.DisableHeaderHoisting = true }).PresignHTTP(req.Context(), creds, unsigned,
-			"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "sts", region, when)
+		signed, _, err := v4.NewSigner(func(o *v4.SignerOptions) { o.DisableHeaderHoisting = true }).PresignHTTP(req.Context(), creds, unsigned, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "sts", region, when)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -208,9 +209,14 @@ func TestMalformedProofsDoNotReachSTS(t *testing.T) {
 		return response(200, successXML(testARN)), nil
 	}))
 	cases := map[string]string{
-		"empty": "", "scheme": "EdgeIAM " + token, "version": "v2." + token[3:],
-		"padding": token + "=", "newline": token[:10] + "\n" + token[10:],
-		"oversize": strings.Repeat("a", 8193), "null": rawToken("null"), "array": rawToken("[]"),
+		"empty":     "",
+		"scheme":    "EdgeIAM " + token,
+		"version":   "v2." + token[3:],
+		"padding":   token + "=",
+		"newline":   token[:10] + "\n" + token[10:],
+		"oversize":  strings.Repeat("a", 8193),
+		"null":      rawToken("null"),
+		"array":     rawToken("[]"),
 		"trailing":  rawToken(string(base) + "{}"),
 		"duplicate": rawToken(`{"audience":"other",` + string(base[1:])),
 		"utf8":      rawToken(strings.Replace(string(base), testAudience, "\xff", 1)),
@@ -390,23 +396,22 @@ func TestDependencyClassification(t *testing.T) {
 func TestXMLIdentityValidation(t *testing.T) {
 	valid := successXML(testARN)
 	for name, body := range map[string]string{
-		"wrong_namespace": strings.ReplaceAll(valid, namespace, "https://attacker.invalid"),
-		"no_namespace":    strings.ReplaceAll(valid, ` xmlns="`+namespace+`"`, ""),
-		"foreign_arn":     strings.Replace(valid, "<Arn>", `<Arn xmlns="urn:foreign">`, 1),
-		"duplicate_arn":   strings.Replace(valid, "</Arn>", "</Arn><Arn>"+testARN+"</Arn>", 1),
-		"duplicate_result": strings.Replace(valid, "</GetCallerIdentityResult>",
-			"</GetCallerIdentityResult><GetCallerIdentityResult/>", 1),
-		"missing_account": strings.Replace(valid, "<Account>123456789012</Account>", "", 1),
-		"empty_id":        strings.Replace(valid, "opaque:session", "", 1),
-		"wrong_account":   strings.Replace(valid, "<Account>123456789012", "<Account>000000000000", 1),
-		"wrong_partition": strings.Replace(valid, "arn:aws:", "arn:aws-cn:", 1),
-		"bare_role":       successXML("arn:aws:iam::123456789012:role/Operator"),
-		"nested_arn":      strings.Replace(valid, testARN, "<text>"+testARN+"</text>", 1),
-		"second_doc":      valid + valid,
-		"trailing":        valid + "garbage",
-		"dtd":             `<!DOCTYPE foo>` + valid,
-		"broken":          valid[:len(valid)-1],
-		"oversized":       valid + strings.Repeat(" ", 65536),
+		"wrong_namespace":  strings.ReplaceAll(valid, namespace, "https://attacker.invalid"),
+		"no_namespace":     strings.ReplaceAll(valid, ` xmlns="`+namespace+`"`, ""),
+		"foreign_arn":      strings.Replace(valid, "<Arn>", `<Arn xmlns="urn:foreign">`, 1),
+		"duplicate_arn":    strings.Replace(valid, "</Arn>", "</Arn><Arn>"+testARN+"</Arn>", 1),
+		"duplicate_result": strings.Replace(valid, "</GetCallerIdentityResult>", "</GetCallerIdentityResult><GetCallerIdentityResult/>", 1),
+		"missing_account":  strings.Replace(valid, "<Account>123456789012</Account>", "", 1),
+		"empty_id":         strings.Replace(valid, "opaque:session", "", 1),
+		"wrong_account":    strings.Replace(valid, "<Account>123456789012", "<Account>000000000000", 1),
+		"wrong_partition":  strings.Replace(valid, "arn:aws:", "arn:aws-cn:", 1),
+		"bare_role":        successXML("arn:aws:iam::123456789012:role/Operator"),
+		"nested_arn":       strings.Replace(valid, testARN, "<text>"+testARN+"</text>", 1),
+		"second_doc":       valid + valid,
+		"trailing":         valid + "garbage",
+		"dtd":              `<!DOCTYPE foo>` + valid,
+		"broken":           valid[:len(valid)-1],
+		"oversized":        valid + strings.Repeat(" ", 65536),
 	} {
 		t.Run(name, func(t *testing.T) {
 			v := verifier(t, roundTripFunc(func(*http.Request) (*http.Response, error) { return response(200, body), nil }))

@@ -44,9 +44,14 @@ func encodeJSON(t testing.TB, value any) []byte {
 }
 
 func publicJWK(key *rsa.PrivateKey, kid string) map[string]any {
-	return map[string]any{"kty": "RSA", "alg": "RS256", "use": "sig", "kid": kid,
-		"n": base64.RawURLEncoding.EncodeToString(key.N.Bytes()),
-		"e": base64.RawURLEncoding.EncodeToString(big.NewInt(int64(key.E)).Bytes())}
+	return map[string]any{
+		"kty": "RSA",
+		"alg": "RS256",
+		"use": "sig",
+		"kid": kid,
+		"n":   base64.RawURLEncoding.EncodeToString(key.N.Bytes()),
+		"e":   base64.RawURLEncoding.EncodeToString(big.NewInt(int64(key.E)).Bytes()),
+	}
 }
 
 func keySet(t testing.TB, entries ...map[string]any) string {
@@ -56,9 +61,18 @@ func keySet(t testing.TB, entries ...map[string]any) string {
 
 func accessClaims() map[string]any {
 	now := time.Now().Unix()
-	return map[string]any{"iss": cognitoIssuer, "client_id": "app", "sub": "alice", "token_use": "access",
-		"aud": "https://orders.example", "iat": now, "exp": now + 3600, "scope": "orders.read", "cognito:groups": []string{"operators"},
-		"precise": jsontext.Value("9007199254740993")}
+	return map[string]any{
+		"iss":            cognitoIssuer,
+		"client_id":      "app",
+		"sub":            "alice",
+		"token_use":      "access",
+		"aud":            "https://orders.example",
+		"iat":            now,
+		"exp":            now + 3600,
+		"scope":          "orders.read",
+		"cognito:groups": []string{"operators"},
+		"precise":        jsontext.Value("9007199254740993"),
+	}
 }
 
 func signRawToken(t testing.TB, key *rsa.PrivateKey, header, payload []byte) string {
@@ -227,9 +241,17 @@ func TestCognitoClientAudienceAndClaims(t *testing.T) {
 		name  string
 		value any
 	}{
-		{"iss", "https://elsewhere.example/pool"}, {"iss", nil}, {"client_id", "other"}, {"client_id", nil},
-		{"token_use", "id"}, {"token_use", nil}, {"sub", ""}, {"sub", 42}, {"scope", "read\twrite"},
-		{"cognito:groups", "operators"}, {"scp", []string{"inconsistent"}},
+		{"iss", "https://elsewhere.example/pool"},
+		{"iss", nil},
+		{"client_id", "other"},
+		{"client_id", nil},
+		{"token_use", "id"},
+		{"token_use", nil},
+		{"sub", ""},
+		{"sub", 42},
+		{"scope", "read\twrite"},
+		{"cognito:groups", "operators"},
+		{"scp", []string{"inconsistent"}},
 	} {
 		claims := accessClaims()
 		claims[tc.name] = tc.value
@@ -246,11 +268,18 @@ func TestCognitoTokenSyntaxAndSignature(t *testing.T) {
 	})))
 	payload := encodeJSON(t, accessClaims())
 	for _, header := range []string{
-		`null`, `[]`, `{"alg":"RS256","kid":"key","alg":"RS256"}`, `{"alg":"none","kid":"key"}`,
-		`{"alg":"HS256","kid":"key"}`, `{"alg":"RS384","kid":"key"}`, `{"alg":"RS256","kid":""}`,
-		`{"alg":"RS256","kid":"key","typ":null}`, `{"alg":"RS256","kid":"key","typ":"at+jwt"}`,
+		`null`,
+		`[]`,
+		`{"alg":"RS256","kid":"key","alg":"RS256"}`,
+		`{"alg":"none","kid":"key"}`,
+		`{"alg":"HS256","kid":"key"}`,
+		`{"alg":"RS384","kid":"key"}`,
+		`{"alg":"RS256","kid":""}`,
+		`{"alg":"RS256","kid":"key","typ":null}`,
+		`{"alg":"RS256","kid":"key","typ":"at+jwt"}`,
 		`{"alg":"RS256","kid":"key","extension":{"x":1,"x":2}}`,
-		`{"alg":"RS256","kid":"key"} {}`, `{"alg":"RS256","kid":"key","x":"` + string([]byte{0xff}) + `"}`,
+		`{"alg":"RS256","kid":"key"} {}`,
+		`{"alg":"RS256","kid":"key","x":"` + string([]byte{0xff}) + `"}`,
 	} {
 		verifyResult(t, v, t.Context(), signRawToken(t, key, []byte(header), payload), authn.ErrInvalidCredentials)
 	}
@@ -311,10 +340,19 @@ func TestCognitoDatesAndBounds(t *testing.T) {
 			name  string
 			value any
 		}{
-			{"exp", now}, {"exp", nil}, {"exp", "9999999999"}, {"exp", jsontext.Value("1e10")},
-			{"exp", jsontext.Value("9999999999.0")}, {"exp", jsontext.Value("253402300800")},
-			{"exp", jsontext.Value("999999999999999999999999")}, {"iat", -1}, {"iat", now + 1},
-			{"iat", nil}, {"nbf", now + 1}, {"nbf", nil}, {"nbf", now + 3600},
+			{"exp", now},
+			{"exp", nil},
+			{"exp", "9999999999"},
+			{"exp", jsontext.Value("1e10")},
+			{"exp", jsontext.Value("9999999999.0")},
+			{"exp", jsontext.Value("253402300800")},
+			{"exp", jsontext.Value("999999999999999999999999")},
+			{"iat", -1},
+			{"iat", now + 1},
+			{"iat", nil},
+			{"nbf", now + 1},
+			{"nbf", nil},
+			{"nbf", now + 3600},
 		} {
 			claims := accessClaims()
 			claims[tc.name] = tc.value

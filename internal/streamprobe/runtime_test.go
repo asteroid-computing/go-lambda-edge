@@ -31,8 +31,7 @@ import (
 const eventJSON = `{"httpMethod":"GET","path":"/","requestContext":{"apiId":"example"},"number":9007199254740993,"duplicate":1,"duplicate":2}`
 const integrationContentType = "application/vnd.awslambda.http-integration-response"
 
-// SDK reader dispatch must retain the concrete value's ContentType and Close
-// methods even though the function's declared result is io.ReadCloser.
+// SDK reader dispatch must retain the concrete value's ContentType and Close methods even though the function's declared result is io.ReadCloser.
 type probeStream struct {
 	body        io.Reader
 	url         string
@@ -114,8 +113,7 @@ func TestRuntimeStreamingProbeProcess(t *testing.T) {
 		return
 	}
 	if mode == "sdk_gateway" {
-		// Exercise the SDK's documented REST response type directly, without
-		// edge's adapter or prefix encoder, to isolate Runtime API behavior.
+		// Exercise the SDK's documented REST response type directly, without edge's adapter or prefix encoder, to isolate Runtime API behavior.
 		lambda.Start(func(ctx context.Context) (*events.APIGatewayProxyStreamingResponse, error) {
 			url := "http://" + os.Getenv("AWS_LAMBDA_RUNTIME_API")
 			body := io.MultiReader(strings.NewReader("first\n"), &gatedTail{ctx: ctx, url: url, tail: bytes.NewReader([]byte("last\n"))})
@@ -208,8 +206,8 @@ func runEdgeStream(t *testing.T, mode string) {
 			_ = s.Close()
 			return nil, errors.New("edge stream lost integration content type")
 		}
-		// Forward the production reader unchanged; the wrapper only records that
-		// SDK Close joined edge cleanup before the next invocation is requested.
+		// Forward the production reader unchanged;
+		// the wrapper only records that SDK Close joined edge cleanup before the next invocation is requested.
 		return &probeStream{body: s, url: url}, nil
 	}
 	if mode == "edge_typed" {
@@ -277,8 +275,7 @@ func TestSDKStreamsThroughRuntimeAPI(t *testing.T) {
 						t.Error(err)
 					}
 				case "/2018-06-01/runtime/invocation/probe/response":
-					// Require the first application body segment, not just metadata,
-					// before releasing the producer's second segment.
+					// Require the first application body segment, not just metadata, before releasing the producer's second segment.
 					reader := bufio.NewReader(r.Body)
 					var initial []byte
 					var err error
@@ -331,8 +328,8 @@ func TestSDKStreamsThroughRuntimeAPI(t *testing.T) {
 			}
 			defer func() {
 				cancel()
-				// The runtime normally loops forever; this test deliberately
-				// terminates its subprocess after observing the next invocation.
+				// The runtime normally loops forever;
+				// this test deliberately terminates its subprocess after observing the next invocation.
 				if err := cmd.Wait(); err != nil && ctx.Err() == nil {
 					t.Errorf("runtime exited: %v; output: %s", err, output.String())
 				}
@@ -377,8 +374,7 @@ func TestSDKStreamsThroughRuntimeAPI(t *testing.T) {
 					t.Fatal("runtime did not close stream before requesting next invocation")
 				}
 			}
-			// Observe compatibility details without asserting that a future SDK
-			// must retain today's omissions or connection reuse behavior.
+			// Observe compatibility details without asserting that a future SDK must retain today's omissions or connection reuse behavior.
 			t.Logf("runtime-request-close=%v response-connection-reused-for-next=%v", got.closeConnection, nextConnection.Load() == got.connection)
 		})
 	}

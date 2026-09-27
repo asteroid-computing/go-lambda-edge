@@ -1,6 +1,6 @@
-// Package claimprobe measures a candidate owned claim tree. Nothing in edge
-// imports it. This is a storage experiment, not an identity implementation:
-// provenance, full input-type support, JWT projection and public APIs are absent.
+// Package claimprobe measures a candidate owned claim tree.
+// Nothing in edge imports it.
+// This is a storage experiment, not an identity implementation: provenance, full input-type support, JWT projection and public APIs are absent.
 package claimprobe
 
 import (
@@ -46,8 +46,9 @@ func charge(remaining *int, n int) bool {
 	return true
 }
 
-// preflight counts every occurrence of a shared subtree. The depth bound also
-// terminates cycles without allocating a visited map. It calls no user methods.
+// preflight counts every occurrence of a shared subtree.
+// The depth bound also terminates cycles without allocating a visited map.
+// It calls no user methods.
 func preflight(v any, remaining *int, depth int) bool {
 	if !charge(remaining, nodeCharge) {
 		return false
@@ -84,8 +85,8 @@ func preflight(v any, remaining *int, depth int) bool {
 	}
 }
 
-// copyNode is only called after preflight. Inputs must remain unchanged until
-// copying completes, as with ordinary Go maps and slices passed to a function.
+// copyNode is only called after preflight.
+// Inputs must remain unchanged until copying completes, as with ordinary Go maps and slices passed to a function.
 func copyNode(v any) node {
 	switch v := v.(type) {
 	case nil:
@@ -129,10 +130,15 @@ func fixture(name string) (map[string]any, int) {
 	switch name {
 	case "ordinary":
 		return map[string]any{
-			"iss": "https://issuer.example", "sub": "subject", "client_id": "client",
-			"scope": "orders.read orders.write", "token_use": "access",
-			"aud": []any{"orders", "inventory"}, "cognito:groups": []any{"staff", "billing"},
-			"exp": float64(1900000000), "tenant": map[string]any{"id": "tenant", "active": true},
+			"iss":            "https://issuer.example",
+			"sub":            "subject",
+			"client_id":      "client",
+			"scope":          "orders.read orders.write",
+			"token_use":      "access",
+			"aud":            []any{"orders", "inventory"},
+			"cognito:groups": []any{"staff", "billing"},
+			"exp":            float64(1900000000),
+			"tenant":         map[string]any{"id": "tenant", "active": true},
 		}, budget
 	case "distinct_names", "distinct_names_1m", "distinct_names_6m":
 		if name == "distinct_names_1m" {
@@ -270,8 +276,9 @@ func TestSDKNumberFidelity(t *testing.T) {
 	}
 }
 
-// scanJSON measures bounded lexical validation separately from the tree. It
-// uses jsontext directly; it does not decode through map[string]any and float64.
+// scanJSON measures bounded lexical validation separately from the tree.
+// It uses jsontext directly;
+// it does not decode through map[string]any and float64.
 func scanJSON(input []byte, budget int) error {
 	if len(input) > budget {
 		return errRejected

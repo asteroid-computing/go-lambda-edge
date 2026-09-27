@@ -1,10 +1,9 @@
 # Design decisions
 
-Statuses: proposed, accepted, superseded, or rejected. A proposed record is not
-authorization to implement the behavior it describes.
+Statuses: proposed, accepted, superseded, or rejected.
+A proposed record is not authorization to implement the behavior it describes.
 
-Each substantive decision records the question, relevant code and official
-sources, alternatives, recommendation, consequences, and the user's resolution.
+Each substantive decision records the question, relevant code and official sources, alternatives, recommendation, consequences, and the user's resolution.
 Keep related decisions small enough to review and implement independently.
 
 | Record | Status | Question |

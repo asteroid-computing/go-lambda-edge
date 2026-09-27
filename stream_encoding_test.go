@@ -14,8 +14,10 @@ import (
 
 func TestStreamPrefixMetadata(t *testing.T) {
 	h := mustSnapshot(t, http.Header{
-		"Custom": {"first", "second"}, "Set-Cookie": {"a=1", "b=2"},
-		"Quoted": {"a\t\"b"}, "Suppressed": nil,
+		"Custom":     {"first", "second"},
+		"Set-Cookie": {"a=1", "b=2"},
+		"Quoted":     {"a\t\"b"},
+		"Suppressed": nil,
 	}, defaultResponseHeaderBudget)
 	prefix, err := encodeStreamPrefix(201, h)
 	if err != nil {

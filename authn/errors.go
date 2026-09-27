@@ -18,9 +18,9 @@ var (
 	ErrVerifierContract     = errors.New("authn: invalid verifier result")
 )
 
-// Error describes a sanitized HTTP authentication failure. Inspect its category
-// with errors.Is and its HTTP treatment with errors.AsType[*Error]. Its private
-// state never retains a supplied credential or an underlying provider error.
+// Error describes a sanitized HTTP authentication failure.
+// Inspect its category with errors.Is and its HTTP treatment with errors.AsType[*Error].
+// Its private state never retains a supplied credential or an underlying provider error.
 // The zero value describes an internal failure, without a challenge.
 type Error struct {
 	category   error

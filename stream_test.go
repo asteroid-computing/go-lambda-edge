@@ -440,8 +440,8 @@ func (r *finalBytesReader) Read(p []byte) (int, error) {
 
 func TestStreamDefersErrorAccompanyingBytes(t *testing.T) {
 	for _, terminal := range []error{io.EOF, http.ErrContentLength} {
-		// Inject a legal Reader result that the current SDK mishandles. This
-		// protects the runtime-facing Read contract independently of io.Pipe.
+		// Inject a legal Reader result that the current SDK mishandles.
+		// This protects the runtime-facing Read contract independently of io.Pipe.
 		done := make(chan struct{})
 		close(done)
 		s := &responseStream{

@@ -12,8 +12,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 )
 
-// Decoder tests exercise the accepted wire contract directly while the public
-// Invoke and typed HTTP entry points await their translation contract.
+// Decoder tests exercise the accepted wire contract directly while the public Invoke and typed HTTP entry points await their translation contract.
 const minimalV1 = `{"httpMethod":"GET","path":"/","requestContext":{"apiId":"example"}}`
 const minimalV2 = `{"version":"2.0","rawPath":"/","requestContext":{"apiId":"example","http":{"method":"GET"}}}`
 

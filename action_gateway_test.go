@@ -94,8 +94,8 @@ func actionGatewayRequest(t *testing.T, format string, values []string) *http.Re
 	v1.Headers = map[string]string{"Custom-Trace": "keep"}
 	v2.Headers = map[string]string{"custom-trace": "keep"}
 	if len(values) != 0 {
-		// A value mirrored by V1's single and multivalue maps is not an extra
-		// field line. Actual repeats in the multivalue list must survive.
+		// A value mirrored by V1's single and multivalue maps is not an extra field line.
+		// Actual repeats in the multivalue list must survive.
 		v1.Headers["action"] = values[0]
 		v1.MultiValueHeaders = map[string][]string{"ACTION": values}
 		v2.Headers["action"] = strings.Join(values, ",")

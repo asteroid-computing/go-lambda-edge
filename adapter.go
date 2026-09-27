@@ -1,7 +1,7 @@
 // Package edge adapts AWS API Gateway Lambda proxy events to net/http handlers.
-// It supports raw JSON v2 and already typed AWS events with optional native
-// gateway identity. Buffered and REST streaming responses share request and
-// identity policies; each has its own response and invocation boundary.
+// It supports raw JSON v2 and already typed AWS events with optional native gateway identity.
+// Buffered and REST streaming responses share request and identity policies;
+// each has its own response and invocation boundary.
 package edge
 
 import (
@@ -13,8 +13,10 @@ import (
 )
 
 // Adapter holds an HTTP handler and its API Gateway adaptation configuration.
-// Construct an Adapter with [New]; its zero value is not usable.
-// Configuration is fixed at construction. Calls own separate request state;
+// Construct an Adapter with [New];
+// its zero value is not usable.
+// Configuration is fixed at construction.
+// Calls own separate request state;
 // a shared handler must be safe for concurrent use.
 type Adapter struct {
 	handler http.Handler
@@ -30,14 +32,17 @@ type config struct {
 }
 
 // Option configures an [Adapter] or [StreamingAdapter] during construction.
-// Use the option functions provided by this package. A nil Option is invalid.
-// Options apply in argument order; the last assignment to a scalar setting wins.
+// Use the option functions provided by this package.
+// A nil Option is invalid.
+// Options apply in argument order;
+// the last assignment to a scalar setting wins.
 type Option func(*config)
 
 // WithGatewayIdentity configures whether gateway assertions establish identity.
-// The default is false. When enabled, the policy covers native IAM and
-// JWT/Cognito assertions; it does not configure authorization in AWS or enable
-// local token verification. Custom-authorizer contexts need an explicit mapper.
+// The default is false.
+// When enabled, the policy covers native IAM and JWT/Cognito assertions;
+// it does not configure authorization in AWS or enable local token verification.
+// Custom-authorizer contexts need an explicit mapper.
 // Unsupported or conflicting assertions fail before running the HTTP handler.
 func WithGatewayIdentity(enabled bool) Option {
 	return func(c *config) {
@@ -46,11 +51,13 @@ func WithGatewayIdentity(enabled bool) Option {
 }
 
 // WithIdentityClaimsBudget sets the gateway identity claims allowance in bytes.
-// The default is 256 KiB; New and NewStreaming reject settings outside 1..6 MiB.
+// The default is 256 KiB;
+// New and NewStreaming reject settings outside 1..6 MiB.
 // Each claim value costs 64 bytes plus name, string and exact-number text bytes.
-// Dedicated gateway scopes consume the same allowance. Raw claim JSON is also
-// limited to this byte length. This is a resource policy, not a heap cap or AWS
-// quota. It does not enable gateway identity.
+// Dedicated gateway scopes consume the same allowance.
+// Raw claim JSON is also limited to this byte length.
+// This is a resource policy, not a heap cap or AWS quota.
+// It does not enable gateway identity.
 func WithIdentityClaimsBudget(bytes int) Option {
 	return func(c *config) {
 		c.identityClaimsBudget = bytes
@@ -58,24 +65,26 @@ func WithIdentityClaimsBudget(bytes int) Option {
 }
 
 // WithResponseHeaderBudget sets the response header resource budget in bytes.
-// The default is 256 KiB. Both constructors reject settings outside 1..6 MiB;
-// zero does not disable the bound. Each original value costs its name length,
-// value length and 32 bytes; nil/empty slices cost their name length and 32.
-// Generated headers also consume the budget. This is a library resource policy,
-// not an AWS quota or a bound on total heap usage. It does not change the separate
-// buffered envelope or streaming metadata limits.
+// The default is 256 KiB.
+// Both constructors reject settings outside 1..6 MiB;
+// zero does not disable the bound.
+// Each original value costs its name length, value length and 32 bytes;
+// nil/empty slices cost their name length and 32.
+// Generated headers also consume the budget.
+// This is a library resource policy, not an AWS quota or a bound on total heap usage.
+// It does not change the separate buffered envelope or streaming metadata limits.
 func WithResponseHeaderBudget(bytes int) Option {
 	return func(c *config) {
 		c.responseHeaderBudget = bytes
 	}
 }
 
-// New validates handler and opts and returns an Adapter without performing I/O
-// or invoking handler. Nil handlers, including typed nil handlers, and nil
-// options are rejected. On error, the returned Adapter is nil.
+// New validates handler and opts and returns an Adapter without performing I/O or invoking handler.
+// Nil handlers, including typed nil handlers, and nil options are rejected.
+// On error, the returned Adapter is nil.
 //
-// The caller retains ownership of handler and is responsible for its concurrency
-// safety when sharing it. New does not use [http.DefaultServeMux].
+// The caller retains ownership of handler and is responsible for its concurrency safety when sharing it.
+// New does not use [http.DefaultServeMux].
 func New(handler http.Handler, opts ...Option) (*Adapter, error) {
 	cfg, err := configureAdapter(handler, opts)
 	if err != nil {
@@ -91,8 +100,8 @@ func configureAdapter(handler http.Handler, opts []Option) (config, error) {
 	if handler == nil {
 		return config{}, errors.New("edge: nil HTTP handler")
 	}
-	// An interface containing a typed nil is non-nil. Check nil-capable kinds
-	// before accepting a handler that would defer a startup fault to invocation.
+	// An interface containing a typed nil is non-nil.
+	// Check nil-capable kinds before accepting a handler that would defer a startup fault to invocation.
 	v := reflect.ValueOf(handler)
 	switch v.Kind() {
 	case reflect.Chan, reflect.Func, reflect.Map, reflect.Pointer, reflect.Slice:

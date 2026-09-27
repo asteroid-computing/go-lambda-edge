@@ -6,8 +6,8 @@ import (
 	"github.com/asteroid-computing/go-lambda-edge/identity"
 )
 
-// Test the actual demonstration enrollment policy separately from cryptographic
-// verification. All identities here are explicitly custom-assertion fixtures.
+// Test the actual demonstration enrollment policy separately from cryptographic verification.
+// All identities here are explicitly custom-assertion fixtures.
 func TestDemoEnrollment(t *testing.T) {
 	const issuer = "https://issuer.example/pool"
 	const principal = "arn:aws:iam::123456789012:user/Alice"
@@ -32,8 +32,8 @@ func TestDemoEnrollment(t *testing.T) {
 			if tc.arn != "" {
 				caller, err = identity.NewIAM(tc.arn, identity.SourceCustomAssertion)
 			} else {
-				// A subjectless caller still needs a client identity. Enrollment
-				// must not silently treat that client as the configured subject.
+				// A subjectless caller still needs a client identity.
+				// Enrollment must not silently treat that client as the configured subject.
 				claims := map[string]any{"iss": tc.issuer, "client_id": "app"}
 				if tc.subject != "" {
 					claims["sub"] = tc.subject

@@ -8,9 +8,10 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 )
 
-// decodedEvent contains exactly one request on success. Authorizer JSON belongs
-// to this value, independently of the input buffer; it is not decoded into the
-// SDK's string/float64 claim representations. No identity is established here.
+// decodedEvent contains exactly one request on success.
+// Authorizer JSON belongs to this value, independently of the input buffer;
+// it is not decoded into the SDK's string/float64 claim representations.
+// No identity is established here.
 type decodedEvent struct {
 	version    string
 	v1         *events.APIGatewayProxyRequest
@@ -19,15 +20,14 @@ type decodedEvent struct {
 }
 
 func decodeEvent(payload []byte) (decodedEvent, error) {
-	// This small first pass validates all JSON syntax, including unknown and
-	// opaque fields, and retains presence where SDK scalar zero values cannot.
+	// This small first pass validates all JSON syntax, including unknown and opaque fields, and retains presence where SDK scalar zero values cannot.
 	var envelope *struct {
 		Version         jsontext.Value `json:"version"`
 		IsBase64Encoded jsontext.Value `json:"isBase64Encoded"`
 	}
 	if err := json.Unmarshal(payload, &envelope); err != nil {
-		// JSON errors can contain object names and input values. Do not expose
-		// them, even through an unwrap chain, at this credential-bearing boundary.
+		// JSON errors can contain object names and input values.
+		// Do not expose them, even through an unwrap chain, at this credential-bearing boundary.
 		return decodedEvent{}, invocationError("decode", ErrInvalidEvent, "invalid event JSON")
 	}
 	if envelope == nil {
@@ -113,8 +113,8 @@ func validateV2(event events.APIGatewayV2HTTPRequest) error {
 }
 
 // Optional collections may be null, but their string elements must be strings.
-// Scope this rule to collections: AWS also sends null optional scalar metadata
-// and body fields. Options and unmarshaler lists are immutable after creation.
+// Scope this rule to collections: AWS also sends null optional scalar metadata and body fields.
+// Options and unmarshaler lists are immutable after creation.
 var eventStringOptions = json.WithUnmarshalers(json.JoinUnmarshalers(
 	json.UnmarshalFunc(func(data []byte, out *map[string]string) error {
 		return json.Unmarshal(data, out, nonNullStringOptions)

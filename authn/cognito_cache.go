@@ -24,8 +24,9 @@ type jwksKey struct {
 	expires time.Time
 }
 
-// An empty kid means Warm. Every path performs at most one fetch/join. A
-// successful fetch missing the requested kid must not start a refresh loop.
+// An empty kid means Warm.
+// Every path performs at most one fetch/join.
+// A successful fetch missing the requested kid must not start a refresh loop.
 func (v *CognitoVerifier) key(ctx context.Context, kid string) (jwksKey, error) {
 	v.mu.Lock()
 	now := time.Now()
@@ -58,10 +59,10 @@ func (v *CognitoVerifier) key(ctx context.Context, kid string) (jwksKey, error) 
 	case <-ctx.Done():
 		return jwksKey{}, ctx.Err()
 	case <-flight.ctx.Done():
-		// A misbehaving transport may still be running. Retain its flight so
-		// subsequent callers cannot accumulate replacement fetch goroutines.
-		// Completion also cancels the fetch context; prefer its published
-		// result when both signals are ready.
+		// A misbehaving transport may still be running.
+		// Retain its flight so subsequent callers cannot accumulate replacement fetch goroutines.
+		// Completion also cancels the fetch context;
+		// prefer its published result when both signals are ready.
 		select {
 		case <-flight.done:
 		default:
@@ -100,8 +101,8 @@ func (v *CognitoVerifier) refresh(flight *jwksFlight, cancel context.CancelFunc)
 		v.retryAfter = now.Add(v.backoff)
 		flight.err = ErrUnavailable
 	} else {
-		// Publish only a complete validated set. Removed keys do not survive
-		// in a union, and failure never extends the old snapshot's lifetime.
+		// Publish only a complete validated set.
+		// Removed keys do not survive in a union, and failure never extends the old snapshot's lifetime.
 		v.snapshot = jwksSnapshot{keys: keys, expires: now.Add(v.cfg.CacheTTL)}
 		v.unknownAfter = now.Add(30 * time.Second)
 		v.failed = false
