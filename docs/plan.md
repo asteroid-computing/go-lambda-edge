@@ -63,6 +63,7 @@ Decision 0021 accepts authorization rules and the consumer-owned resolution/disp
 | Package | Responsibility |
 | --- | --- |
 | `edge` (root) | Invocation adapter, payload decoding, HTTP translation and optional gateway identity; metadata accessors deferred |
+| `actionheader` | Strict single-value action selection from a configured request header; standard library only (decision 0026 E1) |
 | `identity` | Validated callers, claim representation, context transport; standard library only |
 | `authn` | Explicit IAM-proof/OAuth selection, Cognito verification and JWKS caching |
 | `iamproof` | Exported client proof generator and bounded online STS verifier |
@@ -367,6 +368,22 @@ Both organization secrets and their repository access are verified, and the old 
 The workflow now reads both values from secrets.
 Token creation and Release Please execution still need a successful run after merge.
 No release was published, and the license and deployment qualifications remain open.
+
+### 7. Pre-release exported API alignment
+
+[Decision 0026](decisions/0026-exported-api-review.md) reviewed every exported identifier against Google's Go style guidance.
+The owner approved E1–E6 and rejected E7 on 2026-09-27, with one stacked PR per item.
+Behavior, error semantics and trust boundaries do not change;
+these are placement, naming, typing and documentation changes made before the first release.
+
+- [ ] E1: move the action-header selector to the standard-library-only `actionheader` package as `Selector`/`NewSelector`.
+- [ ] E2: rename the moved sentinels to `ErrMissing`, `ErrAmbiguous` and `ErrInvalid`.
+- [ ] E3: rename `identity.WithCaller` to `identity.NewContext`.
+- [ ] E4: type the `InvocationError` operation and limit names with exported constants.
+- [ ] E5: add `String` methods to the `identity` enumerations.
+- [ ] E6: complete sentinel docs, doc links, callback parameter names and `Claim.Bool` result names.
+
+Acceptance: each PR passes the full AGENTS.md validation set, and examples, guides and the external consumer check use the new names.
 
 ## Findings carried forward from the Beakley review
 
