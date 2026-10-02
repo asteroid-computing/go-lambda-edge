@@ -35,12 +35,11 @@ No branch protection was configured.
 
 The [first main run](https://github.com/asteroid-computing/go-lambda-edge/actions/runs/36281181036) passed the original repeated validation but failed at App token creation: the repository installation lookup returned 404.
 The owner subsequently installed astrocompute-release-please, and installation access is now verified.
-After the workflow credential migration merges, verify token creation, the generated v0.1.0 release PR and its checks.
-Release Please has not yet executed successfully.
+Release Please has since executed successfully: the App opened [the v0.1.0 release PR](https://github.com/asteroid-computing/go-lambda-edge/pull/3), updates it on each main push, and its Go checks pass.
 
-The owner's license and copyright holder remain undecided.
-No license, repository visibility change, release tag or release publication has been performed.
-Resolve the license before external publication.
+The owner chose the Apache License, Version 2.0 on 2026-10-02, with Andrew Beck as copyright holder ([decision 0023 R6](decisions/0023-consumer-readiness.md#r6-obtain-the-owners-distributionlicense-choice-before-publication)).
+LICENSE is the unmodified canonical text.
+No repository visibility change, release tag or release publication has been performed.
 
 REST streaming's SDK deployment qualification remains open: local probes cannot establish AWS acceptance of the observed mode-header/connection behavior.
 Authoritative clarification or a separately approved live test is still needed.

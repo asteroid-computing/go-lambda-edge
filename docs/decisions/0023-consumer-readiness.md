@@ -235,6 +235,12 @@ Do not infer a license from dependencies or Beakley, and do not change repositor
 **Consequence:** it does not block the example or local validation.
 The exact license remains an open owner question, even if R1–R5 are approved.
 
+**Resolution (2026-10-02):** the owner chose the Apache License, Version 2.0, with Andrew Beck as copyright holder.
+The tracked LICENSE is the unmodified text from apache.org (SHA-256 `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30`), identical to the copy shipped by aws-lambda-go;
+the README carries the copyright line.
+The patent grant and contribution terms suit a security-path library, and every linked dependency is already Apache-2.0 or BSD.
+Repository visibility is unchanged.
+
 ## Original review validation and accepted execution order
 
 On Go 1.27.1 darwin/arm64, the current implementation passes `go test -race ./...`, `go vet ./...`, `go mod verify` and CGO-disabled Linux arm64/amd64 builds.

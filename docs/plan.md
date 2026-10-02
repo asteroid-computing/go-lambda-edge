@@ -325,11 +325,11 @@ Acceptance: examples work both in Lambda and ordinary HTTP applications, while a
 The user authorized a consumer-readiness design review on 2026-09-20.
 [Decision 0023](decisions/0023-consumer-readiness.md) records the code/documentation evidence, the Beakley failure-case coverage matrix and recommendations R1–R6.
 The user approved R1–R5 on 2026-09-20, including deferring exported `edgetest` helpers.
-The license/copyright choice remains open and does not block local work.
+The owner resolved R6 on 2026-10-02: Apache-2.0, with Andrew Beck as copyright holder.
 
 - [x] Review public composition, existing examples, fixture provenance, deferred features, package dependencies and CI/release readiness.
 - [x] Approve R1–R5: complete reference application, deferred edgetest exports, consumer outcomes, precise support matrix and v0 preparation.
-  The license choice remains open.
+  R6 (license) was resolved on 2026-10-02.
 - [x] Implement the reference application and consumer-testing guide using the existing public APIs, with local provider fixtures.
 - [x] Reconcile support/status documentation, update the indirect Smithy patch in isolation, and record incremental streaming baselines.
 - [x] Obtain actual GitHub CI evidence for the foundation PR;
@@ -347,7 +347,7 @@ No library API or transport policy changed.
 
 Full local race tests, vet, module verification, formatting, external consumption and Linux arm64/amd64 builds pass on Go 1.27.1 (2026-09-21).
 The subsequent authorized push and passing PR CI are recorded below.
-The license and deployment qualifications remain open;
+The deployment qualifications remain open;
 no release publication or AWS deployment occurred.
 
 Release automation follow-up (2026-09-21): the user selected Release Please and its GitHub Action, plus checks on PRs against main.
@@ -367,7 +367,9 @@ read-only checks confirmed the new credentials and repository installation permi
 Both organization secrets and their repository access are verified, and the old repository credentials have been removed.
 The workflow now reads both values from secrets.
 Token creation and Release Please execution still need a successful run after merge.
-No release was published, and the license and deployment qualifications remain open.
+No release was published, and the deployment qualifications remain open.
+Release Please has since run successfully and opened the v0.1.0 release PR;
+the license was chosen on 2026-10-02.
 
 ### 7. Pre-release exported API alignment
 
