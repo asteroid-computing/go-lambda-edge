@@ -129,3 +129,8 @@ post-handoff streaming panics become terminal errors.
 - [Repository working agreement](AGENTS.md)
 - [Release workflow and GitHub App setup](docs/releases.md)
 - [Initial codec benchmarks](docs/benchmarks.md)
+
+## License
+
+Copyright 2026 Andrew Beck.
+Licensed under the [Apache License, Version 2.0](LICENSE).
