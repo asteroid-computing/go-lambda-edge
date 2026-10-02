@@ -71,7 +71,7 @@ do not select again from mutable headers.
 An action header does not authenticate a caller.
 The selector works with both ordinary Go HTTP servers and the Lambda adapter.
 
-See the [runnable middleware example](action_example_test.go) and [accepted header contract](docs/decisions/0011-request-header-processing.md).
+See the [runnable middleware example](actionheader/example_test.go) and [accepted header contract](docs/decisions/0011-request-header-processing.md).
 
 ## Response header budget
 
@@ -129,6 +129,8 @@ post-handoff streaming panics become terminal errors.
 - [Repository working agreement](AGENTS.md)
 - [Release workflow and GitHub App setup](docs/releases.md)
 - [Initial codec benchmarks](docs/benchmarks.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
 
 ## License
 

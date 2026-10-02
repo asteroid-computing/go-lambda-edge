@@ -154,3 +154,7 @@ The working branch was pushed and PR #1 opened.
 [All four PR checks at f6a2624 passed](https://github.com/asteroid-computing/go-lambda-edge/actions/runs/35619720590).
 App installation/permissions and the main-branch release path still need execution evidence after merge.
 No release has been published.
+
+Release execution, verified on 2026-10-02: Release Please minted its App token, opened and maintained [the release PR](https://github.com/asteroid-computing/go-lambda-edge/pull/3), and its Go checks passed.
+After the owner merged it, the release run succeeded and published [v0.1.0](https://github.com/asteroid-computing/go-lambda-edge/releases/tag/v0.1.0), tagged at the release commit 9423302 with the manifest at 0.1.0.
+The accepted workflow is now proven end to end.

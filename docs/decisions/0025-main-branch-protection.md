@@ -8,6 +8,10 @@ Owner direction on 2026-09-27: update readiness documentation, then the owner wi
 Branch protection was not approved as part of that instruction;
 this proposal remains unimplemented.
 
+Owner direction on 2026-10-02: the owner will configure branch protection manually in repository settings.
+No agent changes repository policy;
+this record documents the recommended rule set for that configuration.
+
 ## Evidence
 
 PR #1 at f6a2624469d14a150d89e0f5911644db86449e31 is mergeable, with all four [Go checks passing](https://github.com/asteroid-computing/go-lambda-edge/actions/runs/35619720590).

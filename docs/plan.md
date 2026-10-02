@@ -335,7 +335,8 @@ The owner resolved R6 on 2026-10-02: Apache-2.0, with Andrew Beck as copyright h
 - [x] Obtain actual GitHub CI evidence for the foundation PR;
   all four jobs passed at f6a2624.
   Later commits require their own passing checks.
-- [ ] Verify the main release workflow and resolve publication prerequisites before a release.
+- [x] Verify the main release workflow and resolve publication prerequisites before a release.
+  v0.1.0 was released on 2026-10-02.
   Streaming deployment and live identity interoperability remain separate qualifications.
 
 The [complete dispatcher](../examples/dispatcher/README.md), [testing guide](consumer-testing.md), [support matrix](support.md) and [release checklist](release-readiness.md) are implemented.
