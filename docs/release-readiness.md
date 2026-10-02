@@ -29,7 +29,8 @@ Secret metadata and repository access were verified on 2026-09-27;
 the obsolete repository variable and private-key secret were removed.
 The new key and Client ID were verified against the astrocompute-release-please App and its repository installation using read-only API calls without printing credentials.
 Its installation grants all three required write permissions.
-No branch protection was configured.
+No branch protection was configured;
+the owner will configure it manually ([decision 0025](decisions/0025-main-branch-protection.md)).
 
 ## Outstanding evidence and owner choices
 
@@ -39,7 +40,10 @@ Release Please has since executed successfully: the App opened [the v0.1.0 relea
 
 The owner chose the Apache License, Version 2.0 on 2026-10-02, with Andrew Beck as copyright holder ([decision 0023 R6](decisions/0023-consumer-readiness.md#r6-obtain-the-owners-distributionlicense-choice-before-publication)).
 LICENSE is the unmodified canonical text.
-No repository visibility change, release tag or release publication has been performed.
+
+The owner merged the release PR on 2026-10-02, and the release run published [v0.1.0](https://github.com/asteroid-computing/go-lambda-edge/releases/tag/v0.1.0) at commit 9423302.
+Repository visibility is unchanged;
+make the repository public, enable private vulnerability reporting for the [security policy](../SECURITY.md), and then request the version from the Go module proxy so pkg.go.dev indexes it.
 
 REST streaming's SDK deployment qualification remains open: local probes cannot establish AWS acceptance of the observed mode-header/connection behavior.
 Authoritative clarification or a separately approved live test is still needed.
